@@ -39,7 +39,8 @@ void ssd1306_i2c_setup(void)
 #define SCL_LOW  funDigitalWrite( SSD1306_I2C_BITBANG_SCL, 0 );
 #define SDA_IN   funDigitalRead( SSD1306_I2C_BITBANG_SDA );
 #define I2CSPEEDBASE 1
-#define I2CDELAY_FUNC(x) Delay_Us(x*20);
+#define I2CDELAY_FUNC(x) ADD_N_NOPS(x*10)
+//Delay_Us(x*1);
 
 static void ssd1306_i2c_sendstart()
 {
@@ -48,11 +49,14 @@ static void ssd1306_i2c_sendstart()
 	SDA_LOW
 	I2CDELAY_FUNC( 1 * I2CSPEEDBASE );
 	SCL_LOW
+	I2CDELAY_FUNC( 1 * I2CSPEEDBASE );
 }
 
 void ssd1306_i2c_sendstop()
 {
 	SDA_LOW
+	I2CDELAY_FUNC( 1 * I2CSPEEDBASE );
+	SCL_LOW
 	I2CDELAY_FUNC( 1 * I2CSPEEDBASE );
 	SCL_HIGH
 	I2CDELAY_FUNC( 1 * I2CSPEEDBASE );
@@ -89,7 +93,7 @@ unsigned char ssd1306_i2c_sendbyte( unsigned char data )
 	I2CDELAY_FUNC( 1 * I2CSPEEDBASE );
 	SCL_LOW
 	I2CDELAY_FUNC( 1 * I2CSPEEDBASE );
-//	SDA_LOW // Maybe?
+	SDA_HIGH // Maybe?
 	funPinMode( SSD1306_I2C_BITBANG_SDA, GPIO_CFGLR_OUT_10Mhz_PP );
 	I2CDELAY_FUNC( 1 * I2CSPEEDBASE );
 	return !!i;
@@ -100,6 +104,7 @@ uint8_t ssd1306_pkt_send(uint8_t *data, uint8_t sz, uint8_t cmd)
 	ssd1306_i2c_sendstart();
 	int r = ssd1306_i2c_sendbyte( SSD1306_I2C_ADDR<<1 );
 	if( r ) return r;
+	//ssd1306_i2c_sendstart(); For some reason displays don't want repeated start
 	if(cmd)
 	{
 		if( ssd1306_i2c_sendbyte( 0x00 ) )
