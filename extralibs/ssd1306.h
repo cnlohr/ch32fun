@@ -57,8 +57,7 @@
  */
 uint8_t ssd1306_cmd(uint8_t cmd)
 {
-	ssd1306_pkt_send(&cmd, 1, 1);
-	return 0;
+	return ssd1306_pkt_send(&cmd, 1, 1);
 }
 
 /*
@@ -66,8 +65,7 @@ uint8_t ssd1306_cmd(uint8_t cmd)
  */
 uint8_t ssd1306_data(uint8_t *data, uint8_t sz)
 {
-	ssd1306_pkt_send(data, sz, 0);
-	return 0;
+	return ssd1306_pkt_send(data, sz, 0);
 }
 
 #define SSD1306_SETCONTRAST 0x81
@@ -103,6 +101,7 @@ uint8_t ssd1306_data(uint8_t *data, uint8_t sz)
 //#define vccstate SSD1306_EXTERNALVCC
 #define vccstate SSD1306_SWITCHCAPVCC
 
+#if !defined(SSD1306_CUSTOM_INIT_ARRAY) || !SSD1306_CUSTOM_INIT_ARRAY
 // OLED initialization commands for 128x32
 const uint8_t ssd1306_init_array[] =
 {
@@ -163,6 +162,7 @@ const uint8_t ssd1306_init_array[] =
 #endif
 	SSD1306_TERMINATE_CMDS                 // 0xFF --fake command to mark end
 };
+#endif
 
 // the display buffer
 uint8_t ssd1306_buffer[SSD1306_W*SSD1306_H/8];
@@ -701,8 +701,11 @@ uint8_t ssd1306_init(void)
 {
 	// pulse reset
 	ssd1306_rst();
+
+	ssd1306_setbuf(0);
 	
 	// initialize OLED
+#if !defined(SSD1306_CUSTOM_INIT_ARRAY) || !SSD1306_CUSTOM_INIT_ARRAY
 	uint8_t *cmd_list = (uint8_t *)ssd1306_init_array;
 	while(*cmd_list != SSD1306_TERMINATE_CMDS)
 	{
@@ -714,6 +717,8 @@ uint8_t ssd1306_init(void)
 	ssd1306_setbuf(0);
 	ssd1306_refresh();
 	
+#endif
+
 	return 0;
 }
 
