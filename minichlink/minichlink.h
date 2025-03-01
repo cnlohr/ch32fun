@@ -88,7 +88,7 @@ struct MiniChlinkFunctions
 	FlushLLCommands
 */
 
-inline static int IsAddressFlash( uint32_t addy ) { return ( addy & 0xff000000 ) == 0x08000000 || ( addy & 0x1FFFF000 ) == 0x1FFFF000; }
+inline static int IsAddressFlash( uint32_t addy ) { return ( addy & 0xff000000 ) == 0x08000000 || ( addy & 0x1FFF0000 ) == 0x1FFF0000; }
 
 #define HALT_MODE_HALT_AND_RESET    0
 #define HALT_MODE_REBOOT            1

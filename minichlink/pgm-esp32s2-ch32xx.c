@@ -552,6 +552,7 @@ void * TryInit_ESP32S2CHFUN()
 	MCF.VoidHighLevelState = ESPVoidHighLevelState;
 	MCF.VendorCommand = ESPVendorCommand;
 
+#if 1
 	// These are optional. Disabling these is a good mechanismto make sure the core functions still work.
 	// Comment these out to test the reference algorithm.
 	// DO NOT Comment them out piecemeal because there are state assumptions built into these functions.
@@ -563,6 +564,7 @@ void * TryInit_ESP32S2CHFUN()
 	MCF.BlockWrite64 = ESPBlockWrite64;
 	MCF.ReadBinaryBlob = ESPReadBinaryBlob;
 	MCF.ReadAllCPURegisters = ESPReadAllCPURegisters;
+#endif
 
 	// Reset internal programmer state.
 	Write2LE( eps, 0x0afe );
