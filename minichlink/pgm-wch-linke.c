@@ -46,6 +46,18 @@ static void printChipInfo(enum RiscVChip chip) {
 		case CHIP_CH32V003:
 			fprintf(stderr, "Detected: CH32V003\n");
 			break;
+		case CHIP_CH32V002:
+			fprintf(stderr, "Detected: CH32V002\n");
+			break;
+		case CHIP_CH32V004:
+			fprintf(stderr, "Detected: CH32V004\n");
+			break;
+		case CHIP_CH32V005:
+			fprintf(stderr, "Detected: CH32V005\n");
+			break;
+		case CHIP_CH32V006:
+			fprintf(stderr, "Detected: CH32V006\n");
+			break;
 	}
 }
 

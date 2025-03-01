@@ -22,25 +22,23 @@ int main()
 	// Enable GPIOs
 	RCC->APB2PCENR |= RCC_APB2Periph_GPIOD | RCC_APB2Periph_GPIOC;
 
-	// GPIO D0 Push-Pull
-	GPIOD->CFGLR &= ~(0xf<<(4*0));
-	GPIOD->CFGLR |= (GPIO_Speed_10MHz | GPIO_CNF_OUT_PP)<<(4*0);
-
-	// GPIO C0 Push-Pull
-	GPIOC->CFGLR &= ~(0xf<<(4*0));
-	GPIOC->CFGLR |= (GPIO_Speed_10MHz | GPIO_CNF_OUT_PP)<<(4*0);
+	funPinMode( PD0, GPIO_Speed_10MHz | GPIO_CNF_OUT_PP );
+	funPinMode( PC0, GPIO_Speed_10MHz | GPIO_CNF_OUT_PP );
 
 	while(1)
 	{
-		GPIOD->BSHR = 1;	 // Turn on GPIOs
-		GPIOC->BSHR = 1;
+		funDigitalWrite( PD0, 1 );
+		funDigitalWrite( PC0, 1 );
+
 		printf( "+%lu\n", count++ );
 		Delay_Ms(100);
 		int i;
 		for( i = 0; i < 10000; i++ )
 			poll_input();
-		GPIOD->BSHR = (1<<16); // Turn off GPIODs
-		GPIOC->BSHR = (1<<16);
+
+		funDigitalWrite( PD0, 0 );
+		funDigitalWrite( PC0, 0 );
+
 		printf( "-%lu[%c]\n", count++, last );
 		Delay_Ms(100);
 	}

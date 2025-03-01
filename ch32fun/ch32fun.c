@@ -494,9 +494,7 @@ WEAK int puts(const char *s)
 
 #define mini_strlen strlen
 
-static int
-mini_itoa(long value, unsigned int radix, int uppercase, int unsig,
-	 char *buffer)
+int mini_itoa(long value, unsigned int radix, int uppercase, int unsig, char *buffer)
 {
 	char	*pbuffer = buffer;
 	int	negative = 0;
@@ -775,7 +773,7 @@ extern uint32_t * _edata;
 
 #if FUNCONF_DEBUG_HARDFAULT
 #if FUNCONF_USE_DEBUGPRINTF
-static void PrintN( uint32_t n )
+void PrintHex( uint32_t n )
 {
 	while( (*DMDATA0) & 0x80 );
 	// Write out character.
@@ -790,7 +788,7 @@ static void PrintN( uint32_t n )
 	}
 }
 #elif FUNCONF_USE_UARTPRINTF
-static void PrintN( uint32_t n )
+void PrintHex( uint32_t n )
 {
 	putchar( ' ' );
 	putchar( '0' );
@@ -812,10 +810,10 @@ void DefaultIRQHandler( void )
 #if FUNCONF_DEBUG_HARDFAULT && ( FUNCONF_USE_DEBUGPRINTF || FUNCONF_USE_UARTPRINTF )
 	//This is kind of like a crash handler.
 	//printf( "DEAD MSTATUS:%08x MTVAL:%08x MCAUSE:%08x MEPC:%08x\n", (int)__get_MSTATUS(), (int)__get_MTVAL(), (int)__get_MCAUSE(), (int)__get_MEPC() );
-	PrintN( __get_MEPC() ); // "addr2line -e debugprintfdemo.elf 0x000007e6" ---> debugprintfdemo.c:45
-	PrintN( __get_MSTATUS() );
-	PrintN( __get_MTVAL() );
-	PrintN( __get_MCAUSE() );
+	PrintHex( __get_MEPC() ); // "addr2line -e debugprintfdemo.elf 0x000007e6" ---> debugprintfdemo.c:45
+	PrintHex( __get_MSTATUS() );
+	PrintHex( __get_MTVAL() );
+	PrintHex( __get_MCAUSE() );
 #if FUNCONF_USE_DEBUGPRINTF
 	while( (*DMDATA0) & 0x80 );
 	*DMDATA0 = 0x0a85;
@@ -1317,7 +1315,7 @@ void poll_input( void )
  	if( ((*dmdata0) & 0x80) == 0 )
 	{
 		internal_handle_input( dmdata0 );
-		*dmdata0 = 0x80;
+		*dmdata0 = 0x84;
 	}
 }
 
@@ -1521,8 +1519,17 @@ void SystemInit( void )
 #define BASE_CTLR	(((FUNCONF_HSITRIM) << 3) | RCC_HSION | HSEBYP | RCC_CSS)
 //#define BASE_CTLR	(((FUNCONF_HSITRIM) << 3) | HSEBYP | RCC_CSS)	// disable HSI in HSE modes
 
-	// CH32V003 flash latency
-#if defined(CH32X03x)
+	// Flash latency settings.
+#if defined(CH32V00x)
+	// Per TRM
+	#if FUNCONF_SYSTEM_CORE_CLOCK > 25000000
+		FLASH->ACTLR = FLASH_ACTLR_LATENCY_2;
+	#elif FUNCONF_SYSTEM_CORE_CLOCK > 15000000
+		FLASH->ACTLR = FLASH_ACTLR_LATENCY_1;
+	#else
+		FLASH->ACTLR = FLASH_ACTLR_LATENCY_0;
+	#endif
+#elif defined(CH32X03x)
 	FLASH->ACTLR = FLASH_ACTLR_LATENCY_2;                   // +2 Cycle Latency (Recommended per TRM)
 #elif defined(CH32V003)
 	#if FUNCONF_SYSTEM_CORE_CLOCK > 25000000

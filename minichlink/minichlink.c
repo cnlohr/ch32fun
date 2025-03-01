@@ -82,7 +82,6 @@ void * MiniCHLinkInitAsDLL( struct MiniChlinkFunctions ** MCFO, const init_hints
 	iss->ram_base = 0x20000000;
 	iss->ram_size = 2048;
 	iss->sector_size = 64;
-	iss->flash_size = 16384;
 	iss->target_chip_type = 0;
 
 	SetupAutomaticHighLevelFunctions( dev );
@@ -384,15 +383,15 @@ keep_going:
 							appendword |= i+4; // Will go into DATA0.
 						}
 						int r = MCF.PollTerminal( dev, buffer, sizeof( buffer ), appendword, 0 );
-						if( r == -1 )
-						{
-							// Other end ack'd without printf.
-							appendword = 0;
-						}
-						else if( r < 0 )
+						if( r < -5 )
 						{
 							fprintf( stderr, "Terminal dead.  code %d\n", r );
 							return -32;
+						}
+						else if( r < 0 )
+						{
+							// Other end ack'd without printf. (Or there is another situation)
+							appendword = 0;
 						}
 						else if( r > 0 )
 						{
@@ -659,11 +658,6 @@ keep_going:
 				{
 					fprintf( stderr, "Error: File I/O Fault.\n" );
 					exit( -10 );
-				}
-				if( len > iss->flash_size )
-				{
-					fprintf( stderr, "Error: Image for CH32V003 too large (%d)\n", len );
-					exit( -9 );
 				}
 
 
@@ -950,9 +944,19 @@ int DefaultDetermineChipType( void * dev )
 
 		if( data0offset == 0xe00000f4 )
 		{
-			// Only known processor with this signature is a CH32V003.
-			iss->target_chip_type = CHIP_CH32V003;
-			fprintf( stderr, "Autodetected a ch32x003\n" );
+			// Only known processor with this signature = 0 is a CH32V003.
+			switch( vendorid >> 20 )
+			{
+			case 0x002: iss->target_chip_type = CHIP_CH32V002; break;
+			case 0x004: iss->target_chip_type = CHIP_CH32V004; break;
+			case 0x005: iss->target_chip_type = CHIP_CH32V005; break;
+			case 0x006: iss->target_chip_type = CHIP_CH32V006; break;
+			default:    iss->target_chip_type = CHIP_CH32V003; break; // not usually 003
+			}
+			// Examples:
+			// 00000012 = CHIP_CH32V003
+			// 00620620 = CHIP_CH32V006
+			fprintf( stderr, "Autodetected a SWDIO chip (Enum: %02x from %08x)\n", iss->target_chip_type, vendorid );
 		}
 		else if( data0offset == 0xe0000380 )
 		{
@@ -1030,23 +1034,26 @@ int InternalUnlockBootloader( void * dev )
 {
 	if( !MCF.WriteWord ) return -99;
 	int ret = 0;
-	uint32_t OBTKEYR;
+	uint32_t STATR;
 	ret |= MCF.WriteWord( dev, 0x40022028, 0x45670123 ); //(FLASH_BOOT_MODEKEYP)
 	ret |= MCF.WriteWord( dev, 0x40022028, 0xCDEF89AB ); //(FLASH_BOOT_MODEKEYP)
-	ret |= MCF.ReadWord( dev, 0x40022008, &OBTKEYR ); //(FLASH_OBTKEYR)
+	ret |= MCF.ReadWord( dev, 0x4002200C, &STATR ); //(FLASH_OBTKEYR)
 	if( ret )
 	{
 		fprintf( stderr, "Error operating with OBTKEYR\n" );
 		return -1;
 	}
-	if( OBTKEYR & (1<<15) )
+	if( STATR & (1<<15) )
 	{
-		fprintf( stderr, "Error: Could not unlock boot section (%08x)\n", OBTKEYR );
+		fprintf( stderr, "Error: Could not unlock boot section (%08x)\n", STATR );
 	}
-	OBTKEYR |= (1<<14); // Configure for boot-to-bootload.
-	ret |= MCF.WriteWord( dev, 0x40022008, OBTKEYR );
-	ret |= MCF.ReadWord( dev, 0x40022008, &OBTKEYR ); //(FLASH_OBTKEYR)
-	printf( "FLASH_OBTKEYR = %08x (%d)\n", OBTKEYR, ret );
+	STATR |= (1<<14); // Configure for boot-to-bootload.
+	ret |= MCF.WriteWord( dev, 0x4002200C, STATR );
+	ret |= MCF.ReadWord( dev, 0x4002200C, &STATR ); //(FLASH_OBTKEYR)
+
+	// Need to flush state.
+	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
+	iss->statetag = STTAG( "XXXX" );
 
 	return ret;
 }
@@ -1230,7 +1237,7 @@ static int DefaultWriteWord( void * dev, uint32_t address_to_write, uint32_t dat
 			// fc75 c.bnez x8, -4
 			// c.ebreak
 			MCF.WriteReg32( dev, DMPROGBUF3, 
-				(iss->target_chip_type == CHIP_CH32X03x || iss->target_chip_type == CHIP_CH32V003) ? 
+				(iss->target_chip_type == CHIP_CH32X03x || iss->target_chip_type == CHIP_CH32V003 || (iss->target_chip_type >= CHIP_CH32V002 && iss->target_chip_type <= CHIP_CH32V006 ) ) ? 
 				0x4200c254 : 0x42000001  );
 
 			MCF.WriteReg32( dev, DMPROGBUF4,
@@ -1459,17 +1466,18 @@ int DefaultWriteBinaryBlob( void * dev, uint32_t address_to_write, uint32_t blob
 						MCF.Erase( dev, base, sectorsize, 0 );
 					if( iss->target_chip_type != CHIP_CH32V20x && iss->target_chip_type != CHIP_CH32V30x )
 					{
-						// No bufrst on v20x, v30x
 						// V003, x035, maybe more.
 						MCF.WriteWord( dev, 0x40022010, CR_PAGE_PG ); // THIS IS REQUIRED, (intptr_t)&FLASH->CTLR = 0x40022010
 						MCF.WriteWord( dev, 0x40022010, CR_BUF_RST | CR_PAGE_PG );  // (intptr_t)&FLASH->CTLR = 0x40022010
 					}
 					else
 					{
+						// No bufrst on v20x, v30x
 						if( MCF.WaitForFlash ) MCF.WaitForFlash( dev );
 						MCF.WriteWord( dev, 0x40022010, CR_PAGE_PG ); // THIS IS REQUIRED, (intptr_t)&FLASH->CTLR = 0x40022010
 						//FTPG ==  CR_PAGE_PG   == ((uint32_t)0x00010000)
 					}
+					if( MCF.WaitForFlash ) MCF.WaitForFlash( dev );
 				}
 
 				int j;
@@ -1531,17 +1539,18 @@ int DefaultWriteBinaryBlob( void * dev, uint32_t address_to_write, uint32_t blob
 						MCF.Erase( dev, base, sectorsize, 0 );
 					if( iss->target_chip_type != CHIP_CH32V20x && iss->target_chip_type != CHIP_CH32V30x )
 					{
-						// No bufrst on v20x, v30x
 						// V003, x035, maybe more.
 						MCF.WriteWord( dev, 0x40022010, CR_PAGE_PG ); // THIS IS REQUIRED, (intptr_t)&FLASH->CTLR = 0x40022010
 						MCF.WriteWord( dev, 0x40022010, CR_BUF_RST | CR_PAGE_PG );  // (intptr_t)&FLASH->CTLR = 0x40022010
 					}
 					else
 					{
+						// No bufrst on v20x, v30x
 						if( MCF.WaitForFlash ) MCF.WaitForFlash( dev );
 						MCF.WriteWord( dev, 0x40022010, CR_PAGE_PG ); // THIS IS REQUIRED, (intptr_t)&FLASH->CTLR = 0x40022010
 						//FTPG ==  CR_PAGE_PG   == ((uint32_t)0x00010000)
 					}
+					if( MCF.WaitForFlash ) MCF.WaitForFlash( dev );
 
 					int j;
 					for( j = 0; j < sectorsize/4; j++ )
@@ -1645,7 +1654,9 @@ static int DefaultReadWord( void * dev, uint32_t address_to_read, uint32_t * dat
 
 	int autoincrement = 1;
 	if( address_to_read == 0x40022010 || address_to_read == 0x4002200C )  // Don't autoincrement when checking flash flag. 
+	{
 		autoincrement = 0;
+	}
 
 	if( iss->statetag != STTAG( "RDSQ" ) || address_to_read != iss->currentstateval || autoincrement != iss->autoincrement)
 	{
@@ -2031,6 +2042,13 @@ void PostSetupConfigureInterface( void * dev )
 		iss->sector_size = 64;
 		iss->nr_registers_for_debug = 16;
 		break;
+	case CHIP_CH32V002:
+	case CHIP_CH32V004:
+	case CHIP_CH32V005:
+	case CHIP_CH32V006:
+		iss->sector_size = 256;
+		iss->nr_registers_for_debug = 16;
+		break;
 	}
 }
 
@@ -2370,7 +2388,7 @@ int DefaultUnbrick( void * dev )
 	InternalUnlockFlash(dev, iss);
 
 	const uint8_t * option_data = 
-		( iss->target_chip_type == CHIP_CH32X03x || iss->target_chip_type == CHIP_CH32V003 ) ?
+		( iss->target_chip_type == CHIP_CH32X03x || iss->target_chip_type == CHIP_CH32V003 || (iss->target_chip_type >= CHIP_CH32V002 && iss->target_chip_type <= CHIP_CH32V006 ) ) ?
 		option_data_003_x03x : option_data_20x_30x;
 
 	DefaultWriteBinaryBlob(dev, 0x1ffff800, 16, option_data );

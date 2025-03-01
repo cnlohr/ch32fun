@@ -14,16 +14,16 @@ int main()
 	printf( "Starting\n" );
 
 	// Unkock flash - be aware you need extra stuff for the bootloader.
-	FLASH->KEYR = 0x45670123;
-	FLASH->KEYR = 0xCDEF89AB;
+	FLASH->KEYR = FLASH_KEY1;
+	FLASH->KEYR = FLASH_KEY2;
 
 	// For option bytes.
-//	FLASH->OBKEYR = 0x45670123;
-//	FLASH->OBKEYR = 0xCDEF89AB;
+//	FLASH->OBKEYR = FLASH_KEY1;
+//	FLASH->OBKEYR = FLASH_KEY2;
 
 	// For unlocking programming, in general.
-	FLASH->MODEKEYR = 0x45670123;
-	FLASH->MODEKEYR = 0xCDEF89AB;
+	FLASH->MODEKEYR = FLASH_KEY1;
+	FLASH->MODEKEYR = FLASH_KEY2;
 
 	printf( "FLASH->CTLR = %08lx\n", FLASH->CTLR );
 	if( FLASH->CTLR & 0x8080 ) 

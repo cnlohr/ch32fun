@@ -36,6 +36,8 @@ endif
 CFLAGS?=-g -Os -flto -ffunction-sections -fdata-sections -fmessage-length=0 -msmall-data-limit=8
 LDFLAGS+=-Wl,--print-memory-usage -Wl,-Map=$(TARGET).map
 
+GCCVERSION13 := $(shell expr `$(PREFIX)-gcc -dumpversion | cut -f1 -d.` \>= 13)
+
 ifeq ($(TARGET_MCU),CH32V003)
 	CFLAGS_ARCH+=-march=rv32ec -mabi=ilp32e -DCH32V003=1
 	GENERATED_LD_FILE?=$(CH32FUN)/generated_ch32v003.ld
@@ -44,8 +46,28 @@ ifeq ($(TARGET_MCU),CH32V003)
 	LDFLAGS+=-L$(CH32FUN)/../misc -lgcc
 else
 	MCU_PACKAGE?=1
+	ifeq ($(findstring CH32V00,$(TARGET_MCU)),CH32V00) # CH32V002, 4, 5, 6, 7
+		# Note: The CH32V003 is not a CH32V00x.
+		ifeq "$(GCCVERSION13)" "1"
+			CFLAGS_ARCH+=-march=rv32ec_zmmul -mabi=ilp32e -DCH32V00x=1
+		else
+			CFLAGS_ARCH+=-march=rv32ec -mabi=ilp32e -DCH32V00x=1  # If not GCC 13 or higher, does not support zmmul as a command line
+		endif
 
-	ifeq ($(findstring CH32V10,$(TARGET_MCU)),CH32V10) # CH32V103
+		ifeq ($(findstring CH32V002, $(TARGET_MCU)), CH32V002)
+			TARGET_MCU_LD:=5
+		else ifeq ($(findstring CH32V004, $(TARGET_MCU)), CH32V004)
+			TARGET_MCU_LD:=6
+		else ifeq ($(findstring CH32V005, $(TARGET_MCU)), CH32V005)
+			TARGET_MCU_LD:=7
+		else ifeq ($(findstring CH32V006, $(TARGET_MCU)), CH32V006)
+			TARGET_MCU_LD:=7
+		else ifeq ($(findstring CH32V007, $(TARGET_MCU)), CH32V007)
+			TARGET_MCU_LD:=7
+		else
+			ERROR:=$(error Unknown MCU $(TARGET_MCU))
+		endif
+	else ifeq ($(findstring CH32V10,$(TARGET_MCU)),CH32V10) # CH32V103
 		TARGET_MCU_PACKAGE?=CH32V103R8T6
 		CFLAGS_ARCH+=	-march=rv32imac \
 			-mabi=ilp32 \
@@ -174,7 +196,7 @@ else
 
 	LDFLAGS+=-lgcc
 	GENERATED_LD_FILE:=$(CH32FUN)/generated_$(TARGET_MCU_PACKAGE)_$(TARGET_MCU_MEMORY_SPLIT).ld
-	LINKER_SCRIPT:=$(GENERATED_LD_FILE)
+	LINKER_SCRIPT?=$(GENERATED_LD_FILE)
 endif
 
 CFLAGS+= \
@@ -190,7 +212,7 @@ FILES_TO_COMPILE:=$(SYSTEM_C) $(TARGET).$(TARGET_EXT) $(ADDITIONAL_C_FILES)
 
 $(TARGET).bin : $(TARGET).elf
 	$(PREFIX)-objdump -S $^ > $(TARGET).lst
-	$(PREFIX)-objcopy -O binary $< $(TARGET).bin
+	$(PREFIX)-objcopy $(OBJCOPY_FLAGS) -O binary $< $(TARGET).bin
 	$(PREFIX)-objcopy -O ihex $< $(TARGET).hex
 
 ifeq ($(OS),Windows_NT)

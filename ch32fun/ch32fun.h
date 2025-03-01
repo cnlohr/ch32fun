@@ -932,6 +932,9 @@ int WaitForDebuggerToAttach( int timeout_ms );
 // Just a definition to the internal _write function.
 int _write(int fd, const char *buf, int size);
 
+// Print a hexadecimal value to the debug (or UART) depending on configuration.
+void PrintHex( uint32_t n );
+
 // Call this to busy-wait the polling of input.
 void poll_input( void );
 
@@ -946,6 +949,7 @@ int mini_vsnprintf( char *buffer, unsigned int buffer_len, const char *fmt, va_l
 int mini_vpprintf( int (*puts)(char* s, int len, void* buf), void* buf, const char *fmt, va_list va );
 int mini_snprintf(char* buffer, unsigned int buffer_len, const char *fmt, ...);
 int mini_pprintf(int (*puts)(char*s, int len, void* buf), void* buf, const char *fmt, ...);
+int mini_itoa(long value, unsigned int radix, int uppercase, int unsig,	char *buffer);
 
 #endif // __ASSEMBLER__
 

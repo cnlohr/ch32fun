@@ -56,6 +56,18 @@ MEMORY
 	#else
 		#error "Unknown MCU package"
 	#endif
+#elif TARGET_MCU_LD == 5
+	/* CH32V002 */
+	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 16K
+	RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 4K
+#elif TARGET_MCU_LD == 6
+	/* CH32V004 */
+	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 32K
+	RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 6K
+#elif TARGET_MCU_LD == 7
+	/* CH32V005, CH32V006, CH32V007 */
+	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 62K
+	RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 8K
 #else
 	#error "Unknown MCU target"
 #endif
@@ -161,11 +173,11 @@ SECTIONS
     .data :
     {
       . = ALIGN(4);
+      __global_pointer$ = . + 0x3fc; /* This gets set in the startup code.  This allows -mrelax'd code to be smaller by acting as a sort of quick reference in the gp register. */
       *(.gnu.linkonce.r.*)
       *(.data .data.*)
       *(.gnu.linkonce.d.*)
       . = ALIGN(8);
-      PROVIDE( __global_pointer$ = . + 0x800 );
       *(.sdata .sdata.*)
       *(.sdata2*)
       *(.gnu.linkonce.s.*)
