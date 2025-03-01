@@ -38,8 +38,12 @@ void ssd1306_i2c_setup(void)
 #define SDA_LOW  funDigitalWrite( SSD1306_I2C_BITBANG_SDA, 0 );
 #define SCL_LOW  funDigitalWrite( SSD1306_I2C_BITBANG_SCL, 0 );
 #define SDA_IN   funDigitalRead( SSD1306_I2C_BITBANG_SDA );
+#ifndef I2CSPEEDBASE
 #define I2CSPEEDBASE 1
+#endif
+#ifndef I2CDELAY_FUNC
 #define I2CDELAY_FUNC(x) ADD_N_NOPS(x*1)
+#endif
 
 static void ssd1306_i2c_sendstart()
 {
