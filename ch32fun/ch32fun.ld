@@ -173,11 +173,11 @@ SECTIONS
     .data :
     {
       . = ALIGN(4);
+      __global_pointer$ = . + 0x3fc; /* This gets set in the startup code.  This allows -mrelax'd code to be smaller by acting as a sort of quick reference in the gp register. */
       *(.gnu.linkonce.r.*)
       *(.data .data.*)
       *(.gnu.linkonce.d.*)
       . = ALIGN(8);
-      PROVIDE( __global_pointer$ = . + 0x800 );
       *(.sdata .sdata.*)
       *(.sdata2*)
       *(.gnu.linkonce.s.*)

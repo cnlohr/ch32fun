@@ -63,7 +63,7 @@ uint8_t ssd1306_cmd(uint8_t cmd)
 /*
  * send OLED data packet (up to 32 bytes)
  */
-uint8_t ssd1306_data(uint8_t *data, uint8_t sz)
+uint8_t ssd1306_data(uint8_t *data, int sz)
 {
 	return ssd1306_pkt_send(data, sz, 0);
 }
@@ -258,9 +258,9 @@ void ssd1306_refresh(void)
 /*
  * plot a pixel in the buffer
  */
-void ssd1306_drawPixel(uint8_t x, uint8_t y, uint8_t color)
+void ssd1306_drawPixel(uint32_t x, uint32_t y, int color)
 {
-	uint16_t addr;
+	uint32_t addr;
 	
 	/* clip */
 	if(x >= SSD1306_W)
@@ -281,9 +281,9 @@ void ssd1306_drawPixel(uint8_t x, uint8_t y, uint8_t color)
 /*
  * plot a pixel in the buffer
  */
-void ssd1306_xorPixel(uint8_t x, uint8_t y)
+void ssd1306_xorPixel(uint32_t x, uint32_t y)
 {
-	uint16_t addr;
+	uint32_t addr;
 	
 	/* clip */
 	if(x >= SSD1306_W)
@@ -301,14 +301,14 @@ void ssd1306_xorPixel(uint8_t x, uint8_t y)
  * draw a an image from an array, directly into to the display buffer
  * the color modes allow for overwriting and even layering (sprites!)
  */
-void ssd1306_drawImage(uint8_t x, uint8_t y, const unsigned char* input, uint8_t width, uint8_t height, uint8_t color_mode) {
-	uint8_t x_absolute;
-	uint8_t y_absolute;
-	uint8_t pixel;
-	uint8_t bytes_to_draw = width / 8;
-	uint16_t buffer_addr;
+void ssd1306_drawImage(uint32_t x, uint32_t y, const unsigned char* input, uint32_t width, uint32_t height, uint32_t color_mode) {
+	uint32_t x_absolute;
+	uint32_t y_absolute;
+	uint32_t pixel;
+	uint32_t bytes_to_draw = width / 8;
+	uint32_t buffer_addr;
 
-	for (uint8_t line = 0; line < height; line++) {
+	for (uint32_t line = 0; line < height; line++) {
 		y_absolute = y + line;
 		if (y_absolute >= SSD1306_H) {
 			break;
@@ -316,10 +316,10 @@ void ssd1306_drawImage(uint8_t x, uint8_t y, const unsigned char* input, uint8_t
 
 		// SSD1306 is in vertical mode, yet we want to draw horizontally, which necessitates assembling the output bytes from the input data
 		// bitmask for current pixel in vertical (output) byte
-		uint8_t v_mask = 1 << (y_absolute & 7);
+		uint32_t v_mask = 1 << (y_absolute & 7);
 
-		for (uint8_t byte = 0; byte < bytes_to_draw; byte++) {
-			uint8_t input_byte = input[byte + line * bytes_to_draw];
+		for (uint32_t byte = 0; byte < bytes_to_draw; byte++) {
+			uint32_t input_byte = input[byte + line * bytes_to_draw];
 
 			for (pixel = 0; pixel < 8; pixel++) {
 				x_absolute = x + 8 * (bytes_to_draw - byte) + pixel;
@@ -371,7 +371,7 @@ void ssd1306_drawImage(uint8_t x, uint8_t y, const unsigned char* input, uint8_t
 /*
  *  fast vert line
  */
-void ssd1306_drawFastVLine(uint8_t x, uint8_t y, uint8_t h, uint8_t color)
+void ssd1306_drawFastVLine(int32_t x, int32_t y, int32_t h, uint32_t color)
 {
 	// clipping
 	if((x >= SSD1306_W) || (y >= SSD1306_H)) return;
@@ -385,7 +385,7 @@ void ssd1306_drawFastVLine(uint8_t x, uint8_t y, uint8_t h, uint8_t color)
 /*
  *  fast horiz line
  */
-void ssd1306_drawFastHLine(uint8_t x, uint8_t y, uint8_t w, uint8_t color)
+void ssd1306_drawFastHLine(uint32_t x, uint32_t y, uint32_t w, uint32_t color)
 {
 	// clipping
 	if((x >= SSD1306_W) || (y >= SSD1306_H)) return;
@@ -400,7 +400,7 @@ void ssd1306_drawFastHLine(uint8_t x, uint8_t y, uint8_t w, uint8_t color)
 /*
  * abs() helper function for line drawing
  */
-int16_t gfx_abs(int16_t x)
+int gfx_abs(int x)
 {
 	return (x<0) ? -x : x;
 }
@@ -408,7 +408,7 @@ int16_t gfx_abs(int16_t x)
 /*
  * swap() helper function for line drawing
  */
-void gfx_swap(uint16_t *z0, uint16_t *z1)
+void gfx_swap(int *z0, int *z1)
 {
 	uint16_t temp = *z0;
 	*z0 = *z1;
@@ -418,10 +418,10 @@ void gfx_swap(uint16_t *z0, uint16_t *z1)
 /*
  * Bresenham line draw routine swiped from Wikipedia
  */
-void ssd1306_drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint8_t color)
+void ssd1306_drawLine(int x0, int y0, int x1, int y1, uint32_t color)
 {
-	int16_t steep;
-	int16_t deltax, deltay, error, ystep, x, y;
+	int32_t steep;
+	int32_t deltax, deltay, error, ystep, x, y;
 
 	/* flip sense 45deg to keep error calc in range */
 	steep = (gfx_abs(y1 - y0) > gfx_abs(x1 - x0));
@@ -475,13 +475,13 @@ void ssd1306_drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint8_
 /*
  *  draws a circle
  */
-void ssd1306_drawCircle(int16_t x, int16_t y, int16_t radius, int8_t color)
+void ssd1306_drawCircle(int x, int y, int radius, int color)
 {
     /* Bresenham algorithm */
-    int16_t x_pos = -radius;
-    int16_t y_pos = 0;
-    int16_t err = 2 - 2 * radius;
-    int16_t e2;
+    int x_pos = -radius;
+    int y_pos = 0;
+    int err = 2 - 2 * radius;
+    int e2;
 
     do {
         ssd1306_drawPixel(x - x_pos, y + y_pos, color);
@@ -504,13 +504,13 @@ void ssd1306_drawCircle(int16_t x, int16_t y, int16_t radius, int8_t color)
 /*
  *  draws a filled circle
  */
-void ssd1306_fillCircle(int16_t x, int16_t y, int16_t radius, int8_t color)
+void ssd1306_fillCircle(int x, int y, int radius, int color)
 {
     /* Bresenham algorithm */
-    int16_t x_pos = -radius;
-    int16_t y_pos = 0;
-    int16_t err = 2 - 2 * radius;
-    int16_t e2;
+    int x_pos = -radius;
+    int y_pos = 0;
+    int err = 2 - 2 * radius;
+    int e2;
 
     do {
         ssd1306_drawPixel(x - x_pos, y + y_pos, color);
@@ -535,7 +535,7 @@ void ssd1306_fillCircle(int16_t x, int16_t y, int16_t radius, int8_t color)
 /*
  *  draw a rectangle
  */
-void ssd1306_drawRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color)
+void ssd1306_drawRect(int32_t x, int32_t y, uint32_t w, uint32_t h, uint32_t color)
 {
 	ssd1306_drawFastVLine(x, y, h, color);
 	ssd1306_drawFastVLine(x+w-1, y, h, color);
@@ -546,9 +546,9 @@ void ssd1306_drawRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color)
 /*
  * fill a rectangle
  */
-void ssd1306_fillRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color)
+void ssd1306_fillRect(uint32_t x, uint32_t y, uint8_t w, uint32_t h, uint32_t color)
 {
-	uint8_t m, n=y, iw = w;
+	uint32_t m, n=y, iw = w;
 	
 	/* scan vertical */
 	while(h--)
@@ -713,10 +713,7 @@ uint8_t ssd1306_init(void)
 			return 1;
 	}
 	
-	// clear display
-	ssd1306_setbuf(0);
-	ssd1306_refresh();
-	
+	ssd1306_refresh();	
 #endif
 
 	return 0;

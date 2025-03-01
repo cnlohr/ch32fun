@@ -932,6 +932,9 @@ int WaitForDebuggerToAttach( int timeout_ms );
 // Just a definition to the internal _write function.
 int _write(int fd, const char *buf, int size);
 
+// Print a hexadecimal value to the debug (or UART) depending on configuration.
+void PrintHex( uint32_t n );
+
 // Call this to busy-wait the polling of input.
 void poll_input( void );
 

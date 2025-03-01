@@ -4577,101 +4577,101 @@ typedef struct
 
 #define DMA_CFGR3_MEM2MEM                       ((uint16_t)0x4000) /* Memory to memory mode */
 
-/*******************  Bit definition for DMA_CFG4 register  *******************/
-#define DMA_CFG4_EN                             ((uint16_t)0x0001) /* Channel enable */
-#define DMA_CFG4_TCIE                           ((uint16_t)0x0002) /* Transfer complete interrupt enable */
-#define DMA_CFG4_HTIE                           ((uint16_t)0x0004) /* Half Transfer interrupt enable */
-#define DMA_CFG4_TEIE                           ((uint16_t)0x0008) /* Transfer error interrupt enable */
-#define DMA_CFG4_DIR                            ((uint16_t)0x0010) /* Data transfer direction */
-#define DMA_CFG4_CIRC                           ((uint16_t)0x0020) /* Circular mode */
-#define DMA_CFG4_PINC                           ((uint16_t)0x0040) /* Peripheral increment mode */
-#define DMA_CFG4_MINC                           ((uint16_t)0x0080) /* Memory increment mode */
+/*******************  Bit definition for DMA_CFGR4 register  *******************/
+#define DMA_CFGR4_EN                             ((uint16_t)0x0001) /* Channel enable */
+#define DMA_CFGR4_TCIE                           ((uint16_t)0x0002) /* Transfer complete interrupt enable */
+#define DMA_CFGR4_HTIE                           ((uint16_t)0x0004) /* Half Transfer interrupt enable */
+#define DMA_CFGR4_TEIE                           ((uint16_t)0x0008) /* Transfer error interrupt enable */
+#define DMA_CFGR4_DIR                            ((uint16_t)0x0010) /* Data transfer direction */
+#define DMA_CFGR4_CIRC                           ((uint16_t)0x0020) /* Circular mode */
+#define DMA_CFGR4_PINC                           ((uint16_t)0x0040) /* Peripheral increment mode */
+#define DMA_CFGR4_MINC                           ((uint16_t)0x0080) /* Memory increment mode */
 
-#define DMA_CFG4_PSIZE                          ((uint16_t)0x0300) /* PSIZE[1:0] bits (Peripheral size) */
-#define DMA_CFG4_PSIZE_0                        ((uint16_t)0x0100) /* Bit 0 */
-#define DMA_CFG4_PSIZE_1                        ((uint16_t)0x0200) /* Bit 1 */
+#define DMA_CFGR4_PSIZE                          ((uint16_t)0x0300) /* PSIZE[1:0] bits (Peripheral size) */
+#define DMA_CFGR4_PSIZE_0                        ((uint16_t)0x0100) /* Bit 0 */
+#define DMA_CFGR4_PSIZE_1                        ((uint16_t)0x0200) /* Bit 1 */
 
-#define DMA_CFG4_MSIZE                          ((uint16_t)0x0C00) /* MSIZE[1:0] bits (Memory size) */
-#define DMA_CFG4_MSIZE_0                        ((uint16_t)0x0400) /* Bit 0 */
-#define DMA_CFG4_MSIZE_1                        ((uint16_t)0x0800) /* Bit 1 */
+#define DMA_CFGR4_MSIZE                          ((uint16_t)0x0C00) /* MSIZE[1:0] bits (Memory size) */
+#define DMA_CFGR4_MSIZE_0                        ((uint16_t)0x0400) /* Bit 0 */
+#define DMA_CFGR4_MSIZE_1                        ((uint16_t)0x0800) /* Bit 1 */
 
-#define DMA_CFG4_PL                             ((uint16_t)0x3000) /* PL[1:0] bits (Channel Priority level) */
-#define DMA_CFG4_PL_0                           ((uint16_t)0x1000) /* Bit 0 */
-#define DMA_CFG4_PL_1                           ((uint16_t)0x2000) /* Bit 1 */
+#define DMA_CFGR4_PL                             ((uint16_t)0x3000) /* PL[1:0] bits (Channel Priority level) */
+#define DMA_CFGR4_PL_0                           ((uint16_t)0x1000) /* Bit 0 */
+#define DMA_CFGR4_PL_1                           ((uint16_t)0x2000) /* Bit 1 */
 
-#define DMA_CFG4_MEM2MEM                        ((uint16_t)0x4000) /* Memory to memory mode */
+#define DMA_CFGR4_MEM2MEM                        ((uint16_t)0x4000) /* Memory to memory mode */
 
-/******************  Bit definition for DMA_CFG5 register  *******************/
-#define DMA_CFG5_EN                             ((uint16_t)0x0001) /* Channel enable */
-#define DMA_CFG5_TCIE                           ((uint16_t)0x0002) /* Transfer complete interrupt enable */
-#define DMA_CFG5_HTIE                           ((uint16_t)0x0004) /* Half Transfer interrupt enable */
-#define DMA_CFG5_TEIE                           ((uint16_t)0x0008) /* Transfer error interrupt enable */
-#define DMA_CFG5_DIR                            ((uint16_t)0x0010) /* Data transfer direction */
-#define DMA_CFG5_CIRC                           ((uint16_t)0x0020) /* Circular mode */
-#define DMA_CFG5_PINC                           ((uint16_t)0x0040) /* Peripheral increment mode */
-#define DMA_CFG5_MINC                           ((uint16_t)0x0080) /* Memory increment mode */
+/******************  Bit definition for DMA_CFGR5 register  *******************/
+#define DMA_CFGR5_EN                             ((uint16_t)0x0001) /* Channel enable */
+#define DMA_CFGR5_TCIE                           ((uint16_t)0x0002) /* Transfer complete interrupt enable */
+#define DMA_CFGR5_HTIE                           ((uint16_t)0x0004) /* Half Transfer interrupt enable */
+#define DMA_CFGR5_TEIE                           ((uint16_t)0x0008) /* Transfer error interrupt enable */
+#define DMA_CFGR5_DIR                            ((uint16_t)0x0010) /* Data transfer direction */
+#define DMA_CFGR5_CIRC                           ((uint16_t)0x0020) /* Circular mode */
+#define DMA_CFGR5_PINC                           ((uint16_t)0x0040) /* Peripheral increment mode */
+#define DMA_CFGR5_MINC                           ((uint16_t)0x0080) /* Memory increment mode */
 
-#define DMA_CFG5_PSIZE                          ((uint16_t)0x0300) /* PSIZE[1:0] bits (Peripheral size) */
-#define DMA_CFG5_PSIZE_0                        ((uint16_t)0x0100) /* Bit 0 */
-#define DMA_CFG5_PSIZE_1                        ((uint16_t)0x0200) /* Bit 1 */
+#define DMA_CFGR5_PSIZE                          ((uint16_t)0x0300) /* PSIZE[1:0] bits (Peripheral size) */
+#define DMA_CFGR5_PSIZE_0                        ((uint16_t)0x0100) /* Bit 0 */
+#define DMA_CFGR5_PSIZE_1                        ((uint16_t)0x0200) /* Bit 1 */
 
-#define DMA_CFG5_MSIZE                          ((uint16_t)0x0C00) /* MSIZE[1:0] bits (Memory size) */
-#define DMA_CFG5_MSIZE_0                        ((uint16_t)0x0400) /* Bit 0 */
-#define DMA_CFG5_MSIZE_1                        ((uint16_t)0x0800) /* Bit 1 */
+#define DMA_CFGR5_MSIZE                          ((uint16_t)0x0C00) /* MSIZE[1:0] bits (Memory size) */
+#define DMA_CFGR5_MSIZE_0                        ((uint16_t)0x0400) /* Bit 0 */
+#define DMA_CFGR5_MSIZE_1                        ((uint16_t)0x0800) /* Bit 1 */
 
-#define DMA_CFG5_PL                             ((uint16_t)0x3000) /* PL[1:0] bits (Channel Priority level) */
-#define DMA_CFG5_PL_0                           ((uint16_t)0x1000) /* Bit 0 */
-#define DMA_CFG5_PL_1                           ((uint16_t)0x2000) /* Bit 1 */
+#define DMA_CFGR5_PL                             ((uint16_t)0x3000) /* PL[1:0] bits (Channel Priority level) */
+#define DMA_CFGR5_PL_0                           ((uint16_t)0x1000) /* Bit 0 */
+#define DMA_CFGR5_PL_1                           ((uint16_t)0x2000) /* Bit 1 */
 
-#define DMA_CFG5_MEM2MEM                        ((uint16_t)0x4000) /* Memory to memory mode enable */
+#define DMA_CFGR5_MEM2MEM                        ((uint16_t)0x4000) /* Memory to memory mode enable */
 
-/*******************  Bit definition for DMA_CFG6 register  *******************/
-#define DMA_CFG6_EN                             ((uint16_t)0x0001) /* Channel enable */
-#define DMA_CFG6_TCIE                           ((uint16_t)0x0002) /* Transfer complete interrupt enable */
-#define DMA_CFG6_HTIE                           ((uint16_t)0x0004) /* Half Transfer interrupt enable */
-#define DMA_CFG6_TEIE                           ((uint16_t)0x0008) /* Transfer error interrupt enable */
-#define DMA_CFG6_DIR                            ((uint16_t)0x0010) /* Data transfer direction */
-#define DMA_CFG6_CIRC                           ((uint16_t)0x0020) /* Circular mode */
-#define DMA_CFG6_PINC                           ((uint16_t)0x0040) /* Peripheral increment mode */
-#define DMA_CFG6_MINC                           ((uint16_t)0x0080) /* Memory increment mode */
+/*******************  Bit definition for DMA_CFGR6 register  *******************/
+#define DMA_CFGR6_EN                             ((uint16_t)0x0001) /* Channel enable */
+#define DMA_CFGR6_TCIE                           ((uint16_t)0x0002) /* Transfer complete interrupt enable */
+#define DMA_CFGR6_HTIE                           ((uint16_t)0x0004) /* Half Transfer interrupt enable */
+#define DMA_CFGR6_TEIE                           ((uint16_t)0x0008) /* Transfer error interrupt enable */
+#define DMA_CFGR6_DIR                            ((uint16_t)0x0010) /* Data transfer direction */
+#define DMA_CFGR6_CIRC                           ((uint16_t)0x0020) /* Circular mode */
+#define DMA_CFGR6_PINC                           ((uint16_t)0x0040) /* Peripheral increment mode */
+#define DMA_CFGR6_MINC                           ((uint16_t)0x0080) /* Memory increment mode */
 
-#define DMA_CFG6_PSIZE                          ((uint16_t)0x0300) /* PSIZE[1:0] bits (Peripheral size) */
-#define DMA_CFG6_PSIZE_0                        ((uint16_t)0x0100) /* Bit 0 */
-#define DMA_CFG6_PSIZE_1                        ((uint16_t)0x0200) /* Bit 1 */
+#define DMA_CFGR6_PSIZE                          ((uint16_t)0x0300) /* PSIZE[1:0] bits (Peripheral size) */
+#define DMA_CFGR6_PSIZE_0                        ((uint16_t)0x0100) /* Bit 0 */
+#define DMA_CFGR6_PSIZE_1                        ((uint16_t)0x0200) /* Bit 1 */
 
-#define DMA_CFG6_MSIZE                          ((uint16_t)0x0C00) /* MSIZE[1:0] bits (Memory size) */
-#define DMA_CFG6_MSIZE_0                        ((uint16_t)0x0400) /* Bit 0 */
-#define DMA_CFG6_MSIZE_1                        ((uint16_t)0x0800) /* Bit 1 */
+#define DMA_CFGR6_MSIZE                          ((uint16_t)0x0C00) /* MSIZE[1:0] bits (Memory size) */
+#define DMA_CFGR6_MSIZE_0                        ((uint16_t)0x0400) /* Bit 0 */
+#define DMA_CFGR6_MSIZE_1                        ((uint16_t)0x0800) /* Bit 1 */
 
-#define DMA_CFG6_PL                             ((uint16_t)0x3000) /* PL[1:0] bits (Channel Priority level) */
-#define DMA_CFG6_PL_0                           ((uint16_t)0x1000) /* Bit 0 */
-#define DMA_CFG6_PL_1                           ((uint16_t)0x2000) /* Bit 1 */
+#define DMA_CFGR6_PL                             ((uint16_t)0x3000) /* PL[1:0] bits (Channel Priority level) */
+#define DMA_CFGR6_PL_0                           ((uint16_t)0x1000) /* Bit 0 */
+#define DMA_CFGR6_PL_1                           ((uint16_t)0x2000) /* Bit 1 */
 
-#define DMA_CFG6_MEM2MEM                        ((uint16_t)0x4000) /* Memory to memory mode */
+#define DMA_CFGR6_MEM2MEM                        ((uint16_t)0x4000) /* Memory to memory mode */
 
-/*******************  Bit definition for DMA_CFG7 register  *******************/
-#define DMA_CFG7_EN                             ((uint16_t)0x0001) /* Channel enable */
-#define DMA_CFG7_TCIE                           ((uint16_t)0x0002) /* Transfer complete interrupt enable */
-#define DMA_CFG7_HTIE                           ((uint16_t)0x0004) /* Half Transfer interrupt enable */
-#define DMA_CFG7_TEIE                           ((uint16_t)0x0008) /* Transfer error interrupt enable */
-#define DMA_CFG7_DIR                            ((uint16_t)0x0010) /* Data transfer direction */
-#define DMA_CFG7_CIRC                           ((uint16_t)0x0020) /* Circular mode */
-#define DMA_CFG7_PINC                           ((uint16_t)0x0040) /* Peripheral increment mode */
-#define DMA_CFG7_MINC                           ((uint16_t)0x0080) /* Memory increment mode */
+/*******************  Bit definition for DMA_CFGR7 register  *******************/
+#define DMA_CFGR7_EN                             ((uint16_t)0x0001) /* Channel enable */
+#define DMA_CFGR7_TCIE                           ((uint16_t)0x0002) /* Transfer complete interrupt enable */
+#define DMA_CFGR7_HTIE                           ((uint16_t)0x0004) /* Half Transfer interrupt enable */
+#define DMA_CFGR7_TEIE                           ((uint16_t)0x0008) /* Transfer error interrupt enable */
+#define DMA_CFGR7_DIR                            ((uint16_t)0x0010) /* Data transfer direction */
+#define DMA_CFGR7_CIRC                           ((uint16_t)0x0020) /* Circular mode */
+#define DMA_CFGR7_PINC                           ((uint16_t)0x0040) /* Peripheral increment mode */
+#define DMA_CFGR7_MINC                           ((uint16_t)0x0080) /* Memory increment mode */
 
-#define DMA_CFG7_PSIZE                          ((uint16_t)0x0300) /* PSIZE[1:0] bits (Peripheral size) */
-#define DMA_CFG7_PSIZE_0                        ((uint16_t)0x0100) /* Bit 0 */
-#define DMA_CFG7_PSIZE_1                        ((uint16_t)0x0200) /* Bit 1 */
+#define DMA_CFGR7_PSIZE                          ((uint16_t)0x0300) /* PSIZE[1:0] bits (Peripheral size) */
+#define DMA_CFGR7_PSIZE_0                        ((uint16_t)0x0100) /* Bit 0 */
+#define DMA_CFGR7_PSIZE_1                        ((uint16_t)0x0200) /* Bit 1 */
 
-#define DMA_CFG7_MSIZE                          ((uint16_t)0x0C00) /* MSIZE[1:0] bits (Memory size) */
-#define DMA_CFG7_MSIZE_0                        ((uint16_t)0x0400) /* Bit 0 */
-#define DMA_CFG7_MSIZE_1                        ((uint16_t)0x0800) /* Bit 1 */
+#define DMA_CFGR7_MSIZE                          ((uint16_t)0x0C00) /* MSIZE[1:0] bits (Memory size) */
+#define DMA_CFGR7_MSIZE_0                        ((uint16_t)0x0400) /* Bit 0 */
+#define DMA_CFGR7_MSIZE_1                        ((uint16_t)0x0800) /* Bit 1 */
 
-#define DMA_CFG7_PL                             ((uint16_t)0x3000) /* PL[1:0] bits (Channel Priority level) */
-#define DMA_CFG7_PL_0                           ((uint16_t)0x1000) /* Bit 0 */
-#define DMA_CFG7_PL_1                           ((uint16_t)0x2000) /* Bit 1 */
+#define DMA_CFGR7_PL                             ((uint16_t)0x3000) /* PL[1:0] bits (Channel Priority level) */
+#define DMA_CFGR7_PL_0                           ((uint16_t)0x1000) /* Bit 0 */
+#define DMA_CFGR7_PL_1                           ((uint16_t)0x2000) /* Bit 1 */
 
-#define DMA_CFG7_MEM2MEM                        ((uint16_t)0x4000) /* Memory to memory mode enable */
+#define DMA_CFGR7_MEM2MEM                        ((uint16_t)0x4000) /* Memory to memory mode enable */
 
 /******************  Bit definition for DMA_CNTR1 register  ******************/
 #define DMA_CNTR1_NDT                           ((uint16_t)0xFFFF) /* Number of data to Transfer */

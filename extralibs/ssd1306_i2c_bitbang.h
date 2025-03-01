@@ -39,8 +39,7 @@ void ssd1306_i2c_setup(void)
 #define SCL_LOW  funDigitalWrite( SSD1306_I2C_BITBANG_SCL, 0 );
 #define SDA_IN   funDigitalRead( SSD1306_I2C_BITBANG_SDA );
 #define I2CSPEEDBASE 1
-#define I2CDELAY_FUNC(x) ADD_N_NOPS(x*10)
-//Delay_Us(x*1);
+#define I2CDELAY_FUNC(x) ADD_N_NOPS(x*1)
 
 static void ssd1306_i2c_sendstart()
 {
@@ -99,7 +98,7 @@ unsigned char ssd1306_i2c_sendbyte( unsigned char data )
 	return !!i;
 }
 
-uint8_t ssd1306_pkt_send(uint8_t *data, uint8_t sz, uint8_t cmd)
+uint8_t ssd1306_pkt_send(const uint8_t *data, int sz, uint8_t cmd)
 {
 	ssd1306_i2c_sendstart();
 	int r = ssd1306_i2c_sendbyte( SSD1306_I2C_ADDR<<1 );

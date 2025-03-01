@@ -76,7 +76,7 @@ void ssd1306_rst(void)
 /*
  * packet send for blocking polled operation via spi
  */
-uint8_t ssd1306_pkt_send(uint8_t *data, uint8_t sz, uint8_t cmd)
+uint8_t ssd1306_pkt_send(const uint8_t *data, int sz, uint8_t cmd)
 {
 	if(cmd)
 	{
