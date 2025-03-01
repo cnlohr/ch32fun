@@ -82,7 +82,6 @@ void * MiniCHLinkInitAsDLL( struct MiniChlinkFunctions ** MCFO, const init_hints
 	iss->ram_base = 0x20000000;
 	iss->ram_size = 2048;
 	iss->sector_size = 64;
-	iss->flash_size = 16384;
 	iss->target_chip_type = 0;
 
 	SetupAutomaticHighLevelFunctions( dev );
@@ -659,11 +658,6 @@ keep_going:
 				{
 					fprintf( stderr, "Error: File I/O Fault.\n" );
 					exit( -10 );
-				}
-				if( len > iss->flash_size )
-				{
-					fprintf( stderr, "Error: Image for CH32V003 too large (%d)\n", len );
-					exit( -9 );
 				}
 
 
