@@ -949,6 +949,7 @@ int mini_vsnprintf( char *buffer, unsigned int buffer_len, const char *fmt, va_l
 int mini_vpprintf( int (*puts)(char* s, int len, void* buf), void* buf, const char *fmt, va_list va );
 int mini_snprintf(char* buffer, unsigned int buffer_len, const char *fmt, ...);
 int mini_pprintf(int (*puts)(char*s, int len, void* buf), void* buf, const char *fmt, ...);
+int mini_itoa(long value, unsigned int radix, int uppercase, int unsig,	char *buffer);
 
 #endif // __ASSEMBLER__
 

@@ -494,9 +494,7 @@ WEAK int puts(const char *s)
 
 #define mini_strlen strlen
 
-static int
-mini_itoa(long value, unsigned int radix, int uppercase, int unsig,
-	 char *buffer)
+int mini_itoa(long value, unsigned int radix, int uppercase, int unsig, char *buffer)
 {
 	char	*pbuffer = buffer;
 	int	negative = 0;
