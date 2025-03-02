@@ -128,6 +128,10 @@
 	#define FUNCONF_DEBUG_HARDFAULT 1
 #endif
 
+#if !defined( FUNCONF_INIT_ANALOG )
+	#define FUNCONF_INIT_ANALOG 1
+#endif
+
 #if defined( CH32X03x ) && FUNCONF_USE_PLL
 	#error No PLL on the X03x
 #endif
@@ -160,6 +164,8 @@
 		#endif
 	#elif defined(CH32V30x)
 		#define HSE_VALUE				  (8000000)
+	#elif defined(CH59x)
+		#define HSE_VALUE				  (32000000)
 	#endif
 #endif
 
@@ -348,6 +354,8 @@ typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
 	#include "ch32v20xhw.h"
 #elif defined( CH32V30x )
 	#include "ch32v30xhw.h"
+#elif defined( CH59x )
+	#include "ch59xhw.h"
 #endif
 
 #if defined(__riscv) || defined(__riscv__) || defined( CH32V003FUN_BASE )
@@ -817,11 +825,41 @@ extern "C" {
 // and take two cycles, so you typically would use 0, 2, 4, etc.
 #define ADD_N_NOPS( n ) asm volatile( ".rept " #n "\nc.nop\n.endr" );
 
+#define FUN_HIGH 0x1
+#define FUN_LOW 0x0
+#if defined(CH59x)
+#define GPIOA_ResetBits(pin)      (R32_PA_CLR |= pin)
+#define GPIOA_SetBits(pin)        (R32_PA_OUT |= pin)
+#define GPIOA_InverseBits(pin)    (R32_PA_OUT ^= pin)
+#define GPIOA_ReadPortPin(pin)    (R32_PA_PIN & (pin))
+#define GPIOB_ResetBits(pin)      (R32_PB_CLR |= pin)
+#define GPIOB_SetBits(pin)        (R32_PB_OUT |= pin)
+#define GPIOB_InverseBits(pin)    (R32_PB_OUT ^= pin)
+#define GPIOB_ReadPortPin(pin)    (R32_PB_PIN & (pin))
+#define GPIO_ResetBits(pin)       { if(pin & PB) GPIOB_ResetBits(pin); else GPIOA_ResetBits(pin); }
+#define GPIO_SetBits(pin)         { if(pin & PB) GPIOB_SetBits(pin); else GPIOA_SetBits(pin); }
+#define GPIO_InverseBits(pin)     { if(pin & PB) GPIOB_InverseBits(pin); else GPIOA_InverseBits(pin); }
+#define funDigitalRead(pin)       ( (pin & PB) ? GPIOB_ReadPortPin(pin) : GPIOA_ReadPortPin(pin) )
+#define funDigitalWrite( pin, value ) { if(value==FUN_HIGH){GPIO_SetBits(pin);} else if(value==FUN_LOW){GPIO_ResetBits(pin);} }
+
+#define GPIO_ModeCfg(pd_drv, pu, dir, pin, mode) { switch(mode) { \
+																										case GPIO_ModeIN_Floating: \
+																											pd_drv &= ~pin; pu &= ~pin; dir &= ~pin; break; \
+																										case GPIO_ModeIN_PU: \
+																											pd_drv &= ~pin; pu |= pin; dir &= ~pin; break; \
+																										case GPIO_ModeIN_PD: \
+																											pd_drv |= pin; pu &= ~pin; dir &= ~pin; break; \
+																										case GPIO_ModeOut_PP_5mA: \
+																											pd_drv &= ~pin; dir |= pin; break; \
+																										case GPIO_ModeOut_PP_20mA: \
+																											pd_drv |= pin; dir |= pin; break; \
+																									} }
+#define funPinMode( pin, mode ) { if(pin & PB) GPIO_ModeCfg(R32_PB_PD_DRV, R32_PB_PU, R32_PB_DIR, pin, mode) \
+																	else GPIO_ModeCfg(R32_PA_PD_DRV, R32_PA_PU, R32_PA_DIR, pin, mode) }
+#else
 // Arduino-like GPIO Functionality
 #define GpioOf( pin ) ((GPIO_TypeDef *)(GPIOA_BASE + 0x400 * ((pin)>>4)))
 
-#define FUN_HIGH 0x1
-#define FUN_LOW 0x0
 #define FUN_OUTPUT (GPIO_Speed_10MHz | GPIO_CNF_OUT_PP)
 #define FUN_INPUT (GPIO_CNF_IN_FLOATING)
 
@@ -846,6 +884,7 @@ extern "C" {
 #define funGpioInitC() { RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOC ); }
 #define funGpioInitD() { RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOD ); }
 #define funDigitalRead( pin ) ((int)((GpioOf(pin)->INDR >> ((pin)&0xf)) & 1))
+#endif
 
 
 #define ANALOG_0 0
