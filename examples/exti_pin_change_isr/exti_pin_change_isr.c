@@ -82,7 +82,7 @@ int main()
 		 : : :  "t1" );
 
 	// Configure the IO as an interrupt.
-	AFIO->EXTICR = AFIO_EXTICR_EXTI3_PD;
+	AFIO->EXTICR = AFIO_EXTICR1_EXTI3_PD;
 	EXTI->INTENR = EXTI_INTENR_MR3; // Enable EXT3
 	EXTI->RTENR = EXTI_RTENR_TR3;  // Rising edge trigger
 
