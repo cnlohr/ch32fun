@@ -365,13 +365,66 @@ keep_going:
 
 				CaptureKeyboardInput();
 
+#if TERMINAL_INPUT_BUFFER
+				char pline_buf[256]; // Buffer that contains current line that is being printed to
+				char input_buf[128]; // Buffer that contains user input until it is sent out
+				memset( pline_buf, 0, sizeof( pline_buf ) );
+				memset( input_buf, 0, sizeof( input_buf ) );
+				uint8_t input_pos = 0;
+				uint8_t to_send = 0;
+#endif
+				printf( "Terminal started\n\n" );
 				uint32_t appendword = 0;
 				do
 				{
 					uint8_t buffer[256];
+#if TERMINAL_INPUT_BUFFER
+					char print_buf[TERMINAL_BUFFER_SIZE]; // Buffer that is filled with everything and will be written to stdout (basically it's for formatting)
+					uint8_t update = 0;
+#endif
 					if( !IsGDBServerInShadowHaltState( dev ) )
 					{
 						// Handle keyboard input.
+#if TERMINAL_INPUT_BUFFER
+						if( IsKBHit() && to_send == 0 )
+						{
+							uint8_t c = ReadKBByte();
+							if ( c == 8 || c == 127 )
+							{
+								input_buf[input_pos - 1] = 0;
+								if ( input_pos > 0 ) input_pos--;
+							}
+							else if ( c > 31 && c < 127 )
+							{
+								input_buf[input_pos] = c;
+								input_pos++;
+							}
+							else if ( c == '\n' || c == 10 )
+							{
+								to_send = input_pos;
+							}
+							update = 1;
+						}
+						// Process incomming buffer during sending
+						if( to_send > 0 && appendword == 0 )
+						{
+							for( int i = 0; i < 3; i++ )
+							{
+								appendword |= input_buf[input_pos - to_send] << ( i * 8 + 8 );
+								to_send--;
+								if ( to_send == 0 ) break;
+							}
+							if( to_send == 0 )
+							{
+                snprintf(print_buf, TERMINAL_BUFFER_SIZE - 1, "%s%s%s\n%s%s", TERMINAL_CLEAR_CUR, TERMIANL_INPUT_SENT, input_buf, pline_buf, TERMINAL_SEND_LABEL);
+								fwrite( print_buf, strlen( print_buf ), 1, stdout );
+								fflush( stdout );
+								input_pos = 0;
+								memset( input_buf, 0, sizeof( input_buf ) );
+							}
+							appendword |= i + 4;
+						}
+#else
 						if( appendword == 0 )
 						{
 							int i;
@@ -382,7 +435,20 @@ keep_going:
 							}
 							appendword |= i+4; // Will go into DATA0.
 						}
+#endif
+
 						int r = MCF.PollTerminal( dev, buffer, sizeof( buffer ), appendword, 0 );
+#if TERMINAL_INPUT_BUFFER
+						if( ( r == -1 || r == 0 ) && update > 0 )
+						{
+							strncpy( print_buf, TERMINAL_CLEAR_CUR, TERMINAL_BUFFER_SIZE - 1 );
+							if ( to_send > 0 ) strncat( print_buf, TERMINAL_DIM, TERMINAL_BUFFER_SIZE - 1 - strlen(print_buf) );
+							strncat( print_buf, TERMINAL_SEND_LABEL, TERMINAL_BUFFER_SIZE - 1 - strlen(print_buf) );
+							strncat( print_buf, input_buf, TERMINAL_BUFFER_SIZE - 1 - strlen(print_buf) );
+							fwrite( print_buf, strlen( print_buf ), 1, stdout );
+							fflush( stdout );
+						}
+#endif
 						if( r < -5 )
 						{
 							fprintf( stderr, "Terminal dead.  code %d\n", r );
@@ -395,7 +461,22 @@ keep_going:
 						}
 						else if( r > 0 )
 						{
+#if TERMINAL_INPUT_BUFFER
+							uint8_t new_line = 0;
+							if( buffer[r - 1] == '\n' ) new_line = 1;
+							if( new_line == 0 ) strncpy( print_buf, TERMINAL_CLEAR_PREV, TERMINAL_BUFFER_SIZE - 1 ); //  Go one line up and erase it
+							else strncpy( print_buf, TERMINAL_CLEAR_CUR, TERMINAL_BUFFER_SIZE - 1 ); // Go to the start of the line and erase it
+							strncat( pline_buf, (char *)buffer, TERMINAL_BUFFER_SIZE - 1 - strlen(print_buf) ); // Add newely received chars to line buffer
+							strncat( print_buf, pline_buf, TERMINAL_BUFFER_SIZE - 1 - strlen(print_buf) ); // Add line to buffer
+							if( to_send > 0 ) strncat( print_buf, TERMINAL_DIM, TERMINAL_BUFFER_SIZE - 1 - strlen(print_buf) );
+							strncat( print_buf, TERMINAL_SEND_LABEL, TERMINAL_BUFFER_SIZE - 1 - strlen(print_buf) ); // Print styled "Send" label
+							strncat( print_buf, input_buf, TERMINAL_BUFFER_SIZE - 1 - strlen(print_buf) ); // Print current input
+							fwrite( print_buf, strlen( print_buf ), 1, stdout );
+							print_buf[0] = 0;
+							if( new_line == 1 ) pline_buf[0] = 0;
+#else
 							fwrite( buffer, r, 1, stdout );
+#endif
 							fflush( stdout );
 							// Otherwise it's basically just an ack for appendword.
 							appendword = 0;
