@@ -96,7 +96,7 @@ static int ReadKBByte()
 
 static void CtrlC()
 {
-	fprintf( stderr, "Minichlink Closing\n" );
+	fprintf( stderr, "\nMinichlink Closing\n" );
 	ResetKeyboardInput();
 	exit( 0 );
 }
