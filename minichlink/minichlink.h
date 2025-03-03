@@ -210,7 +210,7 @@ extern struct MiniChlinkFunctions MCF;
 void * TryInit_WCHLinkE(void);
 void * TryInit_ESP32S2CHFUN(void);
 void * TryInit_NHCLink042(void);
-void * TryInit_B003Fun(void);
+void * TryInit_B003Fun(uint32_t id);
 void * TryInit_Ardulink(const init_hints_t*);
 
 // Returns 0 if ok, populated, 1 if not populated.
