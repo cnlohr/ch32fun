@@ -1,18 +1,19 @@
-# Default prefix for Windows
 ifeq ($(OS),Windows_NT)
-	PREFIX?=riscv64-unknown-elf
-	ifeq ($(shell which $(PREFIX)),)
-		PREFIX:=riscv-none-elf
-	endif
-# Check if riscv64-unknown-elf-gcc exists
-else ifneq ($(shell which riscv64-unknown-elf-gcc),)
-	PREFIX?=riscv64-unknown-elf
+	WHICH:=where
+else
+	WHICH:=which
+endif
+
+# Default/fallback prefix
+PREFIX:=riscv64-elf
+
+ifneq ($(shell $(WHICH) riscv64-unknown-elf-gcc),)
+	PREFIX:=riscv64-unknown-elf
+else ifneq ($(shell $(WHICH) riscv-none-elf-gcc),)
+	PREFIX:=riscv-none-elf
+endif
 # We used to check if riscv64-linux-gnu-gcc exists, because it would still produce valid output with -ffreestanding.
 # It was different enough that we decided not to automatically fallback to it.
-# Default prefix
-else
-	PREFIX?=riscv64-elf
-endif
 
 # Fedora places newlib in a different location
 ifneq ($(wildcard /etc/fedora-release),)
@@ -21,7 +22,7 @@ else
 	NEWLIB?=/usr/include/newlib
 endif
 
-CH32FUN?=$(shell dirname $(lastword $(MAKEFILE_LIST)))
+CH32FUN?=$(dir $(lastword $(MAKEFILE_LIST)))
 #TARGET_MCU?=CH32V003 # Because we are now opening up to more processors, don't assume this.
 
 TARGET_EXT?=c
