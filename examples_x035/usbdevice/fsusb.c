@@ -640,7 +640,7 @@ int FSUSBSetup()
 	AFIO->CTLR = (AFIO->CTLR & ~(UDP_PUE_MASK | UDM_PUE_MASK )) | USB_PHY_V33 | UDP_PUE_1K5 | USB_IOEN;
 #endif
 
-	AFIO->CTLR = (AFIO->CTLR & ~(UDP_PUE_11 | UDM_PUE_11 )) | USB_PHY_V33 | USB_IOEN | UDP_PUE_11; //1.5k pullup
+	AFIO->CTLR = (AFIO->CTLR & ~(UDP_PUE_MASK | UDM_PUE_MASK )) | USB_PHY_V33 | USB_IOEN | UDP_PUE_1K5; //1.5k pullup
 
 	// Enable PC16/17 Alternate Function (USB)
 	// According to EVT, GPIO16 = GPIO_Mode_IN_FLOATING, GPIO17 = GPIO_Mode_IPU
