@@ -86,7 +86,7 @@ int main()
  *            OB_RST_NoEN - Reset IO disable (PD7)
  *            OB_RST_EN_DT12ms - Reset IO enable (PD7) and  Ignore delay time 12ms
  *            OB_RST_EN_DT1ms - Reset IO enable (PD7) and  Ignore delay time 1ms
- *            OB_RST_EN_DT128ms - Reset IO enable (PD7) and  Ignore delay time 128ms
+ *            OB_RST_EN_DT128us - Reset IO enable (PD7) and  Ignore delay time 128us
  *          OB_BOOT - Selects bootloader or usercode for on start.
  *            OB_STARTMODE_USER - Boot directly to flash
  *            OB_STARTMODE_BOOT - Boot to bootloader

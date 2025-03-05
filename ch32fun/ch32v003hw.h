@@ -591,7 +591,7 @@ typedef struct
 #define ESIG_BASE                               ((uint32_t)0x1FFFF7E0)
 #define INFO_BASE                               ((uint32_t)0x1FFFF704)
 
-#define EXTEN_BASE                              ((uint32_t)0x40023800)
+#define EXTEN_BASE                              (AHBPERIPH_BASE + 0x3800)
 
 #define VENDOR_CFG0_BASE                        ((uint32_t)0x1FFFF7D4)
 #define CFG0_PLL_TRIM                           (VENDOR_CFG0_BASE)
@@ -601,119 +601,6 @@ typedef struct
 
 
 
-
-// AFIO CTLR Bits
-#define PB6_FILT_EN    (1<<27)
-#define PB5_FILT_EN    (1<<26)
-#define PA4_FILT_EN    (1<<25)
-#define PA3_FILT_EN    (1<<24)
-#define UDM_BC_CMPO	   (1<<19)
-#define UDP_BC_CMPO    (1<<17)
-#define UDM_BC_VSRC    (1<<17)
-#define UDP_BC_VSRC    (1<<16)
-#define USBPD_IN_HVT   (1<<9)
-#define USBPD_PHY_V33  (1<<8)
-#define USB_IOEN       (1<<7)
-#define USB_PHY_V33    (1<<6)
-#define UDP_PUE_00     (0b00<<2)
-#define UDP_PUE_01     (0b01<<2)
-#define UDP_PUE_10     (0b10<<2)
-#define UDP_PUE_11     (0b11<<2)
-#define UDM_PUE_00     (0b00<<0)
-#define UDM_PUE_01     (0b01<<0)
-#define UDM_PUE_10     (0b10<<0)
-#define UDM_PUE_11     (0b11<<0)
-#define UDP_PUE_MASK                0x0000000C
-#define UDP_PUE_DISABLE             0x00000000
-#define UDP_PUE_35UA                0x00000004
-#define UDP_PUE_10K                 0x00000008
-#define UDP_PUE_1K5                 0x0000000C
-#define UDM_PUE_MASK                0x00000003
-#define UDM_PUE_DISABLE             0x00000000
-#define UDM_PUE_35UA                0x00000001
-#define UDM_PUE_10K                 0x00000002
-#define UDM_PUE_1K5                 0x00000003
-
-
-// USB PD Bits
-#define IE_TX_END      (1<<15)
-#define IE_RX_RESET    (1<<14)
-#define IE_RX_ACT      (1<<13)
-#define IE_RX_BYTE     (1<<12)
-#define IE_RX_BIT      (1<<11)
-#define IE_PD_IO       (1<<10)
-#define WAKE_POLAR     (1<<5)
-#define PD_RST_EN      (1<<4)
-#define PD_DMA_EN      (1<<3)
-#define CC_SEL         (1<<2)
-#define PD_ALL_CLR     (1<<1)
-#define PD_FILT_EN     (1<<0)
-#define BMC_CLK_CNT_MASK  (0xff)
-
-//R8_CONTROL
-#define BMC_BYTE_HI    (1<<7)
-#define TX_BIT_BACK    (1<<6)
-#define DATA_FLAG      (1<<5)
-#define RX_STATE_MASK  (0x7<<2)
-#define RX_STATE_0     (1<<2)
-#define RX_STATE_1     (1<<3)
-#define RX_STATE_2     (1<<4)
-#define BMC_START      (1<<1)
-#define PD_TX_EN       (1<<0)
-
-#define TX_SEL4_MASK   (3<<6)
-#define TX_SEL4_0      (1<<6)
-#define TX_SEL4_1      (1<<7)
-
-#define TX_SEL3_MASK   (3<<4)
-#define TX_SEL3_0      (1<<4)
-#define TX_SEL3_1      (1<<5)
-
-#define TX_SEL2_MASK   (3<<2)
-#define TX_SEL2_0      (1<<2)
-#define TX_SEL2_1      (1<<3)
-
-#define TX_SEL1        (1<<0)
-
-#define BMC_TX_SZ_MASK (0x1ff)
-
-//R8_STATUS
-#define IF_TX_END      (1<<7)
-#define IF_RX_RESET    (1<<6)
-#define IF_RX_ACT      (1<<5)
-#define IF_RX_BYTE     (1<<4)
-#define IF_RX_BIT      (1<<3)
-#define IFBUF_ERR      (1<<2)
-#define BMC_AUX_MASK   (3<<0)
-#define BMC_AUX_1      (1<<1)
-#define BMC_AUX_0      (1<<0)
-
-// PORT CC1
-#define CC1_CE_MASK    (7<<5)
-#define CC1_CE_0       (1<<5)
-#define CC1_CE_1       (2<<5)
-#define CC1_CE_2       (4<<5)
-
-#define CC1_LVE        (1<<4)
-#define CC1_PU_MASK    (3<<2)
-#define CC1_PU_DISABLE (0<<2)
-#define CC1_PU_330uA   (1<<2)
-#define CC1_PU_180uA   (2<<2)
-#define CC1_PU_80uA    (3<<2)
-#define PA_CC1_AI      (1<<0)
-
-#define CC2_CE_MASK    (7<<5)
-#define CC2_CE_0       (1<<5)
-#define CC2_CE_1       (2<<5)
-#define CC2_CE_2       (4<<5)
-
-#define CC2_LVE        (1<<4)
-#define CC2_PU_MASK    (3<<2)
-#define CC2_PU_DISABLE (0<<2)
-#define CC2_PU_330uA   (1<<2)
-#define CC2_PU_180uA   (2<<2)
-#define CC2_PU_80uA    (3<<2)
-#define PA_CC2_AI      (1<<0)
 
 
 
@@ -1902,33 +1789,33 @@ typedef struct
 
 
 /*****************  Bit definition for AFIO_EXTICR register  *****************/
-#define AFIO_EXTICR_EXTI0                       ((uint16_t)0x0003) /* EXTI 0 configuration */
-#define AFIO_EXTICR_EXTI1                       ((uint16_t)0x000C) /* EXTI 1 configuration */
-#define AFIO_EXTICR_EXTI2                       ((uint16_t)0x0030) /* EXTI 2 configuration */
-#define AFIO_EXTICR_EXTI3                       ((uint16_t)0x00C0) /* EXTI 3 configuration */
-#define AFIO_EXTICR_EXTI4                       ((uint16_t)0x0300) /* EXTI 4 configuration */
-#define AFIO_EXTICR_EXTI5                       ((uint16_t)0x0C00) /* EXTI 5 configuration */
-#define AFIO_EXTICR_EXTI6                       ((uint16_t)0x3000) /* EXTI 6 configuration */
-#define AFIO_EXTICR_EXTI7                       ((uint16_t)0xC000) /* EXTI 7 configuration */
+#define AFIO_EXTICR1_EXTI0                      ((uint16_t)0x0003) /* EXTI 0 configuration */
+#define AFIO_EXTICR1_EXTI1                      ((uint16_t)0x000C) /* EXTI 1 configuration */
+#define AFIO_EXTICR1_EXTI2                      ((uint16_t)0x0030) /* EXTI 2 configuration */
+#define AFIO_EXTICR1_EXTI3                      ((uint16_t)0x00C0) /* EXTI 3 configuration */
+#define AFIO_EXTICR1_EXTI4                      ((uint16_t)0x0300) /* EXTI 4 configuration */
+#define AFIO_EXTICR1_EXTI5                      ((uint16_t)0x0C00) /* EXTI 5 configuration */
+#define AFIO_EXTICR1_EXTI6                      ((uint16_t)0x3000) /* EXTI 6 configuration */
+#define AFIO_EXTICR1_EXTI7                      ((uint16_t)0xC000) /* EXTI 7 configuration */
 
-#define AFIO_EXTICR_EXTI0_PC                    ((uint16_t)0x0002) /* PC[0] pin */
-#define AFIO_EXTICR_EXTI0_PD                    ((uint16_t)0x0003) /* PD[0] pin */
-#define AFIO_EXTICR_EXTI1_PA                    ((uint16_t)0x0000) /* PA[1] pin */
-#define AFIO_EXTICR_EXTI1_PC                    ((uint16_t)0x0008) /* PC[1] pin */
-#define AFIO_EXTICR_EXTI1_PD                    ((uint16_t)0x000C) /* PD[1] pin */
-#define AFIO_EXTICR_EXTI2_PA                    ((uint16_t)0x0000) /* PA[2] pin */
-#define AFIO_EXTICR_EXTI2_PC                    ((uint16_t)0x0020) /* PC[2] pin */
-#define AFIO_EXTICR_EXTI2_PD                    ((uint16_t)0x0030) /* PD[2] pin */
-#define AFIO_EXTICR_EXTI3_PC                    ((uint16_t)0x0080) /* PC[3] pin */
-#define AFIO_EXTICR_EXTI3_PD                    ((uint16_t)0x00C0) /* PD[3] pin */
-#define AFIO_EXTICR_EXTI4_PC                    ((uint16_t)0x0200) /* PC[4] pin */
-#define AFIO_EXTICR_EXTI4_PD                    ((uint16_t)0x0300) /* PD[4] pin */
-#define AFIO_EXTICR_EXTI5_PC                    ((uint16_t)0x0800) /* PC[5] pin */
-#define AFIO_EXTICR_EXTI5_PD                    ((uint16_t)0x0C00) /* PD[5] pin */
-#define AFIO_EXTICR_EXTI6_PC                    ((uint16_t)0x2000) /* PC[6] pin */
-#define AFIO_EXTICR_EXTI6_PD                    ((uint16_t)0x3000) /* PD[6] pin */
-#define AFIO_EXTICR_EXTI7_PC                    ((uint16_t)0x8000) /* PC[7] pin */
-#define AFIO_EXTICR_EXTI7_PD                    ((uint16_t)0xC000) /* PD[7] pin */
+#define AFIO_EXTICR1_EXTI0_PC                   ((uint16_t)0x0002) /* PC[0] pin */
+#define AFIO_EXTICR1_EXTI0_PD                   ((uint16_t)0x0003) /* PD[0] pin */
+#define AFIO_EXTICR1_EXTI1_PA                   ((uint16_t)0x0000) /* PA[1] pin */
+#define AFIO_EXTICR1_EXTI1_PC                   ((uint16_t)0x0008) /* PC[1] pin */
+#define AFIO_EXTICR1_EXTI1_PD                   ((uint16_t)0x000C) /* PD[1] pin */
+#define AFIO_EXTICR1_EXTI2_PA                   ((uint16_t)0x0000) /* PA[2] pin */
+#define AFIO_EXTICR1_EXTI2_PC                   ((uint16_t)0x0020) /* PC[2] pin */
+#define AFIO_EXTICR1_EXTI2_PD                   ((uint16_t)0x0030) /* PD[2] pin */
+#define AFIO_EXTICR1_EXTI3_PC                   ((uint16_t)0x0080) /* PC[3] pin */
+#define AFIO_EXTICR1_EXTI3_PD                   ((uint16_t)0x00C0) /* PD[3] pin */
+#define AFIO_EXTICR1_EXTI4_PC                   ((uint16_t)0x0200) /* PC[4] pin */
+#define AFIO_EXTICR1_EXTI4_PD                   ((uint16_t)0x0300) /* PD[4] pin */
+#define AFIO_EXTICR1_EXTI5_PC                   ((uint16_t)0x0800) /* PC[5] pin */
+#define AFIO_EXTICR1_EXTI5_PD                   ((uint16_t)0x0C00) /* PD[5] pin */
+#define AFIO_EXTICR1_EXTI6_PC                   ((uint16_t)0x2000) /* PC[6] pin */
+#define AFIO_EXTICR1_EXTI6_PD                   ((uint16_t)0x3000) /* PD[6] pin */
+#define AFIO_EXTICR1_EXTI7_PC                   ((uint16_t)0x8000) /* PC[7] pin */
+#define AFIO_EXTICR1_EXTI7_PD                   ((uint16_t)0xC000) /* PD[7] pin */
 
 
 /******************************************************************************/
@@ -3556,7 +3443,7 @@ typedef enum
 #define OB_RST_NoEN                      ((uint16_t)0x0018) /* Reset IO disable (PD7)*/
 #define OB_RST_EN_DT12ms                 ((uint16_t)0x0010) /* Reset IO enable (PD7) and  Ignore delay time 12ms */
 #define OB_RST_EN_DT1ms                  ((uint16_t)0x0008) /* Reset IO enable (PD7) and  Ignore delay time 1ms */
-#define OB_RST_EN_DT128ms                ((uint16_t)0x0000) /* Reset IO enable (PD7) and  Ignore delay time 128ms */
+#define OB_RST_EN_DT128us                ((uint16_t)0x0000) /* Reset IO enable (PD7) and  Ignore delay time 128us */
 
 
 /* Option_Bytes_Power_ON_Start_Mode */
