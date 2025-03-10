@@ -1,8 +1,8 @@
 /* This file supports the CH32V00X and CH32M00X family of chips
 */
 
-#ifndef TODO_HARDWARE_H
-#define TODO_HARDWARE_H
+#ifndef TODO_CH32X00X_H
+#define TODO_CH32X00X_H
 
 #include "ch32fun.h"
 
@@ -117,6 +117,11 @@ typedef struct
 #define HSE_Value             HSE_VALUE
 #define HSEStartUp_TimeOut    HSE_STARTUP_TIMEOUT
 
+// Datasheet recommends HSE of 24M
+#ifndef HSE_VALUE
+#define HSE_VALUE 24000000
+#endif
+
 #ifndef __ASSEMBLER__
 /* Analog to Digital Converter */
 typedef struct
@@ -124,6 +129,7 @@ typedef struct
     __IO uint32_t STATR;
     __IO uint32_t CTLR1;
     __IO uint32_t CTLR2;
+    __IO uint32_t SAMPTR1;
     __IO uint32_t SAMPTR2;
     __IO uint32_t IOFR1;
     __IO uint32_t IOFR2;
@@ -235,6 +241,21 @@ typedef enum
 	GPIO_CFGLR_OUT_OD    = 0b0101,
 	GPIO_CFGLR_OUT_AF_PP = 0b1001,
 	GPIO_CFGLR_OUT_AF_OD = 0b1101,
+
+
+	// For intercompatibility with 003 legacy code.
+	GPIO_CFGLR_OUT_10Mhz_PP = 0b0001,
+	GPIO_CFGLR_OUT_2Mhz_PP = 0b0001,
+	GPIO_CFGLR_OUT_50Mhz_PP = 0b0001,
+	GPIO_CFGLR_OUT_10Mhz_OD = 0b0101,
+	GPIO_CFGLR_OUT_2Mhz_OD = 0b0101,
+	GPIO_CFGLR_OUT_50Mhz_OD = 0b0101,
+	GPIO_CFGLR_OUT_10Mhz_AF_PP = 0b1001,
+	GPIO_CFGLR_OUT_2Mhz_AF_PP = 0b1001,
+	GPIO_CFGLR_OUT_50Mhz_AF_PP = 0b1001,
+	GPIO_CFGLR_OUT_10Mhz_AF_OD = 0b1101,
+	GPIO_CFGLR_OUT_2Mhz_AF_OD = 0b1101,
+	GPIO_CFGLR_OUT_50Mhz_AF_OD = 0b1101,
 } GPIO_CFGLR_PIN_MODE_Typedef;
 
 /*  This was correct in the 003, but the 00X have 0b0010 as a reserved bit in this field.  The above enum never sets this bit as directed by the RM.  But it's included in the following structure as a 4 bit field becaus changing it to two disjoint bit fields would make life too painful.  */
@@ -403,11 +424,27 @@ typedef struct
     __IO uint32_t CTLR;
     __IO uint32_t CFGR0;
     __IO uint32_t INTR;
-    __IO uint32_t PB2PRSTR;
+	union
+	{
+	    __IO uint32_t PB2PRSTR;
+	    __IO uint32_t APB2PRSTR; // For 003 compatibility
+	};
     __IO uint32_t PB1PRSTR;
-    __IO uint32_t HBPCENR;
-    __IO uint32_t PB2PCENR;
-    __IO uint32_t PB1PCENR;
+	union
+	{
+	    __IO uint32_t HBPCENR;
+	    __IO uint32_t AHBPCENR; // For 003 compatibility
+	};
+	union
+	{
+	    __IO uint32_t PB2PCENR;
+	    __IO uint32_t APB2PCENR; // For 003 compatibility
+	};
+	union
+	{
+	    __IO uint32_t PB1PCENR;
+	    __IO uint32_t APB1PCENR; // For 003 compatibility
+	};
     __IO uint32_t RESERVED0;
 	  __IO uint32_t RSTSCKR;
 } RCC_TypeDef;
@@ -1616,20 +1653,37 @@ typedef struct
 #define GPIO_LCK7                               ((uint32_t)0x00000080) /* Port x Lock bit 7 */
 #define GPIO_LCKK                               ((uint32_t)0x00010000) /* Lock key */
 
-
 /******************  Bit definition for AFIO_PCFR1register  *******************/
 #define AFIO_PCFR1_SPI1_RM                      ((uint32_t)0x00000007) /* SPI1 remapping */
+#define AFIO_PCFR1_SPI1_RM_0                    ((uint32_t)0x00000001) /* SPI1 remapping */
+#define AFIO_PCFR1_SPI1_RM_1                    ((uint32_t)0x00000002) /* SPI1 remapping */
+#define AFIO_PCFR1_SPI1_RM_2                    ((uint32_t)0x00000004) /* SPI1 remapping */
 #define AFIO_PCFR1_I2C1_RM                      ((uint32_t)0x00000038) /* I2C1 remapping */
+#define AFIO_PCFR1_I2C1_RM_0                    ((uint32_t)0x00000008) /* I2C1 remapping */
+#define AFIO_PCFR1_I2C1_RM_1                    ((uint32_t)0x00000010) /* I2C1 remapping */
+#define AFIO_PCFR1_I2C1_RM_2                    ((uint32_t)0x00000020) /* I2C1 remapping */
 #define AFIO_PCFR1_USART1_RM                    ((uint32_t)0x000003C0) /* USART1 remapping */
+#define AFIO_PCFR1_USART1_RM_0                  ((uint32_t)0x00000040) /* USART1 remapping */
+#define AFIO_PCFR1_USART1_RM_1                  ((uint32_t)0x00000080) /* USART1 remapping */
+#define AFIO_PCFR1_USART1_RM_2                  ((uint32_t)0x00000100) /* USART1 remapping */
+#define AFIO_PCFR1_USART1_RM_3                  ((uint32_t)0x00000200) /* USART1 remapping */
 #define AFIO_PCFR1_TIM1_RM                      ((uint32_t)0x00003C00) /* TIM1_REMAP remapping */
+#define AFIO_PCFR1_TIM1_RM_0                    ((uint32_t)0x00000400) /* TIM1_REMAP remapping */
+#define AFIO_PCFR1_TIM1_RM_1                    ((uint32_t)0x00000800) /* TIM1_REMAP remapping */
+#define AFIO_PCFR1_TIM1_RM_2                    ((uint32_t)0x00001000) /* TIM1_REMAP remapping */
+#define AFIO_PCFR1_TIM1_RM_3                    ((uint32_t)0x00002000) /* TIM1_REMAP remapping */
 #define AFIO_PCFR1_TIM2_RM                      ((uint32_t)0x0001C000) /* TIM2_REMAP remapping */
+#define AFIO_PCFR1_TIM2_RM_0                    ((uint32_t)0x00004000) /* TIM2_REMAP remapping */
+#define AFIO_PCFR1_TIM2_RM_1                    ((uint32_t)0x00008000) /* TIM2_REMAP remapping */
+#define AFIO_PCFR1_TIM2_RM_2                    ((uint32_t)0x00010000) /* TIM2_REMAP remapping */
 #define AFIO_PCFR1_PA12_RM                      ((uint32_t)0x00020000) /* PA1/2 OSC_IN/OSC_OUT remapping */
 #define AFIO_PCFR1_ADC_ETRGINJ_RM               ((uint32_t)0x00040000) /* ADC external triggered injection remapping */
 #define AFIO_PCFR1_ADC_ETRGREG_RM               ((uint32_t)0x00080000) /* ADC external triggered rule remapping */
 #define AFIO_PCFR1_USART2_RM                    ((uint32_t)0x00700000) /* USART2 remapping */
-#define AFIO_PCFR1_SWCFG                        ((uint32_t)0x07000000) /* SWCFG  SDI or GPIO configuration */
-
-
+#define AFIO_PCFR1_USART2_RM_0                  ((uint32_t)0x00700000) /* USART2 remapping */
+#define AFIO_PCFR1_USART2_RM_1                  ((uint32_t)0x00700000) /* USART2 remapping */
+#define AFIO_PCFR1_USART2_RM_2                  ((uint32_t)0x00700000) /* USART2 remapping */
+#define AFIO_PCFR1_SWCFG                        ((uint32_t)0x07000000) /* SWCFG  SDI or GPIO configuration (Please reconsider your design if you find yourself setting this bit) */
 
 /*****************  Bit definition for AFIO_EXTICR register  *****************/
 #define AFIO_EXTICR_EXTI0                       ((uint32_t)0x00000003) /* EXTI 0 configuration */
@@ -1892,6 +1946,10 @@ typedef struct
 #define RCC_ADCPRE_DIV128                       ((uint32_t)0x0000F800) /* HBCLK divided by 128 */
 
 #define RCC_PLLSRC                              ((uint32_t)0x00010000) /* PLL entry clock source */
+
+//For compatibility with the v003
+#define RCC_PLLSRC_HSI_Mul2                     ((uint32_t)0x00000000) /* HSI clock*2 selected as PLL entry clock source */
+#define RCC_PLLSRC_HSE_Mul2                     ((uint32_t)0x00010000) /* HSE clock*2 selected as PLL entry clock source */
 
 #define RCC_CFGR0_MCO                           ((uint32_t)0x07000000) /* MCO[2:0] bits (Microcontroller Clock Output) */
 #define RCC_MCO_0                               ((uint32_t)0x01000000) /* Bit 0 */

@@ -5,13 +5,15 @@ else
 endif
 
 # Default/fallback prefix
-PREFIX:=riscv64-elf
+PREFIX_DEFAULT:=riscv64-elf
 
 ifneq ($(shell $(WHICH) riscv64-unknown-elf-gcc),)
-	PREFIX:=riscv64-unknown-elf
+	PREFIX_DEFAULT:=riscv64-unknown-elf
 else ifneq ($(shell $(WHICH) riscv-none-elf-gcc),)
-	PREFIX:=riscv-none-elf
+	PREFIX_DEFAULT:=riscv-none-elf
 endif
+
+PREFIX?=$(PREFIX_DEFAULT)
 # We used to check if riscv64-linux-gnu-gcc exists, because it would still produce valid output with -ffreestanding.
 # It was different enough that we decided not to automatically fallback to it.
 

@@ -984,7 +984,7 @@ void InterruptVectorDefault( void )
 #endif
 }
 
-#if defined( CH32V003 ) || defined( CH32X03x )
+#if defined( CH32V003 ) || defined( CH32X03x ) || defined(CH32V00x)
 
 void handle_reset( void )
 {
@@ -1467,7 +1467,7 @@ WEAK int putchar(int c)
 
 void DelaySysTick( uint32_t n )
 {
-#ifdef CH32V003
+#if defined(CH32V003) || defined(CH32V00x)
 	uint32_t targend = SysTick->CNT + n;
 	while( ((int32_t)( SysTick->CNT - targend )) < 0 );
 #elif defined(CH32V20x) || defined(CH32V30x)
@@ -1500,7 +1500,7 @@ void SystemInit( void )
 #endif
 
 #if defined(FUNCONF_USE_PLL) && FUNCONF_USE_PLL
-	#if defined(CH32V003)
+	#if defined(CH32V003) || defined(CH32V00x)
 		#define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PLLSRC_HSI_Mul2    // HCLK = SYSCLK = APB1 And, enable PLL
 	#elif defined(CH32V20x_D8W)
 		#define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PPRE2_DIV1 | RCC_PPRE1_DIV1 | PLL_MULTIPLICATION
@@ -1508,7 +1508,7 @@ void SystemInit( void )
 		#define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PPRE2_DIV1 | RCC_PPRE1_DIV2 | PLL_MULTIPLICATION
 	#endif
 #else
-	#if defined(CH32V003) || defined(CH32X03x)
+	#if defined(CH32V003) || defined(CH32X03x) || defined(CH32V00x)
 		#define BASE_CFGR0 RCC_HPRE_DIV1     					  // HCLK = SYSCLK = APB1 And, no pll.
 	#else
 		#define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PPRE2_DIV1 | RCC_PPRE1_DIV1
@@ -1553,7 +1553,7 @@ void SystemInit( void )
 
 #elif defined(FUNCONF_USE_HSE) && FUNCONF_USE_HSE
 
-	#if defined(CH32V003)
+	#if defined(CH32V003) || defined(CH32V00x)
 		RCC->CTLR = BASE_CTLR | RCC_HSION | RCC_HSEON ;       		  // Keep HSI on while turning on HSE
 	#else
 		RCC->CTLR = RCC_HSEON;							  			  // Only turn on HSE.
@@ -1562,7 +1562,7 @@ void SystemInit( void )
 	// Values lifted from the EVT.  There is little to no documentation on what this does.
 	while(!(RCC->CTLR&RCC_HSERDY)) {};
 
-	#if defined(CH32V003)
+	#if defined(CH32V003) || defined(CH32V00x)
 		RCC->CFGR0 = RCC_PLLSRC_HSE_Mul2 | RCC_SW_HSE;
 	#else
 		RCC->CFGR0 = BASE_CFGR0 | RCC_PLLSRC_HSE | RCC_PLLXTPRE_HSE;
@@ -1631,12 +1631,12 @@ void funAnalogInit( void )
 	ADC1->CTLR2 |= ADC_ADON | ADC_EXTSEL;	// turn on ADC and set rule group to sw trig
 
 	// Reset calibration
-	ADC1->CTLR2 |= ADC_RSTCAL;
-	while(ADC1->CTLR2 & ADC_RSTCAL);
+	ADC1->CTLR2 |= CTLR2_RSTCAL_Set;
+	while(ADC1->CTLR2 & CTLR2_RSTCAL_Set);
 	
 	// Calibrate
-	ADC1->CTLR2 |= ADC_CAL;
-	while(ADC1->CTLR2 & ADC_CAL);
+	ADC1->CTLR2 |= CTLR2_CAL_Set;
+	while(ADC1->CTLR2 & CTLR2_CAL_Set);
 
 }
 
