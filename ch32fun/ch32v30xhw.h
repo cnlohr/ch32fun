@@ -10436,7 +10436,7 @@ typedef struct
 				#define PLL_MULTIPLICATION RCC_PLLMULL15
 			#elif FUNCONF_PLL_MULTIPLIER == 16
 				#define PLL_MULTIPLICATION RCC_PLLMULL16
-			#elif defined(CH32V20x) && FUNCONF_PLL_MULTIPLIER == 18
+			#elif FUNCONF_PLL_MULTIPLIER == 18
 				#define PLL_MULTIPLICATION RCC_PLLMULL18
 			#else
 				#error "Invalid PLL multiplier"
