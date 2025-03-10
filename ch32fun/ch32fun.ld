@@ -65,9 +65,20 @@ MEMORY
 	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 32K
 	RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 6K
 #elif TARGET_MCU_LD == 7
-	/* CH32V005, CH32V006, CH32V007 */
-	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 62K
-	RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 8K
+  /* CH32V005, CH32V006, CH32V007 */
+  FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 62K
+  RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 8K
+#elif TARGET_MCU_LD == 8
+	/* CH591/2 */
+	#if MCU_PACKAGE == 1
+		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 192K
+		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 24K
+	#elif MCU_PACKAGE == 2
+		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 448K
+		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 24K
+	#else
+		#error "Unknown MCU package"
+#endif
 #else
 	#error "Unknown MCU target"
 #endif
