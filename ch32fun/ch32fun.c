@@ -981,7 +981,13 @@ void TMR3_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) 
 void UART2_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void UART3_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void WDOG_BAT_IRQHandler( void )		__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
-
+// CH57x
+void SPI_IRQHandler( void )				__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void TMR_IRQHandler( void )				__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void UART_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void CMP_IRQHandler( void )				__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void KEYSCAN_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void ENCODER_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 
 
 void InterruptVector()         __attribute__((naked)) __attribute((section(".init"))) __attribute((weak,alias("InterruptVectorDefault"))) __attribute((naked));
@@ -1076,7 +1082,7 @@ asm volatile(
 "	mret\n" : : [main]"r"(main) );
 }
 
-#elif defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x) || defined(CH59x)
+#elif defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x) || defined(CH57x) || defined(CH59x)
 
 void handle_reset( void )
 {
@@ -1491,7 +1497,7 @@ void DelaySysTick( uint32_t n )
 #elif defined(CH32V20x) || defined(CH32V30x) || defined(CH59x)
 	uint64_t targend = SysTick->CNT + n;
 	while( ((int64_t)( SysTick->CNT - targend )) < 0 );
-#elif defined(CH32V10x) || defined(CH32X03x)
+#elif defined(CH32V10x) || defined(CH32X03x) || defined(CH57x)
 	uint32_t targend = SysTick->CNTL + n;
 	while( ((int32_t)( SysTick->CNTL - targend )) < 0 );
 #else
@@ -1557,10 +1563,53 @@ void SystemInit( void )
 	#endif
 #endif
 
-#if defined(CH59x) // has no HSI
+#if defined(CH57x) || defined(CH59x)
 	// SYS_SAFE_ACCESS for writing RWA and WA registers
 	#define SYS_SAFE_ACCESS_ENABLE  { R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG1; R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG2; ADD_N_NOPS(2); }
 	#define SYS_SAFE_ACCESS_DISABLE { R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG0; ADD_N_NOPS(2); }
+#endif
+
+#if defined(CH57x) // has no HSI
+#ifndef CLK_SOURCE_CH57X
+	#define CLK_SOURCE_CH57X CLK_SOURCE_HSE_PLL_100MHz
+#endif
+	SYS_SAFE_ACCESS_ENABLE
+	uint16_t clk_sys_cfg;
+	uint8_t x32M_c;
+	SYS_CLKTypeDef sc = CLK_SOURCE_CH57X;
+	
+	if(sc == RB_CLK_SYS_MOD)  // LSI
+	{
+		R8_CLK_SYS_CFG |= RB_CLK_SYS_MOD;
+	}
+	else
+	{
+		if(!(R8_HFCK_PWR_CTRL & RB_CLK_XT32M_PON))
+		{
+			x32M_c = R8_XT32M_TUNE;
+			R8_XT32M_TUNE |= 0x03;
+			R8_HFCK_PWR_CTRL |= RB_CLK_XT32M_PON;
+			clk_sys_cfg = R8_CLK_SYS_CFG;
+			R8_CLK_SYS_CFG |= 0xC0;
+			ADD_N_NOPS(10);
+			R8_CLK_SYS_CFG = clk_sys_cfg;
+			R8_XT32M_TUNE = x32M_c;
+		}
+	
+		if((sc & RB_CLK_SYS_MOD) == 0x40) // PLL div
+		{
+			R8_HFCK_PWR_CTRL |= RB_CLK_PLL_PON;
+			R8_FLASH_CFG = 0X01;
+			R8_FLASH_SCK |= 1<<4; //50M
+		}
+		else    // 32M div
+		{
+			R8_FLASH_CFG = (sc & 0x1F) ? 0x02 : 0x07;
+		}
+		R8_CLK_SYS_CFG = sc;
+	}
+	SYS_SAFE_ACCESS_DISABLE
+#elif defined(CH59x) // has no HSI
 #ifndef CLK_SOURCE_CH59X
 	#define CLK_SOURCE_CH59X CLK_SOURCE_PLL_60MHz
 #endif
@@ -1645,11 +1694,11 @@ void SystemInit( void )
 	#endif
 #endif
 
-#if !defined(CH59x)
+#if !defined(CH57x) && !defined(CH59x)
 	RCC->INTR  = 0x009F0000;                               // Clear PLL, CSSC, HSE, HSI and LSI ready flags.
 #endif
 
-#if defined(FUNCONF_USE_PLL) && FUNCONF_USE_PLL && !defined(CH59x)
+#if defined(FUNCONF_USE_PLL) && FUNCONF_USE_PLL && !defined(CH57x) && !defined(CH59x)
 	while((RCC->CTLR & RCC_PLLRDY) == 0);                       	// Wait till PLL is ready
 	uint32_t tmp32 = RCC->CFGR0 & ~(0x03);							// clr the SW
 	RCC->CFGR0 = tmp32 | RCC_SW_PLL;                       			// Select PLL as system clock source

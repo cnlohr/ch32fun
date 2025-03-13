@@ -78,7 +78,15 @@ MEMORY
 		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 24K
 	#else
 		#error "Unknown MCU package"
-#endif
+  #endif
+#elif TARGET_MCU_LD == 9
+  /* CH57x */
+  #if MCU_PACKAGE == 0 || MCU_PACKAGE == 2
+    FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 240K
+    RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 12K
+  #else
+    #error "Unknown MCU package, only ch570 and ch572 are supported at the moment"
+  #endif
 #else
 	#error "Unknown MCU target"
 #endif
