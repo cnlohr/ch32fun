@@ -986,7 +986,13 @@ void TMR3_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) 
 void UART2_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void UART3_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void WDOG_BAT_IRQHandler( void )		__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
-
+// CH57x
+void SPI_IRQHandler( void )				__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void TMR_IRQHandler( void )				__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void UART_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void CMP_IRQHandler( void )				__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void KEYSCAN_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void ENCODER_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 
 
 void InterruptVector()         __attribute__((naked)) __attribute((section(".init"))) __attribute((weak,alias("InterruptVectorDefault"))) __attribute((naked));
@@ -1081,7 +1087,7 @@ asm volatile(
 "	mret\n" : : [main]"r"(main) );
 }
 
-#elif defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x) || defined(CH58x) || defined(CH59x)
+#elif defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x) ||  defined(CH57x) || defined(CH58x) || defined(CH59x)
 
 void handle_reset( void )
 {
@@ -1478,10 +1484,10 @@ void SetupDebugPrintf( void )
 int WaitForDebuggerToAttach( int timeout_ms )
 {
 
-#if defined(CH32V20x) || defined(CH32V30x) || defined(CH58x) || defined(CH59x)
+#if defined(CH32V20x) || defined(CH32V30x) || (defined(CH57x) && MCU_PACKAGE == 3) || defined(CH58x) || defined(CH59x)
 	#define systickcnt_t uint64_t
 	#define SYSTICKCNT SysTick->CNT
-#elif defined(CH32V10x) || defined(CH32X03x)
+#elif defined(CH32V10x) || defined(CH32X03x) || defined(CH57x)
 	#define systickcnt_t uint32_t
 	#define SYSTICKCNT SysTick->CNTL
 #else
@@ -1530,9 +1536,13 @@ void DelaySysTick( uint32_t n )
 #elif defined(CH32V20x) || defined(CH32V30x) || defined(CH58x) || defined(CH59x)
 	uint64_t targend = SysTick->CNT + n;
 	while( ((int64_t)( SysTick->CNT - targend )) < 0 );
-#elif defined(CH32V10x) || defined(CH32X03x)
+#elif defined(CH32V10x) || defined(CH32X03x) || (defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2))
 	uint32_t targend = SysTick->CNTL + n;
 	while( ((int32_t)( SysTick->CNTL - targend )) < 0 );
+#elif defined(CH57x) && MCU_PACKAGE == 3
+	// ch573 insisted on being special, it's counting down
+	uint64_t targend = SysTick->CNT - n;
+	while( ((int64_t)( SysTick->CNT - targend )) > 0 );
 #else
 	#error DelaySysTick not defined.
 #endif
@@ -1596,10 +1606,40 @@ void SystemInit( void )
 	#endif
 #endif
 
-#if defined(CH58x) || defined(CH59x) // has no HSI
+#if defined(CH57x) || defined(CH58x) || defined(CH59x) // has no HSI
 #ifndef CLK_SOURCE_CH5XX
 	#define CLK_SOURCE_CH5XX CLK_SOURCE_PLL_60MHz
 #endif
+#if defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2)
+	SYS_CLKTypeDef sc = CLK_SOURCE_CH57X;
+	
+	if(sc == RB_CLK_SYS_MOD)  // LSI
+	{
+		SYS_SAFE_ACCESS(
+			R8_CLK_SYS_CFG |= RB_CLK_SYS_MOD;
+		);
+	}
+	else
+	{
+		if((sc & RB_CLK_SYS_MOD) == 0x40) // PLL div
+		{
+			SYS_SAFE_ACCESS(
+				R8_HFCK_PWR_CTRL |= RB_CLK_PLL_PON;
+				R8_FLASH_CFG = 0x01;
+				R8_FLASH_SCK |= 1<<4; //50M
+			);
+		}
+		else    // 32M div
+		{
+			SYS_SAFE_ACCESS(
+				R8_FLASH_CFG = (sc & 0x1F) ? 0x02 : 0x07;
+			);
+		}
+		SYS_SAFE_ACCESS(
+			R8_CLK_SYS_CFG = sc;
+		);
+	}
+#else
 	SYS_CLKTypeDef sc = CLK_SOURCE_CH5XX;
 	SYS_SAFE_ACCESS(
 		R8_PLL_CONFIG &= ~(1 << 5);
@@ -1630,6 +1670,7 @@ void SystemInit( void )
 	SYS_SAFE_ACCESS(
 		R8_PLL_CONFIG |= 1 << 7;
 	);
+#endif // switch between ch570/2 and other ch5xx
 #elif defined(FUNCONF_USE_HSI) && FUNCONF_USE_HSI
 	#if defined(CH32V30x) || defined(CH32V20x) || defined(CH32V10x)
 		EXTEN->EXTEN_CTR |= EXTEN_PLL_HSI_PRE;
@@ -1689,11 +1730,11 @@ void SystemInit( void )
 	#endif
 #endif
 
-#if !defined(CH58x) && !defined(CH59x)
+#if !defined(CH57x) && !defined(CH58x) && !defined(CH59x)
 	RCC->INTR  = 0x009F0000;                               // Clear PLL, CSSC, HSE, HSI and LSI ready flags.
 #endif
 
-#if defined(FUNCONF_USE_PLL) && FUNCONF_USE_PLL && !defined(CH58x) && !defined(CH59x)
+#if defined(FUNCONF_USE_PLL) && FUNCONF_USE_PLL && !defined(CH57x) && !defined(CH58x) && !defined(CH59x)
 	while((RCC->CTLR & RCC_PLLRDY) == 0);                       	// Wait till PLL is ready
 	uint32_t tmp32 = RCC->CFGR0 & ~(0x03);							// clr the SW
 	RCC->CFGR0 = tmp32 | RCC_SW_PLL;                       			// Select PLL as system clock source
