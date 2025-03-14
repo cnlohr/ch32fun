@@ -233,6 +233,8 @@ typedef struct
 /* General Purpose I/O */
 typedef enum
 {
+	GPIO_CFGLR_MASK      = 0b1111,
+
 	GPIO_CFGLR_IN_ANALOG = 0b0000,
 	GPIO_CFGLR_IN_FLOAT  = 0b0100,
 	GPIO_CFGLR_IN_PUPD   = 0b1000,
@@ -241,7 +243,6 @@ typedef enum
 	GPIO_CFGLR_OUT_OD    = 0b0101,
 	GPIO_CFGLR_OUT_AF_PP = 0b1001,
 	GPIO_CFGLR_OUT_AF_OD = 0b1101,
-
 
 	// For intercompatibility with 003 legacy code.
 	GPIO_CFGLR_OUT_10Mhz_PP = 0b0001,
@@ -779,6 +780,14 @@ typedef struct
 #define ADC_EXTSEL_0                            ((uint32_t)0x00020000) /* Bit 0 */
 #define ADC_EXTSEL_1                            ((uint32_t)0x00040000) /* Bit 1 */
 #define ADC_EXTSEL_2                            ((uint32_t)0x00080000) /* Bit 2 */
+#define ADC_EXTSEL_TRGO_1												((uint32_t)0x00000000) /* TRGO event of timer 1 		*/
+#define ADC_EXTSEL_CC1_1												((uint32_t)0x00000000) /* CC1 event of timer 1 			*/
+#define ADC_EXTSEL_CC2_1												((uint32_t)0x00000000) /* CC2 event of timer 1 			*/
+#define ADC_EXTSEL_TRGO_2												((uint32_t)0x00000000) /* TRGO event of timer 2 		*/
+#define ADC_EXTSEL_CC1_2												((uint32_t)0x00000000) /* CC1 event of timer 2 			*/
+#define ADC_EXTSEL_CC2_2												((uint32_t)0x00000000) /* CC2 event of timer 2 			*/
+#define ADC_EXTSEL_OPA													((uint32_t)0x00000000) /* OPA trigger/(PD3/PC2) 		*/
+#define ADC_EXTSEL_SWSTART											((uint32_t)0x00000000) /* SWSTART software trigger 	*/
 
 #define ADC_EXTTRIG                             ((uint32_t)0x00100000) /* External Trigger Conversion mode for regular channels */
 #define ADC_JSWSTART                            ((uint32_t)0x00200000) /* Start Conversion of injected channels */
