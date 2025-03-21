@@ -204,7 +204,7 @@ struct InternalState
 #endif
 
 #ifndef TERMINAL_INPUT_BUFFER
-#define TERMINAL_INPUT_BUFFER 0
+#define TERMINAL_INPUT_BUFFER 1
 #endif
 
 #define TERMINAL_BUFFER_SIZE 512

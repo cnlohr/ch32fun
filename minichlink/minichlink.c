@@ -374,11 +374,32 @@ keep_going:
 #if TERMINAL_INPUT_BUFFER
 				char pline_buf[256]; // Buffer that contains current line that is being printed to
 				char input_buf[128]; // Buffer that contains user input until it is sent out
-				memset( pline_buf, 0, sizeof( pline_buf ) );
-				memset( input_buf, 0, sizeof( input_buf ) );
+				memset( pline_buf, 0, sizeof(pline_buf) );
+				memset( input_buf, 0, sizeof(input_buf) );
 				uint8_t input_pos = 0;
 				uint8_t to_send = 0;
-        uint8_t nice_terminal = isatty(1);
+				uint8_t nice_terminal = isatty( fileno(stdout) );
+#if defined(WINDOWS) || defined(WIN32) || defined(_WIN32)
+				unsigned long console_mode;
+				void* handle_output = GetStdHandle(STD_OUTPUT_HANDLE);
+				GetConsoleMode(handle_output, &console_mode);
+				console_mode |= ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+				uint8_t set_result = SetConsoleMode(handle_output, console_mode);
+				if ( set_result == 0 ) nice_terminal = 0;
+#else
+				if( nice_terminal > 0 )
+				{
+					fflush( stdin );
+					fprintf( stdout, "\x1b[6n" );
+					fflush( stdout );
+					read( fileno(stdin), input_buf, 10 );
+					if (input_buf[0] != 27)
+					{
+						nice_terminal = 0;
+					}
+					memset( input_buf, 0, sizeof(input_buf) );
+				}
+#endif
 #endif
 				printf( "Terminal started\n\n" );
 				uint32_t appendword = 0;
@@ -2684,6 +2705,3 @@ void TestFunction(void * dev )
 		if( (i & 0xf) == 0xf ) printf( "\n" );
 	}
 }
-
-
-
