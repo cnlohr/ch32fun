@@ -385,7 +385,7 @@ static int LESetupInterface( void * d )
 			break;
 	}
 
-	// TODO: What in the world is this?  It doesn't appear to be needed.
+	// Set CLK Speed, 0x0C (0x01: 6000kHz, 0x02: 4000kHz, 0x03: 400kHz)
 	wch_link_command( dev, "\x81\x0c\x02\x09\x01", 5, 0, 0, 0 ); //Reply is: 820c0101
 
 	// Note from further debugging:
@@ -513,7 +513,7 @@ retry_DoneOp:
 	// Recommended to switch to 05 from 09 by Alexander M
 	//	wch_link_command( dev, "\x81\x11\x01\x09", 4, (int*)&transferred, rbuff, 1024 ); // Reply: Chip ID + Other data (see below)
 
-	if( unknown_chip_fallback )
+	if( unknown_chip_fallback || chip == CHIP_CH59x )
 	{
 		// This is a little cursed.  If we're in fallback mode, none of the other chip-specific operations will work
 		// the processor will be in a very cursed mode.  We can't trust it.
