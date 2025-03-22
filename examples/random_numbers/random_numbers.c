@@ -48,7 +48,7 @@ int main()
 	// * 3045866432
 	for(uint8_t x = 0; x < 4; x++)
 	{
-		printf("Random Number %u: %lu\n", x, rand());
+		printf("Random Number %u: %lu\n\r", x, rand());
 	}
 
 	// Seeding the LFSR using a semi-random input, like a timer tick, or 
