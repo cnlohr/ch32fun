@@ -211,6 +211,7 @@ else
 			MCU_PACKAGE:=2
 		else ifeq ($(findstring 573, $(TARGET_MCU_PACKAGE)), 573)
 			MCU_PACKAGE:=3
+			CFLAGS+=-DMCU_PACKAGE=$(MCU_PACKAGE)
 		endif
 
 		# Package
@@ -222,6 +223,8 @@ else
 			CFLAGS+=-DCH57xR
 		else ifeq ($(findstring E, $(TARGET_MCU_PACKAGE)), E)
 			CFLAGS+=-DCH57xE
+		else ifeq ($(findstring F, $(TARGET_MCU_PACKAGE)), F)
+			CFLAGS+=-DCH57xF
 		endif
 
 		TARGET_MCU_LD:=9

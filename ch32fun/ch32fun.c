@@ -64,8 +64,8 @@ void WaitForDebuggerToAttach()
 #endif
 
 #if (defined( FUNCONF_USE_DEBUGPRINTF ) && !FUNCONF_USE_DEBUGPRINTF) && \
-    (defined( FUNCONF_USE_UARTPRINTF ) && !FUNCONF_USE_UARTPRINTF) && \
-    (defined( FUNCONF_NULL_PRINTF ) && FUNCONF_NULL_PRINTF)
+	(defined( FUNCONF_USE_UARTPRINTF ) && !FUNCONF_USE_UARTPRINTF) && \
+	(defined( FUNCONF_NULL_PRINTF ) && FUNCONF_NULL_PRINTF)
 
 int _write(int fd, const char *buf, int size)
 int putchar(int c)
@@ -981,13 +981,6 @@ void TMR3_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) 
 void UART2_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void UART3_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void WDOG_BAT_IRQHandler( void )		__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
-// CH57x
-void SPI_IRQHandler( void )				__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
-void TMR_IRQHandler( void )				__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
-void UART_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
-void CMP_IRQHandler( void )				__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
-void KEYSCAN_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
-void ENCODER_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 
 
 void InterruptVector()         __attribute__((naked)) __attribute((section(".init"))) __attribute((weak,alias("InterruptVectorDefault"))) __attribute((naked));
@@ -1187,7 +1180,7 @@ __attribute__ ((naked)) int setjmp( jmp_buf env )
 "	sw s1, 2*4(a0)\n"
 "	sw sp, 3*4(a0)\n"
 
-    // RV32I only registers
+	// RV32I only registers
 #if !defined( __riscv_abi_rve )
 "	sw s2, 4*4(a0)\n"
 "	sw s3, 5*4(a0)\n"
@@ -1222,14 +1215,14 @@ __attribute__ ((naked)) int setjmp( jmp_buf env )
 
 __attribute__ ((naked)) void longjmp( jmp_buf env, int val )
 {
-    asm volatile(
-    // Common registers
+	asm volatile(
+	// Common registers
 "	lw ra, 0*4(a0)\n"
 "	lw s0, 1*4(a0)\n"
 "	lw s1, 2*4(a0)\n"
 "	lw sp, 3*4(a0)\n"
 
-    // RV32I only registers
+	// RV32I only registers
 #if !defined( __riscv_abi_rve )
 "	lw s2, 4*4(a0)\n"
 "	lw s3, 5*4(a0)\n"
@@ -1301,8 +1294,8 @@ void SetupUART( int uartBRR )
 WEAK int _write(int fd, const char *buf, int size)
 {
 	for(int i = 0; i < size; i++){
-	    while( !(USART1->STATR & USART_FLAG_TC));
-	    USART1->DATAR = *buf++;
+		while( !(USART1->STATR & USART_FLAG_TC));
+		USART1->DATAR = *buf++;
 	}
 	return size;
 }
@@ -1336,7 +1329,7 @@ static void internal_handle_input( volatile uint32_t * dmdata0 )
 void poll_input( void )
 {
 	volatile uint32_t * dmdata0 = (volatile uint32_t *)DMDATA0;
- 	if( ((*dmdata0) & 0x80) == 0 )
+	if( ((*dmdata0) & 0x80) == 0 )
 	{
 		internal_handle_input( dmdata0 );
 		*dmdata0 = 0x84;
@@ -1445,10 +1438,10 @@ void SetupDebugPrintf( void )
 int WaitForDebuggerToAttach( int timeout_ms )
 {
 
-#if defined(CH32V20x) || defined(CH32V30x)
+#if defined(CH32V20x) || defined(CH32V30x) || (defined(CH57x) && MCU_PACKAGE == 3) || defined(CH59x)
 	#define systickcnt_t uint64_t
 	#define SYSTICKCNT SysTick->CNT
-#elif defined(CH32V10x) || defined(CH32X03x)
+#elif defined(CH32V10x) || defined(CH32X03x) || defined(CH57x)
 	#define systickcnt_t uint32_t
 	#define SYSTICKCNT SysTick->CNTL
 #else
@@ -1474,8 +1467,8 @@ int WaitForDebuggerToAttach( int timeout_ms )
 #endif
 
 #if (defined( FUNCONF_USE_DEBUGPRINTF ) && !FUNCONF_USE_DEBUGPRINTF) && \
-    (defined( FUNCONF_USE_UARTPRINTF ) && !FUNCONF_USE_UARTPRINTF) && \
-    (defined( FUNCONF_NULL_PRINTF ) && FUNCONF_NULL_PRINTF)
+	(defined( FUNCONF_USE_UARTPRINTF ) && !FUNCONF_USE_UARTPRINTF) && \
+	(defined( FUNCONF_NULL_PRINTF ) && FUNCONF_NULL_PRINTF)
 
 WEAK int _write(int fd, const char *buf, int size)
 {
@@ -1497,9 +1490,13 @@ void DelaySysTick( uint32_t n )
 #elif defined(CH32V20x) || defined(CH32V30x) || defined(CH59x)
 	uint64_t targend = SysTick->CNT + n;
 	while( ((int64_t)( SysTick->CNT - targend )) < 0 );
-#elif defined(CH32V10x) || defined(CH32X03x) || defined(CH57x)
+#elif defined(CH32V10x) || defined(CH32X03x) || (defined(CH57x) && MCU_PACKAGE != 3)
 	uint32_t targend = SysTick->CNTL + n;
 	while( ((int32_t)( SysTick->CNTL - targend )) < 0 );
+#elif defined(CH57x) && MCU_PACKAGE == 3
+	// ch573 insisted on being special, it's counting down
+	uint64_t targend = SysTick->CNT - n;
+	while( ((int64_t)( SysTick->CNT - targend )) > 0 );
 #else
 	#error DelaySysTick not defined.
 #endif
@@ -1571,8 +1568,27 @@ void SystemInit( void )
 
 #if defined(CH57x) // has no HSI
 #ifndef CLK_SOURCE_CH57X
-	#define CLK_SOURCE_CH57X CLK_SOURCE_HSE_PLL_100MHz
+	#define CLK_SOURCE_CH57X CLK_SOURCE_HSE_PLL_60MHz
 #endif
+#if MCU_PACKAGE == 3
+	SYS_CLKTypeDef sc = CLK_SOURCE_CH57X;
+	SYS_SAFE_ACCESS_ENABLE
+	R8_PLL_CONFIG &= ~(1 << 5); //
+	if(sc & 0x20)
+	{ // HSE div
+		R32_CLK_SYS_CFG = (0 << 6) | (sc & 0x1f) | RB_TX_32M_PWR_EN | RB_PLL_PWR_EN;
+		ADD_N_NOPS(4);
+		R8_FLASH_CFG = 0x51;
+	}
+
+	else if(sc & 0x40)
+	{ // PLL div
+		R32_CLK_SYS_CFG = (1 << 6) | (sc & 0x1f) | RB_TX_32M_PWR_EN | RB_PLL_PWR_EN;
+		ADD_N_NOPS(4);
+		R8_FLASH_CFG = 0x53;
+	}
+	SYS_SAFE_ACCESS_DISABLE
+#else
 	SYS_SAFE_ACCESS_ENABLE
 	uint16_t clk_sys_cfg;
 	uint8_t x32M_c;
@@ -1609,6 +1625,7 @@ void SystemInit( void )
 		R8_CLK_SYS_CFG = sc;
 	}
 	SYS_SAFE_ACCESS_DISABLE
+#endif // MCU_PACKAGE == 3 (ch573)
 #elif defined(CH59x) // has no HSI
 #ifndef CLK_SOURCE_CH59X
 	#define CLK_SOURCE_CH59X CLK_SOURCE_PLL_60MHz

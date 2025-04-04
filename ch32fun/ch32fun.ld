@@ -84,8 +84,11 @@ MEMORY
   #if MCU_PACKAGE == 0 || MCU_PACKAGE == 2
     FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 240K
     RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 12K
+  #elif MCU_PACKAGE == 3
+    FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 512K
+    RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 18K
   #else
-    #error "Unknown MCU package, only ch570 and ch572 are supported at the moment"
+    #error "Unknown MCU package, only ch570, 2 and 3 are supported at the moment"
   #endif
 #else
 	#error "Unknown MCU target"

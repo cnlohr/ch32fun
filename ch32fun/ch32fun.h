@@ -209,7 +209,7 @@
 
 #ifndef FUNCONF_SYSTEM_CORE_CLOCK
 	#if defined(CH57x) // no PLL multiplier, but a divider from the 480 MHz clock
-		#define FUNCONF_SYSTEM_CORE_CLOCK 100000000 // default in ch32fun.c using CLK_SOURCE_PLL_100MHz
+		#define FUNCONF_SYSTEM_CORE_CLOCK 60000000 // default in ch32fun.c using CLK_SOURCE_PLL_60MHz
 		#if defined(CLK_SOURCE_CH57X)
 			#error Must define FUNCONF_SYSTEM_CORE_CLOCK too if CLK_SOURCE_CH57X is defined
 		#endif
