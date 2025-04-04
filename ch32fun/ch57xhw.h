@@ -22,21 +22,33 @@ typedef enum IRQn
 	Software_IRQn = 14,      /* 14 software Interrupt                                */
 
 	/******  RISC-V specific Interrupt Numbers *********************************************************/
+	TMR0_IRQn = 16,          /* TMR0 */
 	GPIOA_IRQn = 17,         /* GPIOA */
-	SPI_IRQn = 19,           /* SPI */
+	GPIOB_IRQn = 18,         /* GPIOB */
+	SPI0_IRQn = 19,          /* SPI0 */
 	BB_IRQn = 20,            /* BLEB */
 	LLE_IRQn = 21,           /* BLEL */
 	USB_IRQn = 22,           /* USB */
-	TMR_IRQn = 24,           /* TMR */
-	UART_IRQn = 27,          /* UART */
+	TMR1_IRQn = 24,          /* TMR1 */
+	TMR2_IRQn = 25,          /* TMR2 */
+	UART0_IRQn = 26,         /* UART0 */
+	UART1_IRQn = 27,         /* UART1 */
 	RTC_IRQn = 28,           /* RTC */
-	CMP_IRQn = 29,           /* CMP */
+	ADC_IRQn = 29,           /* CMP */
 	I2C_IRQn = 30,           /* I2C */
 	PWMX_IRQn = 31,          /* PWMX */
-	KEYSCAN_IRQn = 33,       /* KEYSCAN */
-	ENCODER_IRQn = 34,       /* ENCODER */
+	TMR3_IRQn = 32,          /* TMR3 */
+	UART2_IRQn = 33,         /* UART2 / KEYSCAN */
+	UART3_IRQn = 34,         /* UART3 / ENCODER */
 	WDOG_BAT_IRQn = 35,      /* WDOG_BAT */
 } IRQn_Type;
+
+#define TMR_IRQn TMR1_IRQn
+#define SPI_IRQn SPI0_IRQn
+#define UART_IRQn UART1_IRQn
+#define CMP_IRQn ADC_IRQn
+#define KEYSCAN_IRQn UART2_IRQn
+#define ENCODER_IRQn UART3_IRQn
 
 #define BASE_VECTOR "\n\
 	.balign  2\n\
@@ -59,46 +71,59 @@ typedef enum IRQn
 	.word   SW_Handler                 /* SW Handler */\n\
 	.word   0\n\
 	/* External Interrupts */\n\
-	.word   0                          /* 16 */\n\
+	.word   TMR0_IRQHandler            /* 16: TMR0 */\n\
 	.word   GPIOA_IRQHandler           /* GPIOA */\n\
-	.word   0 \n\
-	.word   SPI_IRQHandler             /* SPI */\n\
+	.word   GPIOB_IRQHandler           /* GPIOB */\n\
+	.word   SPI0_IRQHandler            /* SPI0 */\n\
 	.word   BB_IRQHandler              /* BLEB */\n\
 	.word   LLE_IRQHandler             /* BLEL */\n\
 	.word   USB_IRQHandler             /* USB */\n\
 	.word   0 \n\
-	.word   TMR_IRQHandler             /* TMR */\n\
-	.word   0 \n\
-	.word   0 \n\
-	.word   UART_IRQHandler            /* UART */\n\
+	.word   TMR1_IRQHandler            /* TMR1 */\n\
+	.word   TMR2_IRQHandler            /* TMR2 */\n\
+	.word   UART0_IRQHandler           /* UART0 */\n\
+	.word   UART1_IRQHandler           /* UART1 */\n\
 	.word   RTC_IRQHandler             /* RTC */\n\
-	.word   CMP_IRQHandler             /* CMP */\n\
+	.word   ADC_IRQHandler             /* ADC */\n\
 	.word   I2C_IRQHandler             /* I2C */\n\
 	.word   PWMX_IRQHandler            /* PWMX */\n\
-	.word   0 \n\
-	.word   KEYSCAN_IRQHandler         /* KEYSCAN */\n\
-	.word   ENCODER_IRQHandler         /* ENCODER */\n\
+	.word   TMR3_IRQHandler            /* TMR3 */\n\
+	.word   UART2_IRQHandler           /* UART2 / KEYSCAN */\n\
+	.word   UART3_IRQHandler           /* UART3 / ENCODER */\n\
 	.word   WDOG_BAT_IRQHandler        /* WDOG_BAT */\n"
 
+// ch570/2 has slightly different interrupts
+#define TMR_IRQHandler TMR1_IRQHandler
+#define SPI_IRQHandler SPI0_IRQHandler
+#define UART_IRQHandler UART1_IRQHandler
+#define CMP_IRQHandler ADC_IRQHandler
+#define KEYSCAN_IRQHandler UART2_IRQHandler
+#define ENCODER_IRQHandler UART3_IRQHandler
 #define DEFAULT_INTERRUPT_VECTOR_CONTENTS BASE_VECTOR "\n.option pop;\n"
 
 /* memory mapped structure for SysTick */
-typedef struct
+typedef struct __attribute__((packed))
 {
-   __IO uint32_t CTLR;
-   __IO uint32_t SR;
-   union
-   {
-	   __IO uint32_t CNT;
-	   __IO uint32_t CNTL;
-   };
-   uint8_t RESERVED[4];
-   union
+	__IO uint32_t CTLR;
+#if MCU_PACKAGE == 3
+	__IO uint64_t CNT;
+	__IO uint64_t CMP;
+	__IO uint32_t CNTFG;
+#else
+	__IO uint32_t SR;
+	union
+	{
+		__IO uint32_t CNT;
+		__IO uint32_t CNTL;
+	};
+	uint8_t RESERVED[4];
+	union
 	{
 		__IO uint32_t CMP;
 		__IO uint32_t CMPL;
 	};
 	uint8_t RESERVED0[4];
+#endif
 } SysTick_Type;
 
 /* memory mapped structure for Program Fast Interrupt Controller (PFIC) */
@@ -107,7 +132,7 @@ typedef struct
 	__I uint32_t  ISR[8];           // 0
 	__I uint32_t  IPR[8];           // 20H
 	__IO uint32_t ITHRESDR;         // 40H
-	uint8_t       RESERVED[8];      // 44H
+	uint8_t       RESERVED[4];      // 44H
 	__O uint32_t  CFGR;             // 48H
 	__I uint32_t  GISR;             // 4CH
 	__IO uint8_t  VTFIDR[4];        // 50H
@@ -142,8 +167,8 @@ typedef struct
 #define PFIC                       ((PFIC_Type *) PFIC_BASE)
 #define NVIC                       PFIC
 #define NVIC_KEY1                  ((uint32_t)0xFA050000)
-#define NVIC_KEY2	                 ((uint32_t)0xBCAF0000)
-#define NVIC_KEY3	                 ((uint32_t)0xBEEF0000)
+#define NVIC_KEY2                  ((uint32_t)0xBCAF0000)
+#define NVIC_KEY3                  ((uint32_t)0xBEEF0000)
 
 #define SysTick                    ((SysTick_Type *) SysTick_BASE)
 #define SysTick_LOAD_RELOAD_Msk    (0xFFFFFFFFFFFFFFFF)
@@ -158,6 +183,26 @@ typedef struct
 
 typedef enum
 {
+#if MCU_PACKAGE == 3
+	 CLK_SOURCE_LSI = 0x00,
+	 CLK_SOURCE_LSE,
+
+	 CLK_SOURCE_HSE_8MHz = 0x24,
+	 CLK_SOURCE_HSE_6_4MHz = 0x25,
+	 CLK_SOURCE_HSE_4MHz = 0x28,
+	 CLK_SOURCE_HSE_2MHz = (0x20 | 16),
+	 CLK_SOURCE_HSE_1MHz = (0x20 | 0),
+
+	 CLK_SOURCE_PLL_60MHz = 0x48,
+	 CLK_SOURCE_PLL_48MHz = (0x40 | 10),
+	 CLK_SOURCE_PLL_40MHz = (0x40 | 12),
+	 CLK_SOURCE_PLL_36_9MHz = (0x40 | 13),
+	 CLK_SOURCE_PLL_32MHz = (0x40 | 15),
+	 CLK_SOURCE_PLL_30MHz = (0x40 | 16),
+	 CLK_SOURCE_PLL_24MHz = (0x40 | 20),
+	 CLK_SOURCE_PLL_20MHz = (0x40 | 24),
+	 CLK_SOURCE_PLL_15MHz = (0x40 | 0),
+#else
 	CLK_SOURCE_LSI = 0xC0,
 
 	CLK_SOURCE_HSE_16MHz = (0x02),
@@ -167,15 +212,16 @@ typedef enum
 	CLK_SOURCE_HSE_2MHz = (0x10),
 	CLK_SOURCE_HSE_1MHz = (0x0),
 
-	CLK_SOURCE_HSE_PLL_100MHz = (0x40 | 6),
-	CLK_SOURCE_HSE_PLL_75MHz = (0x40 | 8),
-	CLK_SOURCE_HSE_PLL_60MHz = (0x40 | 10),
-	CLK_SOURCE_HSE_PLL_50MHz = (0x40 | 12),
-	CLK_SOURCE_HSE_PLL_40MHz = (0x40 | 15),
-	CLK_SOURCE_HSE_PLL_30MHz = (0x40 | 20),
-	CLK_SOURCE_HSE_PLL_25MHz = (0x40 | 24),
-	CLK_SOURCE_HSE_PLL_24MHz = (0x40 | 25),
-	CLK_SOURCE_HSE_PLL_20MHz = (0x40 | 30),
+	CLK_SOURCE_PLL_100MHz = (0x40 | 6),
+	CLK_SOURCE_PLL_75MHz = (0x40 | 8),
+	CLK_SOURCE_PLL_60MHz = (0x40 | 10),
+	CLK_SOURCE_PLL_50MHz = (0x40 | 12),
+	CLK_SOURCE_PLL_40MHz = (0x40 | 15),
+	CLK_SOURCE_PLL_30MHz = (0x40 | 20),
+	CLK_SOURCE_PLL_25MHz = (0x40 | 24),
+	CLK_SOURCE_PLL_24MHz = (0x40 | 25),
+	CLK_SOURCE_PLL_20MHz = (0x40 | 30),
+#endif
 } SYS_CLKTypeDef;
 
 // For debug writing to the debug interface.
@@ -188,6 +234,8 @@ typedef enum
 #define R8_CLK_SYS_CFG      (*((vu8*)0x40001008))     // RWA, system clock configuration, SAM
 #define  RB_CLK_SYS_MOD     0xC0                      // RWA, system clock source mode: 00/10=divided from 32MHz, 01=divided from PLL-600MHz,11=directly from LSI
 #define  RB_CLK_PLL_DIV     0x1F                      // RWA, output clock divider from PLL or CK32M
+#define  RB_TX_32M_PWR_EN   0x40000                   // RWA, extern 32MHz HSE power contorl
+#define  RB_PLL_PWR_EN      0x100000                  // RWA, PLL power control
 #define R8_HFCK_PWR_CTRL    (*((vu8*)0x4000100A))     // RWA, power configuration for system high clock, SAM
 #define  RB_CLK_PLL_PON     0x10                      // RWA, PLL power control
 #define  RB_CLK_XT32M_KEEP  0x08                      // RWA, RWA, disable auto closing when in halt mode
@@ -232,6 +280,15 @@ typedef enum
 #define R32_PA_PD_DRV       (*((vu32*)0x400010B4)) // RW, PA pulldown for input or PA driving capability for output
 #define R32_PA_SET          (*((vu32*)0x400010B8)) // RW, PA set high for output ,1=set output high,0=IDLE
 
+/* GPIO PB register */
+#define R32_PB_DIR          (*((vu32*)0x400010C0)) // RW, GPIO PB I/O direction: 0=in, 1=out
+#define R32_PB_PIN          (*((vu32*)0x400010C4)) // RO, GPIO PB input
+#define R32_PB_OUT          (*((vu32*)0x400010C8)) // RW, GPIO PB output
+#define R32_PB_CLR          (*((vu32*)0x400010CC)) // WZ, GPIO PB clear output: 0=keep, 1=clear
+#define R32_PB_PU           (*((vu32*)0x400010D0)) // RW, GPIO PB pullup resistance enable
+#define R32_PB_PD_DRV       (*((vu32*)0x400010D4)) // RW, PB pulldown for input or PB driving capability for output
+#define R32_PB_SET          (*((vu32*)0x400010D8)) // RW, PB set high for output ,1=set output high,0=IDLE
+
 #define PA0      (0x00000001) /*!< Pin 0 selected */
 #define PA1      (0x00000002) /*!< Pin 1 selected */
 #define PA2      (0x00000004) /*!< Pin 2 selected */
@@ -244,7 +301,37 @@ typedef enum
 #define PA9      (0x00000200) /*!< Pin 9 selected */
 #define PA10     (0x00000400) /*!< Pin 10 selected */
 #define PA11     (0x00000800) /*!< Pin 11 selected */
-#define PA_All    (0xFFFFFFFF) /*!< All pins selected */
+#define PA12     (0x00001000) /*!< Pin 12 selected */
+#define PA13     (0x00002000) /*!< Pin 13 selected */
+#define PA14     (0x00004000) /*!< Pin 14 selected */
+#define PA15     (0x00008000) /*!< Pin 15 selected */
+
+#define PB       (0x80000000) /* Bit mask to indicate bank B */
+#define PB0      (0x80000001) /*!< Pin 0 selected */
+#define PB1      (0x80000002) /*!< Pin 1 selected */
+#define PB2      (0x80000004) /*!< Pin 2 selected */
+#define PB3      (0x80000008) /*!< Pin 3 selected */
+#define PB4      (0x80000010) /*!< Pin 4 selected */
+#define PB5      (0x80000020) /*!< Pin 5 selected */
+#define PB6      (0x80000040) /*!< Pin 6 selected */
+#define PB7      (0x80000080) /*!< Pin 7 selected */
+#define PB8      (0x80000100) /*!< Pin 8 selected */
+#define PB9      (0x80000200) /*!< Pin 9 selected */
+#define PB10     (0x80000400) /*!< Pin 10 selected */
+#define PB11     (0x80000800) /*!< Pin 11 selected */
+#define PB12     (0x80001000) /*!< Pin 12 selected */
+#define PB13     (0x80002000) /*!< Pin 13 selected */
+#define PB14     (0x80004000) /*!< Pin 14 selected */
+#define PB15     (0x80008000) /*!< Pin 15 selected */
+#define PB16     (0x80010000) /*!< Pin 16 selected */
+#define PB17     (0x80020000) /*!< Pin 17 selected */
+#define PB18     (0x80040000) /*!< Pin 18 selected */
+#define PB19     (0x80080000) /*!< Pin 19 selected */
+#define PB20     (0x80100000) /*!< Pin 20 selected */
+#define PB21     (0x80200000) /*!< Pin 21 selected */
+#define PB22     (0x80400000) /*!< Pin 22 selected */
+#define PB23     (0x80800000) /*!< Pin 23 selected */
+#define P_All    (0xFFFFFFFF) /*!< All pins selected */
 
 typedef enum
 {
