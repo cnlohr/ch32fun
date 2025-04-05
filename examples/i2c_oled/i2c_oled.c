@@ -4,7 +4,8 @@
  */
 
 // what type of OLED - uncomment just one
-//#define SSD1306_64X32
+// #define SSD1306_64X32
+// #define SSD1306_72X40
 #define SSD1306_128X32
 //#define SSD1306_128X64
 

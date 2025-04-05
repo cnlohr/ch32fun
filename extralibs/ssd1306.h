@@ -17,7 +17,7 @@
 // Let the caller configure the OLED.
 #else
 // characteristics of each type
-#if !defined (SSD1306_64X32) && !defined (SSD1306_128X32) && !defined (SSD1306_128X64) && !defined (SH1107_128x128) && !(defined(SSD1306_W) && defined(SSD1306_H) && defined(SSD1306_OFFSET) )
+#if !defined (SSD1306_64X32) && !defined (SSD1306_72X40) && !defined (SSD1306_128X32) && !defined (SSD1306_128X64) && !defined (SH1107_128x128) && !(defined(SSD1306_W) && defined(SSD1306_H) && defined(SSD1306_OFFSET) )
 	#error "Please define the SSD1306_WXH resolution used in your application"
 #endif
 
@@ -26,6 +26,13 @@
 #define SSD1306_H 32
 #define SSD1306_FULLUSE
 #define SSD1306_OFFSET 32
+#endif
+
+#ifdef SSD1306_72X40
+#define SSD1306_W 72
+#define SSD1306_H 40
+#define SSD1306_FULLUSE
+#define SSD1306_OFFSET 28
 #endif
 
 #ifdef SSD1306_128X32
@@ -132,8 +139,10 @@ const uint8_t ssd1306_init_array[] =
     SSD1306_SETDISPLAYCLOCKDIV,            // 0xD5
     0x80,                                  // the suggested ratio 0x80
     SSD1306_SETMULTIPLEX,                  // 0xA8
-#ifdef SSD1306_64X32
+#if defined(SSD1306_64X32)
 	0x1F,                                  // for 64-wide displays
+#elif defined(SSD1306_72X40)
+	0x27,
 #else
 	0x3F,                                  // for 128-wide displays
 #endif
@@ -149,7 +158,11 @@ const uint8_t ssd1306_init_array[] =
     SSD1306_SETCOMPINS,                    // 0xDA
 	0x12,                                  //
     SSD1306_SETCONTRAST,                   // 0x81
+#ifdef SSD1306_72X40
+	0xAF,
+#else
 	0x8F,
+#endif
     SSD1306_SETPRECHARGE,                  // 0xd9
 	0xF1,
     SSD1306_SETVCOMDETECT,                 // 0xDB
