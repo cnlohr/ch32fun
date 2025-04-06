@@ -964,12 +964,13 @@ void USBPD_WKUP_IRQHandler( void )		__attribute__((section(".text.vector_handler
 void TIM2_CC_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void TIM2_TRG_IRQHandler( void )		__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void TIM2_BRK_IRQHandler( void )		__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
-// CH59x
+// CH5xx
 void TMR0_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void GPIOA_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void GPIOB_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void SPI0_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void USB_IRQHandler( void )				__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void USB2_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void TMR1_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void TMR2_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void UART0_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
@@ -1076,7 +1077,7 @@ asm volatile(
 "	mret\n" : : [main]"r"(main) );
 }
 
-#elif defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x) || defined(CH59x)
+#elif defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x) || defined(CH58x) || defined(CH59x)
 
 void handle_reset( void )
 {
@@ -1473,7 +1474,7 @@ void SetupDebugPrintf( void )
 int WaitForDebuggerToAttach( int timeout_ms )
 {
 
-#if defined(CH32V20x) || defined(CH32V30x)
+#if defined(CH32V20x) || defined(CH32V30x) || defined(CH58x) || defined(CH59x)
 	#define systickcnt_t uint64_t
 	#define SYSTICKCNT SysTick->CNT
 #elif defined(CH32V10x) || defined(CH32X03x)
@@ -1522,7 +1523,7 @@ void DelaySysTick( uint32_t n )
 #if defined(CH32V003) || defined(CH32V00x)
 	uint32_t targend = SysTick->CNT + n;
 	while( ((int32_t)( SysTick->CNT - targend )) < 0 );
-#elif defined(CH32V20x) || defined(CH32V30x) || defined(CH59x)
+#elif defined(CH32V20x) || defined(CH32V30x) || defined(CH58x) || defined(CH59x)
 	uint64_t targend = SysTick->CNT + n;
 	while( ((int64_t)( SysTick->CNT - targend )) < 0 );
 #elif defined(CH32V10x) || defined(CH32X03x)
@@ -1591,14 +1592,14 @@ void SystemInit( void )
 	#endif
 #endif
 
-#if defined(CH59x) // has no HSI
-#ifndef CLK_SOURCE_CH59X
-	#define CLK_SOURCE_CH59X CLK_SOURCE_PLL_60MHz
+#if defined(CH58x) || defined(CH59x) // has no HSI
+#ifndef CLK_SOURCE_CH5XX
+	#define CLK_SOURCE_CH5XX CLK_SOURCE_PLL_60MHz
 #endif
+	SYS_CLKTypeDef sc = CLK_SOURCE_CH5XX;
 	SYS_SAFE_ACCESS(
 		R8_PLL_CONFIG &= ~(1 << 5);
 	);
-	SYS_CLKTypeDef sc = CLK_SOURCE_CH59X;
 	if(sc & 0x20)  // HSE div
 	{
 		SYS_SAFE_ACCESS(
@@ -1684,11 +1685,11 @@ void SystemInit( void )
 	#endif
 #endif
 
-#if !defined(CH59x)
+#if !defined(CH58x) && !defined(CH59x)
 	RCC->INTR  = 0x009F0000;                               // Clear PLL, CSSC, HSE, HSI and LSI ready flags.
 #endif
 
-#if defined(FUNCONF_USE_PLL) && FUNCONF_USE_PLL && !defined(CH59x)
+#if defined(FUNCONF_USE_PLL) && FUNCONF_USE_PLL && !defined(CH58x) && !defined(CH59x)
 	while((RCC->CTLR & RCC_PLLRDY) == 0);                       	// Wait till PLL is ready
 	uint32_t tmp32 = RCC->CFGR0 & ~(0x03);							// clr the SW
 	RCC->CFGR0 = tmp32 | RCC_SW_PLL;                       			// Select PLL as system clock source

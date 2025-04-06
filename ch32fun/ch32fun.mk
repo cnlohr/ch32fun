@@ -198,6 +198,23 @@ else ifeq ($(findstring CH32V30,$(TARGET_MCU)),CH32V30) #CH32V307
 	endif
 
 	TARGET_MCU_LD:=3
+else ifeq ($(findstring CH58,$(TARGET_MCU)),CH58) # CH582
+	TARGET_MCU_PACKAGE?=CH582F
+	CFLAGS_ARCH+=-march=rv32imac \
+		-mabi=ilp32 \
+		-DCH58x=1
+
+	# MCU Flash/RAM split
+	ifeq ($(findstring 582, $(TARGET_MCU_PACKAGE)), 582)
+		MCU_PACKAGE:=2
+	endif
+
+	# Package
+	ifeq ($(findstring F, $(TARGET_MCU_PACKAGE)), F)
+		CFLAGS+=-DCH58xF
+	endif
+
+	TARGET_MCU_LD:=8
 else ifeq ($(findstring CH59,$(TARGET_MCU)),CH59) # CH592 1
 	TARGET_MCU_PACKAGE?=CH592F
 	CFLAGS_ARCH+=-march=rv32imac \
@@ -218,7 +235,7 @@ else ifeq ($(findstring CH59,$(TARGET_MCU)),CH59) # CH592 1
 		CFLAGS+=-DCH59xF
 	endif
 
-	TARGET_MCU_LD:=8
+	TARGET_MCU_LD:=9
 else
 	ERROR:=$(error Unknown MCU $(TARGET_MCU))
 endif
