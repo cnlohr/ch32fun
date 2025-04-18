@@ -11,7 +11,8 @@
 
 #if defined(WINDOWS) || defined(WIN32) || defined(_WIN32)
 void Sleep(uint32_t dwMilliseconds);
-#define usleep( x ) Sleep( x / 1000 );
+#define usleep( x ) Sleep( x / 1000 )
+#define sleep( x ) Sleep( x * 1000 )
 #else
 #include <unistd.h>
 #endif
@@ -96,13 +97,46 @@ static const unsigned char halt_wait_blob[] = {
 //	0xfd, 0x56, 0x94, 0xc1, 0xfd, 0x56, 0x14, 0xc1, 0x82, 0x80 };
 //
 // Alternatively, we do it ourselves.
-static const unsigned char run_app_blob[] = {
-	0x37, 0x07, 0x67, 0x45, 0xb7, 0x27, 0x02, 0x40, 0x13, 0x07, 0x37, 0x12,
-	0x98, 0xd7, 0x37, 0x97, 0xef, 0xcd, 0x13, 0x07, 0xb7, 0x9a, 0x98, 0xd7,
-	0x23, 0xa6, 0x07, 0x00, 0x13, 0x07, 0x00, 0x08, 0x98, 0xcb, 0xb7, 0xf7,
-	0x00, 0xe0, 0x37, 0x07, 0x00, 0x80, 0x23, 0xa8, 0xe7, 0xd0, 0x82, 0x80,
-};
 
+// static const unsigned char run_app_blob[] = {
+// 	0x37, 0x07, 0x67, 0x45, 0xb7, 0x27, 0x02, 0x40, 0x13, 0x07, 0x37, 0x12,
+// 	0x98, 0xd7, 0x37, 0x97, 0xef, 0xcd, 0x13, 0x07, 0xb7, 0x9a, 0x98, 0xd7,
+// 	0x23, 0xa6, 0x07, 0x00, 0x13, 0x07, 0x00, 0x08, 0x98, 0xcb, 0xb7, 0xf7,
+// 	0x00, 0xe0, 0x37, 0x07, 0x00, 0x80, 0x23, 0xa8, 0xe7, 0xd0, 0x82, 0x80,
+// };
+
+static const unsigned char run_app_blob[] = {
+	0xb7,0xf5,0xff,0x1f,
+	0x93,0x87,0xc5,0x77,
+	0x03,0xa7,0x07,0x00,
+	0x13,0x57,0x07,0x01,
+	0x83,0x96,0x07,0x00,
+	0x93,0xc7,0xc6,0x77,
+	0x63,0x16,0xf7,0x00,
+	0x33,0x87,0xb6,0x00,
+	0x67,0x00,0x07,0x00,
+	0xb7,0x27,0x02,0x40,
+	0x93,0x87,0x87,0x02,
+	0x37,0x07,0x67,0x45,
+	0x13,0x07,0x37,0x12,
+	0x23,0xa0,0xe7,0x00,
+	0xb7,0x27,0x02,0x40,
+	0x93,0x87,0x87,0x02,
+	0x37,0x97,0xef,0xcd,
+	0x13,0x07,0xb7,0x9a,
+	0x23,0xa0,0xe7,0x00,
+	0xb7,0x27,0x02,0x40,
+	0x93,0x87,0xc7,0x00,
+	0x23,0xa0,0x07,0x00,
+	0xb7,0x27,0x02,0x40,
+	0x93,0x87,0x07,0x01,
+	0x13,0x07,0x00,0x08,
+	0x23,0xa0,0xe7,0x00,
+	0xb7,0xf7,0x00,0xe0,
+	0x93,0x87,0x07,0xd1,
+	0x37,0x07,0x00,0x80,
+	0x23,0xa0,0xe7,0x00, 
+};
 
 static void ResetOp( struct B003FunProgrammerStruct * eps )
 {
@@ -121,7 +155,6 @@ static void WriteOp4( struct B003FunProgrammerStruct * eps, uint32_t opsend )
 	}
 	eps->commandplace = newend;
 }
-
 
 static void WriteOpArb( struct B003FunProgrammerStruct * eps, const uint8_t * data, int len )
 {
@@ -228,7 +261,7 @@ static int B003FunWaitForDoneOp( void * dev, int ignore )
 
 // static int B003FunDelayUS( void * dev, int microseconds )
 // {
-// 	usleep( microseconds );
+	// usleep( microseconds );
 // 	return 0;
 // }
 
@@ -406,6 +439,11 @@ static int InternalB003FunBoot( void * dev )
 	printf( "Booting\n" );
 	ResetOp( eps );
 	WriteOpArb( eps, run_app_blob, sizeof(run_app_blob) );
+	// for( int i = 0; i < 128; i++ )
+	// {
+	// 	printf( "%02x ", eps->commandbuffer[i] );
+	// }
+	// printf( "\n" );
 	eps->no_get_report = 1;
 	if( CommitOp( eps ) ) return -5;
 	return 0;
@@ -596,7 +634,29 @@ void * TryInit_B003Fun(uint32_t id)
 	hid_init();
 	fprintf( stderr, "VID:0x%04x, PID:0x%04x\n", id>>16, id&0xFFFF );
 	hid_device * hd = hid_open( id>>16, id&0xFFFF, 0); // third parameter is "serial"
-	if( !hd ) return 0;
+	if( !hd ) {
+		hd = hid_open(0x1209, 0xd003, 0);	//	Looking for default rv003usb device
+		if (!hd) {
+			return 0;
+		} else {
+			fprintf( stderr, "Trying to reboot into bootloader\n");
+			uint8_t buffer[7] = { 0xfd, 0x12, 0x34, 0xaa, 0xbb, 0xcc, 0xdd };
+			hid_send_feature_report(hd, buffer, sizeof(buffer));	// Sending magic soft reboot command
+			fprintf( stderr, "Sent magic packet\n");
+			memset(buffer, 0, 7);
+			int r2 = hid_get_feature_report(hd, buffer, 7);
+			// I wish we had a better way to know if target understands our magic command
+			if (r2 < 0) {
+				for (int i = 0; i < 5; i++) {
+					hd = hid_open( id>>16, id&0xFFFF, 0);
+					if (hd) break;
+					sleep(1);
+				}
+			}
+			// hd = hid_open( id>>16, id&0xFFFF, 0);
+			if (!hd) return 0;
+		}
+  }
 
 	//extern int g_hidapiSuppress;
 	//g_hidapiSuppress = 1;  // Suppress errors for this device.  (don't do this yet)
@@ -781,12 +841,48 @@ void * TryInit_B003Fun(uint32_t id)
 */
 
 
-/* Run app blob
+/* Run app blob (old)
 				FLASH->BOOT_MODEKEYR = FLASH_KEY1;
 				FLASH->BOOT_MODEKEYR = FLASH_KEY2;
 				FLASH->STATR = 0; // 1<<14 is zero, so, boot user code.
 				FLASH->CTLR = CR_LOCK_Set;
 				PFIC->SCTLR = 1<<31;
+*/
+
+/* Run app blob (new)
+		li      a1,0x1FFFF000			// load offset to a1
+		addi    a5,a1,0x77C				// load absolute address of secret area to a5
+		lw      a4,0(a5)					// load reboot function offset + xor from secret to a4
+		srli    a4,a4,16					// shift it to remove lower part (offset)
+		lh      a3,0(a5)					// load offset part to a3
+		xori    a5,a3,0x77C				// find current xor
+		bne     a4,a5,.L2					// if xor is valid
+		add     a4, a3, a1				// make absolute address of reboot function an jump
+		jr      a4
+		// else - means that we didn't find a reboot function address
+		// and need to send the blob to do a reboot
+.L2:													// Same sequence as in "Run app blob (old)"
+		li      a5,1073881088
+		addi    a5,a5,40
+		li      a4,1164378112
+		addi    a4,a4,291
+		sw      a4,0(a5)
+		li      a5,1073881088
+		addi    a5,a5,40
+		li      a4,-839938048
+		addi    a4,a4,-1621
+		sw      a4,0(a5)
+		li      a5,1073881088
+		addi    a5,a5,12
+		sw      zero,0(a5)
+		li      a5,1073881088
+		addi    a5,a5,16
+		li      a4,128
+		sw      a4,0(a5)
+		li      a5,-536809472
+		addi    a5,a5,-752
+		li      a4,-2147483648
+		sw      a4,0(a5)
 */
 
 
