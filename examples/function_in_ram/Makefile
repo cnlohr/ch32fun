@@ -1,6 +1,6 @@
 all : flash
 
-TARGET:=run_from_ram
+TARGET:=function_in_ram
 
 TARGET_MCU?=CH32V003
 include ../../ch32fun/ch32fun.mk
