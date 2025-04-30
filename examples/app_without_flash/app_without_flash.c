@@ -17,6 +17,10 @@ int main()
 {
 	SystemInit();
 
+#ifdef funGpioInitAll
+	funGpioInitAll();
+#endif
+
 	funPinMode( USEPIN, GPIO_CFGLR_OUT_10Mhz_PP );
 
 	while(1)
