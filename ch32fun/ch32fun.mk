@@ -214,6 +214,7 @@ else ifeq ($(findstring CH57,$(TARGET_MCU)),CH57) # CH570 1 2 3
 	else ifeq ($(findstring 573, $(TARGET_MCU_PACKAGE)), 573)
 		MCU_PACKAGE:=3
 	endif
+	CFLAGS+=-DMCU_PACKAGE=$(MCU_PACKAGE)
 
 	# Package
 	ifeq ($(findstring D, $(TARGET_MCU_PACKAGE)), D)

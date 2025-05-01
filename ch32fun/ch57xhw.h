@@ -225,9 +225,15 @@ typedef enum
 } SYS_CLKTypeDef;
 
 // For debug writing to the debug interface.
+#if MCU_PACKAGE == 3
 #define DMDATA0 			((vu32*)0xe0000380)
 #define DMDATA1 			((vu32*)0xe0000384)
 #define DMSTATUS_SENTINEL	((vu32*)0xe0000388)// Reads as 0x00000000 if debugger is attached.
+#else
+#define DMDATA0 			((vu32*)0xe0000340)
+#define DMDATA1 			((vu32*)0xe0000344)
+#define DMSTATUS_SENTINEL	((vu32*)0xe0000348)// Reads as 0x00000000 if debugger is attached.
+#endif
 
 /* System: clock configuration register */
 #define R32_CLK_SYS_CFG     (*((vu32*)0x40001008))    // RWA, system clock configuration, SAM
@@ -252,6 +258,12 @@ typedef enum
 #define SAFE_ACCESS_SIG2    0xA8                      // WO: safe accessing sign value step 2
 #define SAFE_ACCESS_SIG0    0x00                      // WO: safe accessing sign value for disable
 #define R8_CHIP_ID          (*((vu8*)0x40001041))  // RF, chip ID register, always is ID_CH57*
+#define SYS_SAFE_ACCESS(a)  do { R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG1; \
+								 R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG2; \
+								 asm volatile ("nop\nnop"); \
+								 {a} \
+								 R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG0; \
+								 asm volatile ("nop\nnop"); } while(0)
 
 /*System: Miscellaneous Control register */
 #define R32_MISC_CTRL       (*((vu32*)0x40001048)) // RWA, miscellaneous control register

@@ -986,14 +986,6 @@ void TMR3_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) 
 void UART2_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void UART3_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void WDOG_BAT_IRQHandler( void )		__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
-// CH57x
-void SPI_IRQHandler( void )				__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
-void TMR_IRQHandler( void )				__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
-void UART_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
-void CMP_IRQHandler( void )				__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
-void KEYSCAN_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
-void ENCODER_IRQHandler( void )			__attribute__((section(".text.vector_handler"))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
-
 
 void InterruptVector()         __attribute__((naked)) __attribute((section(".init"))) __attribute((weak,alias("InterruptVectorDefault"))) __attribute((naked));
 void InterruptVectorDefault()  __attribute__((naked)) __attribute((section(".init"))) __attribute((naked));
@@ -1611,7 +1603,7 @@ void SystemInit( void )
 	#define CLK_SOURCE_CH5XX CLK_SOURCE_PLL_60MHz
 #endif
 #if defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2)
-	SYS_CLKTypeDef sc = CLK_SOURCE_CH57X;
+	SYS_CLKTypeDef sc = CLK_SOURCE_CH5XX;
 	
 	if(sc == RB_CLK_SYS_MOD)  // LSI
 	{
@@ -1652,14 +1644,13 @@ void SystemInit( void )
 		ADD_N_NOPS(4);
 		R8_FLASH_CFG = 0X51;
 	}
-
 	else if(sc & 0x40) // PLL div
 	{
 		SYS_SAFE_ACCESS(
 			R32_CLK_SYS_CFG = (1 << 6) | (sc & 0x1f) | RB_TX_32M_PWR_EN | RB_PLL_PWR_EN;
 		);
 		ADD_N_NOPS(4);
-		R8_FLASH_CFG = 0X52;
+		R8_FLASH_CFG = 0x52;
 	}
 	else
 	{
@@ -1667,6 +1658,7 @@ void SystemInit( void )
 			R32_CLK_SYS_CFG |= RB_CLK_SYS_MOD;
 		);
 	}
+
 	SYS_SAFE_ACCESS(
 		R8_PLL_CONFIG |= 1 << 7;
 	);
