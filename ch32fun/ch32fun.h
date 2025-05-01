@@ -852,6 +852,7 @@ extern "C" {
 #define GPIO_ReadPortPin(pin)         (*(&R32_PA_PIN + OFFSET_FOR_GPIOB(pin)) &  (pin & ~PB))
 #define funDigitalRead(pin)           GPIO_ReadPortPin(pin)
 #define funDigitalWrite( pin, value ) { if((value)==FUN_HIGH){GPIO_SetBits(pin);} else if((value)==FUN_LOW){GPIO_ResetBits(pin);} }
+#define funGpioInitAll()              // funGpioInitAll() does not do anything on ch5xx, put here for consistency
 
 RV_STATIC_INLINE void funPinMode(u32 pin, GPIOModeTypeDef mode)
 {

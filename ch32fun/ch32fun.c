@@ -1476,10 +1476,10 @@ void SetupDebugPrintf( void )
 int WaitForDebuggerToAttach( int timeout_ms )
 {
 
-#if defined(CH32V20x) || defined(CH32V30x) || (defined(CH57x) && MCU_PACKAGE == 3) || defined(CH58x) || defined(CH59x)
+#if defined(CH32V20x) || defined(CH32V30x) || (defined(CH57x) && MCU_PACKAGE == 3) || defined(CH58x) || defined(CH59x) // ch573
 	#define systickcnt_t uint64_t
 	#define SYSTICKCNT SysTick->CNT
-#elif defined(CH32V10x) || defined(CH32X03x) || defined(CH57x)
+#elif defined(CH32V10x) || defined(CH32X03x) || defined(CH57x) // ch570 ch572
 	#define systickcnt_t uint32_t
 	#define SYSTICKCNT SysTick->CNTL
 #else
@@ -1528,7 +1528,7 @@ void DelaySysTick( uint32_t n )
 #elif defined(CH32V20x) || defined(CH32V30x) || defined(CH58x) || defined(CH59x)
 	uint64_t targend = SysTick->CNT + n;
 	while( ((int64_t)( SysTick->CNT - targend )) < 0 );
-#elif defined(CH32V10x) || defined(CH32X03x) || (defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2))
+#elif defined(CH32V10x) || defined(CH32X03x) || (defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2)) // ch570 ch572
 	uint32_t targend = SysTick->CNTL + n;
 	while( ((int32_t)( SysTick->CNTL - targend )) < 0 );
 #elif defined(CH57x) && MCU_PACKAGE == 3
@@ -1602,7 +1602,7 @@ void SystemInit( void )
 #ifndef CLK_SOURCE_CH5XX
 	#define CLK_SOURCE_CH5XX CLK_SOURCE_PLL_60MHz
 #endif
-#if defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2)
+#if defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2) // ch570 ch572
 	SYS_CLKTypeDef sc = CLK_SOURCE_CH5XX;
 	
 	if(sc == RB_CLK_SYS_MOD)  // LSI
@@ -1631,7 +1631,7 @@ void SystemInit( void )
 			R8_CLK_SYS_CFG = sc;
 		);
 	}
-#else
+#else // ch5xx EXCEPT ch570 ch572
 	SYS_CLKTypeDef sc = CLK_SOURCE_CH5XX;
 	SYS_SAFE_ACCESS(
 		R8_PLL_CONFIG &= ~(1 << 5);

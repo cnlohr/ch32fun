@@ -105,7 +105,7 @@ typedef enum IRQn
 typedef struct __attribute__((packed))
 {
 	__IO uint32_t CTLR;
-#if MCU_PACKAGE == 3
+#if MCU_PACKAGE == 3  // CH573
 	__IO uint64_t CNT;
 	__IO uint64_t CMP;
 	__IO uint32_t CNTFG;
@@ -183,7 +183,7 @@ typedef struct
 
 typedef enum
 {
-#if MCU_PACKAGE == 3
+#if MCU_PACKAGE == 3 // CH573
 	 CLK_SOURCE_LSI = 0x00,
 	 CLK_SOURCE_LSE,
 
@@ -225,7 +225,7 @@ typedef enum
 } SYS_CLKTypeDef;
 
 // For debug writing to the debug interface.
-#if MCU_PACKAGE == 3
+#if MCU_PACKAGE == 3 // CH573
 #define DMDATA0 			((vu32*)0xe0000380)
 #define DMDATA1 			((vu32*)0xe0000384)
 #define DMSTATUS_SENTINEL	((vu32*)0xe0000388)// Reads as 0x00000000 if debugger is attached.

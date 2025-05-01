@@ -23,6 +23,9 @@ int main()
 {
 	SystemInit();
 
+	// Enable GPIOs
+	funGpioInitAll();
+
 	funPinMode( LED, GPIO_CFGLR_OUT_2Mhz_PP );
 
 	while(1)
