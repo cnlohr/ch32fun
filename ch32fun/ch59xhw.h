@@ -528,6 +528,49 @@ typedef enum
 	GPIO_CFGLR_OUT_50Mhz_PP = GPIO_ModeOut_PP_20mA,
 } GPIO_CFGLR_PIN_MODE_Typedef;
 
+#define EEPROM_PAGE_SIZE    256                       // Flash-ROM & Data-Flash page size for writing
+#define EEPROM_BLOCK_SIZE   4096                      // Flash-ROM & Data-Flash block size for erasing
+#define EEPROM_MIN_ER_SIZE  EEPROM_PAGE_SIZE          // Data-Flash minimal size for erasing
+//#define EEPROM_MIN_ER_SIZE  EEPROM_BLOCK_SIZE         // Flash-ROM  minimal size for erasing
+#define EEPROM_MIN_WR_SIZE  1                         // Data-Flash minimal size for writing
+#define EEPROM_MAX_SIZE     0x8000                    // Data-Flash maximum size, 32KB
+#define FLASH_MIN_WR_SIZE   4                         // Flash-ROM minimal size for writing
+#define FLASH_ROM_MAX_SIZE  0x070000                  // Flash-ROM maximum program size, 448KB
+
+#define CMD_FLASH_ROM_START_IO	0x00		// start FlashROM I/O, without parameter
+#define CMD_FLASH_ROM_SW_RESET	0x04		// software reset FlashROM, without parameter
+#define CMD_GET_ROM_INFO		0x06		// get information from FlashROM, parameter @Address,Buffer
+#define CMD_GET_UNIQUE_ID		0x07		// get 64 bit unique ID, parameter @Buffer
+#define CMD_FLASH_ROM_PWR_DOWN	0x0D		// power-down FlashROM, without parameter
+#define CMD_FLASH_ROM_PWR_UP	0x0C		// power-up FlashROM, without parameter
+#define CMD_FLASH_ROM_LOCK		0x08		// lock(protect)/unlock FlashROM data block, return 0 if success, parameter @StartAddr
+// StartAddr: 0=unlock all, 1=lock boot code, 3=lock all code and data
+
+#define CMD_EEPROM_ERASE		0x09		// erase Data-Flash block, return 0 if success, parameter @StartAddr,Length
+#define CMD_EEPROM_WRITE		0x0A		// write Data-Flash data block, return 0 if success, parameter @StartAddr,Buffer,Length
+#define CMD_EEPROM_READ			0x0B		// read Data-Flash data block, parameter @StartAddr,Buffer,Length
+#define CMD_FLASH_ROM_ERASE		0x01		// erase FlashROM block, return 0 if success, parameter @StartAddr,Length
+#define CMD_FLASH_ROM_WRITE		0x02		// write FlashROM data block, minimal block is dword, return 0 if success, parameter @StartAddr,Buffer,Length
+#define CMD_FLASH_ROM_VERIFY	0x03		// read FlashROM data block, minimal block is dword, return 0 if success, parameter @StartAddr,Buffer,Length
+
+#define ROM_CFG_MAC_ADDR	0x7F018			// address for MAC address information
+#define ROM_CFG_BOOT_INFO	0x7DFF8			// address for BOOT information
+
+#define flash_rom_start_io( )                       flash_eeprom_cmd( CMD_FLASH_ROM_START_IO, 0, 0, 0 )
+#define flash_rom_sw_reset( )                       flash_eeprom_cmd( CMD_FLASH_ROM_SW_RESET, 0, 0, 0 )
+#define get_mac_address(Buffer)                     flash_eeprom_cmd( CMD_GET_ROM_INFO, ROM_CFG_MAC_ADDR, Buffer, 0 )
+#define get_boot_info(Buffer)                       flash_eeprom_cmd( CMD_GET_ROM_INFO, ROM_CFG_BOOT_INFO, Buffer, 0 )
+#define get_unique_id(Buffer)                       flash_eeprom_cmd( CMD_GET_UNIQUE_ID, 0, Buffer, 0 )
+#define flash_rom_pwr_down( )                       flash_eeprom_cmd( CMD_FLASH_ROM_PWR_DOWN, 0, 0, 0 )
+#define flash_rom_pwr_up( )                         flash_eeprom_cmd( CMD_FLASH_ROM_PWR_UP, 0, 0, 0 )
+#define eeprom_read(StartAddr,Buffer,Length)        flash_eeprom_cmd( CMD_EEPROM_READ, StartAddr, Buffer, Length )
+#define eeprom_erase(StartAddr,Length)              flash_eeprom_cmd( CMD_EEPROM_ERASE, StartAddr, 0, Length )
+#define eeprom_write(StartAddr,Buffer,Length)       flash_eeprom_cmd( CMD_EEPROM_WRITE, StartAddr, Buffer, Length )
+#define flash_rom_erase(StartAddr,Length)           flash_eeprom_cmd( CMD_FLASH_ROM_ERASE, StartAddr, 0, Length )
+#define flash_rom_write(StartAddr,Buffer,Length)    flash_eeprom_cmd( CMD_FLASH_ROM_WRITE, StartAddr, Buffer, Length )
+#define flash_rom_verify(StartAddr,Buffer,Length)   flash_eeprom_cmd( CMD_FLASH_ROM_VERIFY, StartAddr, Buffer, Length )
+#define flash_rom_read(StartAddr,Buffer,Length)     do { int k,l = (Length +3)>>2; for(k=0; k<l; k++) ((uint32_t*)(Buffer))[k] = ((uint32_t*)(StartAddr))[k]; } while(0)
+
 /* UART0 register */
 #define R32_UART0_CTRL      (*((vu32*)0x40003000)) // RW, UART0 control
 #define R8_UART0_MCR        (*((vu8*)0x40003000))  // RW, UART0 modem control
