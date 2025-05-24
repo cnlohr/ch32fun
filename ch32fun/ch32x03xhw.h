@@ -132,10 +132,21 @@ typedef struct
 {
   __IO uint32_t CTLR;
   __IO uint32_t SR;
-  __IO uint32_t CNTL;
-  __IO uint32_t CNTH;
-  __IO uint32_t CMPL;
-  __IO uint32_t CMPH;
+  union
+  {
+     struct
+     {
+        __IO uint32_t CNTL;
+        __IO uint32_t CNTH;
+        __IO uint32_t CMPL;
+        __IO uint32_t CMPH;
+     };
+     struct
+     {
+        __IO uint64_t CNT;
+        __IO uint64_t CMP;
+     };
+  };
 } SysTick_Type;
 
 
