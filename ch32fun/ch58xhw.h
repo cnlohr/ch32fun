@@ -153,6 +153,7 @@ typedef struct
 
 typedef enum
 {
+#if MCU_PACKAGE == 2 || MCU_PACKAGE == 3 // CH582/3
 	CLK_SOURCE_LSI = 0x00,
 	CLK_SOURCE_LSE,
 
@@ -173,6 +174,42 @@ typedef enum
 	CLK_SOURCE_PLL_24MHz = (0x40 | 20),
 	CLK_SOURCE_PLL_20MHz = (0x40 | 24),
 	CLK_SOURCE_PLL_15MHz = (0x40 | 0),
+#else // CH584/5
+	CLK_SOURCE_32KHz = 0xC0,
+
+	CLK_SOURCE_HSI_16MHz = (0x100 | 0x80),
+	CLK_SOURCE_HSI_8MHz = 0x02,
+	CLK_SOURCE_HSI_5_3MHz = 0x03,
+	CLK_SOURCE_HSI_4MHz = 0x04,
+	CLK_SOURCE_HSI_2MHz = 0x08,
+	CLK_SOURCE_HSI_1MHz = 0x10,
+
+	CLK_SOURCE_HSE_32MHz = (0x100 | 0x200 | 0x80),
+	CLK_SOURCE_HSE_16MHz = (0x200 | 0x02),
+	CLK_SOURCE_HSE_8MHz = (0x200 | 0x04),
+	CLK_SOURCE_HSE_6_4MHz = (0x200 | 0x05),
+	CLK_SOURCE_HSE_4MHz = (0x200 | 0x08),
+	CLK_SOURCE_HSE_2MHz = (0x200 | 0x10),
+
+	CLK_SOURCE_HSI_PLL_78MHz = (0x100 | 0x40 | 4),
+	CLK_SOURCE_HSI_PLL_62_4MHz = (0x100 | 0x40 | 5),
+	CLK_SOURCE_HSI_PLL_52MHz = (0x100 | 0x40 | 6),
+	CLK_SOURCE_HSI_PLL_39MHz = (0x100 | 0x40 | 8),
+	CLK_SOURCE_HSI_PLL_26MHz = (0x100 | 0x40 | 12),
+	CLK_SOURCE_HSI_PLL_24MHz = (0x100 | 0x40 | 13),
+	CLK_SOURCE_HSI_PLL_19_5MHz = (0x100 | 0x40 | 16),
+	CLK_SOURCE_HSI_PLL_13MHz = (0x100 | 0x40 | 24),
+
+	CLK_SOURCE_HSE_PLL_78MHz = (0x300 | 0x40 | 4),
+	CLK_SOURCE_HSE_PLL_62_4MHz = (0x300 | 0x40 | 5),
+	#define CLK_SOURCE_PLL_60MHz "This chip does not support an exact 60MHz setting. Please pick an availabe clock source from the SYS_CLKTypeDef struct in ch58xhw.h"
+	CLK_SOURCE_HSE_PLL_52MHz = (0x300 | 0x40 | 6),
+	CLK_SOURCE_HSE_PLL_39MHz = (0x300 | 0x40 | 8),
+	CLK_SOURCE_HSE_PLL_26MHz = (0x300 | 0x40 | 12),
+	CLK_SOURCE_HSE_PLL_24MHz = (0x300 | 0x40 | 13),
+	CLK_SOURCE_HSE_PLL_19_5MHz = (0x300 | 0x40 | 16),
+	CLK_SOURCE_HSE_PLL_13MHz = (0x300 | 0x40 | 24),
+#endif
 } SYS_CLKTypeDef;
 
 // For debug writing to the debug interface.

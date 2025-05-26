@@ -69,10 +69,13 @@ MEMORY
 	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 62K
 	RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 8K
 #elif TARGET_MCU_LD == 8
-	/* CH583 */
-	#if MCU_PACKAGE == 2
+	/* CH582/3/4/5 */
+	#if MCU_PACKAGE == 2 || MCU_PACKAGE == 3
 		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 448K
 		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 32K
+	#elif MCU_PACKAGE == 4 || MCU_PACKAGE == 5
+		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 448K
+		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 128K
 	#else
 		#error "Unknown MCU package"
 	#endif

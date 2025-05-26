@@ -1607,7 +1607,7 @@ void SystemInit( void )
 #ifndef CLK_SOURCE_CH5XX
 	#define CLK_SOURCE_CH5XX CLK_SOURCE_PLL_60MHz
 #endif
-#if defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2) // ch570 ch572
+#if (defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2)) || (defined(CH58x) && (MCU_PACKAGE == 4 || MCU_PACKAGE == 5)) // ch570/2 ch584/5
 	SYS_CLKTypeDef sc = CLK_SOURCE_CH5XX;
 	
 	if(sc == RB_CLK_SYS_MOD)  // LSI
