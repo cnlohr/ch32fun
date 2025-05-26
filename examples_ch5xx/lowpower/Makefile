@@ -1,8 +1,8 @@
 all : flash
 
 TARGET:=lowpower
-TARGET_MCU:=CH592
-TARGET_MCU_PACKAGE:=CH592F
+TARGET_MCU:=CH570
+TARGET_MCU_PACKAGE:=CH570D
 
 include ../../ch32fun/ch32fun.mk
 

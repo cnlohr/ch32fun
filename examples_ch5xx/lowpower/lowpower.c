@@ -1,16 +1,25 @@
 #include "ch32fun.h"
 #include <stdio.h>
 
-#define LED PA8
+#define LED PA9
 #define LED_ON FUN_LOW
 #define LED_OFF FUN_HIGH
-#define SLEEPTIME_MS 3000
+#define SLEEPTIME_MS 1000
 
-__INTERRUPT
+__attribute__((interrupt))
 void RTC_IRQHandler(void)
 {
-	// clear timer and trigger flags
-	R8_RTC_FLAG_CTRL = (RB_RTC_TMR_CLR | RB_RTC_TRIG_CLR);
+	// clear trigger flag
+	R8_RTC_FLAG_CTRL =  RB_RTC_TRIG_CLR;
+
+}
+
+void allPinPullUp(void)
+{
+	R32_PA_DIR = 0; //Direction input
+	R32_PA_PD_DRV = 0; //Disable pull-down
+	R32_PA_PU = 0xFFFFFFFF; //Enable pull-up  
+	
 }
 
 void blink_led(int n) {
@@ -31,20 +40,23 @@ int main()
 	RTCInit(); // Set the RTC counter to 0
 	SleepInit(); // Enable wakeup from sleep by RTC, and enable RTC IRQ
 
+	allPinPullUp();
+	
 	funPinMode( LED, GPIO_CFGLR_OUT_2Mhz_PP );
 	funDigitalWrite( LED, LED_OFF );
 	blink_led(1);
 
-	while(1)
-	{
-		// sleep according to the power plan in the second parameter, and wait for interrupt (WFI)
-		LowPower( MS_TO_RTC(SLEEPTIME_MS), (RB_PWR_RAM2K | RB_PWR_RAM24K | RB_PWR_EXTEND | RB_XT_PRE_EN) );
-		DCDCEnable(); // Sleep disables DCDC
+	uint8_t i = 5;
+	while(i--)
+	{ 
+		LowPower( MS_TO_RTC(SLEEPTIME_MS), (RB_PWR_RAM12K) );
+		DCDCEnable();
 		blink_led(2);
-
-		// sleep with minimal power plan, and wait for interrupt (WFI)
-		LowPower( MS_TO_RTC(SLEEPTIME_MS), (RB_PWR_RAM2K) );
-		DCDCEnable(); // Sleep disables DCDC
+		
+		LowPower( MS_TO_RTC(SLEEPTIME_MS), (RB_PWR_RAM12K) );
+		DCDCEnable();
 		blink_led(3);
 	}
+
+	while(1); //halt so that the user don't need to unbrick everytime.
 }

@@ -8,8 +8,8 @@ The following table details which demo is working on which chip, since some func
 |-------------------|---------|---------|-------|-------|
 | blink             |    √    |    √    |   √   |   √   |
 | debugprintfdemo   |    √    |    √    |   √   |   √   |
-| lowpower          |    ×    |    ×    |   ×   |   √   |
-| RTC_irq           |    ×    |    ×    |   ×   |   √   |
+| lowpower          |    √    |    ×    |   ×   |   √   |
+| RTC_irq           |    √    |    ×    |   ×   |   √   |
 | systick_irq       |    √    |    ×    |   √   |   √   |
 | uartdemo          |    √    |    √    |   √   |   √   |
 
