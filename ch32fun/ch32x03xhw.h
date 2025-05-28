@@ -865,7 +865,7 @@ typedef struct
 typedef struct
 {
 	__IO uint16_t CONFIG;
-	__IO uint16_t BCM_CLK_CNT;
+	__IO uint16_t BMC_CLK_CNT;
 
 	__IO uint8_t CONTROL;
 	__IO uint8_t TX_SEL;
@@ -878,7 +878,7 @@ typedef struct
 	__IO uint16_t PORT_CC1;
 	__IO uint16_t PORT_CC2;
 
-	__IO uint32_t USBPD_DMA;
+	__IO uint32_t DMA;
 } USBPD_DETAILED_TypeDef;
 
 
@@ -3577,7 +3577,7 @@ extern "C" {
 
 ///* CTLR1 register Mask */
 //Editor's Note: Overloaded Definition
-#define ADC_CTLR1_CLEAR_Mask                 ((uint32_t)0xFFF0FEFF)
+#define ADC_CTLR1_CLEAR_MASK                 ((uint32_t)0xFFF0FEFF)
 
 /* ADC ADON mask */
 #define CTLR2_ADON_Set                   ((uint32_t)0x00000001)
@@ -3623,7 +3623,7 @@ extern "C" {
 #define CTLR2_TSVREFE_Reset              ((uint32_t)0xFF7FFFFF)
 
 /* CTLR2 register Mask */
-#define CTLR2_CLEAR_Mask                 ((uint32_t)0xFFF1F7FD)
+#define CTLR2_CLEAR_MASK                 ((uint32_t)0xFFF1F7FD)
 
 /* ADC SQx mask */
 #define RSQR3_SQ_Set                     ((uint32_t)0x0000001F)
@@ -3631,7 +3631,7 @@ extern "C" {
 #define RSQR1_SQ_Set                     ((uint32_t)0x0000001F)
 
 /* RSQR1 register Mask */
-#define RSQR1_CLEAR_Mask                 ((uint32_t)0xFF0FFFFF)
+#define RSQR1_CLEAR_MASK                 ((uint32_t)0xFF0FFFFF)
 
 /* ADC JSQx mask */
 #define ISQR_JSQ_Set                     ((uint32_t)0x0000001F)
@@ -3657,21 +3657,21 @@ extern "C" {
 /* ch32v00x_dma.c ------------------------------------------------------------*/
 
 /* DMA1 Channelx interrupt pending bit masks */
-#define DMA1_Channel1_IT_Mask    ((uint32_t)(DMA_GIF1 | DMA_TCIF1 | DMA_HTIF1 | DMA_TEIF1))
-#define DMA1_Channel2_IT_Mask    ((uint32_t)(DMA_GIF2 | DMA_TCIF2 | DMA_HTIF2 | DMA_TEIF2))
-#define DMA1_Channel3_IT_Mask    ((uint32_t)(DMA_GIF3 | DMA_TCIF3 | DMA_HTIF3 | DMA_TEIF3))
-#define DMA1_Channel4_IT_Mask    ((uint32_t)(DMA_GIF4 | DMA_TCIF4 | DMA_HTIF4 | DMA_TEIF4))
-#define DMA1_Channel5_IT_Mask    ((uint32_t)(DMA_GIF5 | DMA_TCIF5 | DMA_HTIF5 | DMA_TEIF5))
-#define DMA1_Channel6_IT_Mask    ((uint32_t)(DMA_GIF6 | DMA_TCIF6 | DMA_HTIF6 | DMA_TEIF6))
-#define DMA1_Channel7_IT_Mask    ((uint32_t)(DMA_GIF7 | DMA_TCIF7 | DMA_HTIF7 | DMA_TEIF7))
+#define DMA1_Channel1_IT_MASK    ((uint32_t)(DMA_GIF1 | DMA_TCIF1 | DMA_HTIF1 | DMA_TEIF1))
+#define DMA1_Channel2_IT_MASK    ((uint32_t)(DMA_GIF2 | DMA_TCIF2 | DMA_HTIF2 | DMA_TEIF2))
+#define DMA1_Channel3_IT_MASK    ((uint32_t)(DMA_GIF3 | DMA_TCIF3 | DMA_HTIF3 | DMA_TEIF3))
+#define DMA1_Channel4_IT_MASK    ((uint32_t)(DMA_GIF4 | DMA_TCIF4 | DMA_HTIF4 | DMA_TEIF4))
+#define DMA1_Channel5_IT_MASK    ((uint32_t)(DMA_GIF5 | DMA_TCIF5 | DMA_HTIF5 | DMA_TEIF5))
+#define DMA1_Channel6_IT_MASK    ((uint32_t)(DMA_GIF6 | DMA_TCIF6 | DMA_HTIF6 | DMA_TEIF6))
+#define DMA1_Channel7_IT_MASK    ((uint32_t)(DMA_GIF7 | DMA_TCIF7 | DMA_HTIF7 | DMA_TEIF7))
 
 
 /* DMA2 FLAG mask */
 // Editor's note: Overloaded Definition.
-#define DMA2_FLAG_Mask            ((uint32_t)0x10000000)
+#define DMA2_FLAG_MASK            ((uint32_t)0x10000000)
 
 /* DMA registers Masks */
-#define CFGR_CLEAR_Mask          ((uint32_t)0xFFFF800F)
+#define CFGR_CLEAR_MASK          ((uint32_t)0xFFFF800F)
 
 /* ch32v00x_exti.c -----------------------------------------------------------*/
 
@@ -3705,11 +3705,11 @@ extern "C" {
 #define SR_EOP                     ((uint32_t)0x00000020)
 
 /* FLASH Mask */
-#define RDPRT_Mask                 ((uint32_t)0x00000002)
-#define WRP0_Mask                  ((uint32_t)0x000000FF)
-#define WRP1_Mask                  ((uint32_t)0x0000FF00)
-#define WRP2_Mask                  ((uint32_t)0x00FF0000)
-#define WRP3_Mask                  ((uint32_t)0xFF000000)
+#define RDPRT_MASK                 ((uint32_t)0x00000002)
+#define WRP0_MASK                  ((uint32_t)0x000000FF)
+#define WRP1_MASK                  ((uint32_t)0x0000FF00)
+#define WRP2_MASK                  ((uint32_t)0x00FF0000)
+#define WRP3_MASK                  ((uint32_t)0xFF000000)
 
 /* FLASH Keys */
 #define RDP_Key                    ((uint16_t)0x00A5)
@@ -3773,7 +3773,7 @@ extern "C" {
 
 ////* I2C registers Masks */
 // Editor's note: Overloaded Definition.
-#define I2C_CTLR1_CLEAR_Mask         ((uint16_t)0xFBF5)
+#define I2C_CTLR1_CLEAR_MASK         ((uint16_t)0xFBF5)
 
 /* I2C DMAEN mask */
 #define CTLR2_DMAEN_Set          ((uint16_t)0x0800)
@@ -3805,10 +3805,10 @@ extern "C" {
 
 /* I2C FLAG mask */
 //Editor's Note: Overloaded Definition
-#define I2c_FLAG_Mask            ((uint32_t)0x00FFFFFF)
+#define I2c_FLAG_MASK            ((uint32_t)0x00FFFFFF)
 
 /* I2C Interrupt Enable mask */
-#define ITEN_Mask                ((uint32_t)0x07000000)
+#define ITEN_MASK                ((uint32_t)0x07000000)
 
 /* ch32v00x_iwdg.c -----------------------------------------------------------*/
 
@@ -3840,22 +3840,22 @@ extern "C" {
 #define CTLR_HSEBYP_Set            ((uint32_t)0x00040000)
 #define CTLR_HSEON_Reset           ((uint32_t)0xFFFEFFFF)
 #define CTLR_HSEON_Set             ((uint32_t)0x00010000)
-#define CTLR_HSITRIM_Mask          ((uint32_t)0xFFFFFF07)
+#define CTLR_HSITRIM_MASK          ((uint32_t)0xFFFFFF07)
 
-#define CFGR0_PLL_Mask             ((uint32_t)0xFFC0FFFF)
-#define CFGR0_PLLMull_Mask         ((uint32_t)0x003C0000)
-#define CFGR0_PLLSRC_Mask          ((uint32_t)0x00010000)
-#define CFGR0_PLLXTPRE_Mask        ((uint32_t)0x00020000)
-#define CFGR0_SWS_Mask             ((uint32_t)0x0000000C)
-#define CFGR0_SW_Mask              ((uint32_t)0xFFFFFFFC)
-#define CFGR0_HPRE_Reset_Mask      ((uint32_t)0xFFFFFF0F)
-#define CFGR0_HPRE_Set_Mask        ((uint32_t)0x000000F0)
-#define CFGR0_PPRE1_Reset_Mask     ((uint32_t)0xFFFFF8FF)
-#define CFGR0_PPRE1_Set_Mask       ((uint32_t)0x00000700)
-#define CFGR0_PPRE2_Reset_Mask     ((uint32_t)0xFFFFC7FF)
-#define CFGR0_PPRE2_Set_Mask       ((uint32_t)0x00003800)
-#define CFGR0_ADCPRE_Reset_Mask    ((uint32_t)0xFFFF07FF)
-#define CFGR0_ADCPRE_Set_Mask      ((uint32_t)0x0000F800)
+#define CFGR0_PLL_MASK             ((uint32_t)0xFFC0FFFF)
+#define CFGR0_PLLMull_MASK         ((uint32_t)0x003C0000)
+#define CFGR0_PLLSRC_MASK          ((uint32_t)0x00010000)
+#define CFGR0_PLLXTPRE_MASK        ((uint32_t)0x00020000)
+#define CFGR0_SWS_MASK             ((uint32_t)0x0000000C)
+#define CFGR0_SW_MASK              ((uint32_t)0xFFFFFFFC)
+#define CFGR0_HPRE_Reset_MASK      ((uint32_t)0xFFFFFF0F)
+#define CFGR0_HPRE_Set_MASK        ((uint32_t)0x000000F0)
+#define CFGR0_PPRE1_Reset_MASK     ((uint32_t)0xFFFFF8FF)
+#define CFGR0_PPRE1_Set_MASK       ((uint32_t)0x00000700)
+#define CFGR0_PPRE2_Reset_MASK     ((uint32_t)0xFFFFC7FF)
+#define CFGR0_PPRE2_Set_MASK       ((uint32_t)0x00003800)
+#define CFGR0_ADCPRE_Reset_MASK    ((uint32_t)0xFFFF07FF)
+#define CFGR0_ADCPRE_Set_MASK      ((uint32_t)0x0000F800)
 
 /* RSTSCKR register bit mask */
 #define RSTSCKR_RMVF_Set           ((uint32_t)0x01000000)
@@ -3863,7 +3863,7 @@ extern "C" {
 
 /* RCC Flag Mask */
 //Editor's Note: Overloaded Definition
-#define RCC_FLAG_Mask                  ((uint8_t)0x1F)
+#define RCC_FLAG_MASK                  ((uint8_t)0x1F)
 
 /* INTR register byte 2 (Bits[15:8]) base address */
 #define INTR_BYTE2_ADDRESS         ((uint32_t)0x40021009)
@@ -3902,15 +3902,15 @@ extern "C" {
 
 /* SPI registers Masks */
 //Editor's Note: Overloaded Definition
-#define SPI_CTLR1_CLEAR_Mask  ((uint16_t)0x3040)
-#define I2SCFGR_CLEAR_Mask    ((uint16_t)0xF040)
+#define SPI_CTLR1_CLEAR_MASK  ((uint16_t)0x3040)
+#define I2SCFGR_CLEAR_MASK    ((uint16_t)0xF040)
 
 
 
 /* ch32v00x_tim.c ------------------------------------------------------------*/
 
 /* TIM registers bit mask */
-#define SMCFGR_ETR_Mask    ((uint16_t)0x00FF)
+#define SMCFGR_ETR_MASK    ((uint16_t)0x00FF)
 #define CHCTLR_Offset      ((uint16_t)0x0018)
 #define CCER_CCE_Set       ((uint16_t)0x0001)
 #define CCER_CCNE_Set      ((uint16_t)0x0004)
@@ -3921,21 +3921,21 @@ extern "C" {
 #define CTLR1_UE_Set              ((uint16_t)0x2000) /* USART Enable Mask */
 #define CTLR1_UE_Reset            ((uint16_t)0xDFFF) /* USART Disable Mask */
 
-#define CTLR1_WAKE_Mask           ((uint16_t)0xF7FF) /* USART WakeUp Method Mask */
+#define CTLR1_WAKE_MASK           ((uint16_t)0xF7FF) /* USART WakeUp Method Mask */
 
 #define CTLR1_RWU_Set             ((uint16_t)0x0002) /* USART mute mode Enable Mask */
 #define CTLR1_RWU_Reset           ((uint16_t)0xFFFD) /* USART mute mode Enable Mask */
 #define CTLR1_SBK_Set             ((uint16_t)0x0001) /* USART Break Character send Mask */
 //Editor's Note: Overloaded Definition
-#define USART_CTLR1_CLEAR_Mask          ((uint16_t)0xE9F3) /* USART CR1 Mask */
-#define CTLR2_Address_Mask        ((uint16_t)0xFFF0) /* USART address Mask */
+#define USART_CTLR1_CLEAR_MASK          ((uint16_t)0xE9F3) /* USART CR1 Mask */
+#define CTLR2_Address_MASK        ((uint16_t)0xFFF0) /* USART address Mask */
 
 #define CTLR2_LINEN_Set           ((uint16_t)0x4000) /* USART LIN Enable Mask */
 #define CTLR2_LINEN_Reset         ((uint16_t)0xBFFF) /* USART LIN Disable Mask */
 
-#define CTLR2_LBDL_Mask           ((uint16_t)0xFFDF) /* USART LIN Break detection Mask */
-#define CTLR2_STOP_CLEAR_Mask     ((uint16_t)0xCFFF) /* USART CR2 STOP Bits Mask */
-#define CTLR2_CLOCK_CLEAR_Mask    ((uint16_t)0xF0FF) /* USART CR2 Clock Mask */
+#define CTLR2_LBDL_MASK           ((uint16_t)0xFFDF) /* USART LIN Break detection Mask */
+#define CTLR2_STOP_CLEAR_MASK     ((uint16_t)0xCFFF) /* USART CR2 STOP Bits Mask */
+#define CTLR2_CLOCK_CLEAR_MASK    ((uint16_t)0xF0FF) /* USART CR2 Clock Mask */
 
 #define CTLR3_SCEN_Set            ((uint16_t)0x0020) /* USART SC Enable Mask */
 #define CTLR3_SCEN_Reset          ((uint16_t)0xFFDF) /* USART SC Disable Mask */
@@ -3946,14 +3946,14 @@ extern "C" {
 #define CTLR3_HDSEL_Set           ((uint16_t)0x0008) /* USART Half-Duplex Enable Mask */
 #define CTLR3_HDSEL_Reset         ((uint16_t)0xFFF7) /* USART Half-Duplex Disable Mask */
 
-#define CTLR3_IRLP_Mask           ((uint16_t)0xFFFB) /* USART IrDA LowPower mode Mask */
-#define CTLR3_CLEAR_Mask          ((uint16_t)0xFCFF) /* USART CR3 Mask */
+#define CTLR3_IRLP_MASK           ((uint16_t)0xFFFB) /* USART IrDA LowPower mode Mask */
+#define CTLR3_CLEAR_MASK          ((uint16_t)0xFCFF) /* USART CR3 Mask */
 
 #define CTLR3_IREN_Set            ((uint16_t)0x0002) /* USART IrDA Enable Mask */
 #define CTLR3_IREN_Reset          ((uint16_t)0xFFFD) /* USART IrDA Disable Mask */
-#define GPR_LSB_Mask              ((uint16_t)0x00FF) /* Guard Time Register LSB Mask */
-#define GPR_MSB_Mask              ((uint16_t)0xFF00) /* Guard Time Register MSB Mask */
-#define IT_Mask                   ((uint16_t)0x001F) /* USART Interrupt Mask */
+#define GPR_LSB_MASK              ((uint16_t)0x00FF) /* Guard Time Register LSB Mask */
+#define GPR_MSB_MASK              ((uint16_t)0xFF00) /* Guard Time Register MSB Mask */
+#define IT_MASK                   ((uint16_t)0x001F) /* USART Interrupt Mask */
 
 /* USART OverSampling-8 Mask */
 #define CTLR1_OVER8_Set           ((uint16_t)0x8000) /* USART OVER8 mode Enable Mask */
@@ -3969,9 +3969,9 @@ extern "C" {
 #define CTLR_WDGA_Set      ((uint32_t)0x00000080)
 
 /* CFGR register bit mask */
-#define CFGR_WDGTB_Mask    ((uint32_t)0xFFFFFE7F)
-#define CFGR_W_Mask        ((uint32_t)0xFFFFFF80)
-#define BIT_Mask           ((uint8_t)0x7F)
+#define CFGR_WDGTB_MASK    ((uint32_t)0xFFFFFE7F)
+#define CFGR_W_MASK        ((uint32_t)0xFFFFFF80)
+#define BIT_MASK           ((uint8_t)0x7F)
 
 
 /* ch32v00x_adc.h ------------------------------------------------------------*/
@@ -5979,7 +5979,7 @@ typedef volatile unsigned long *PUINT32V;
 
 /* Register Bit Definition */
 /* USBPD->CONFIG */
-#define PD_FILT_ED          (1<<0)             /* PD pin input filter enable */
+#define PD_FILT_EN          (1<<0)             /* PD pin input filter enable */
 #define PD_ALL_CLR          (1<<1)             /* Clear all interrupt flags */
 #define CC_SEL              (1<<2)             /* Select PD communication port */
 #define PD_DMA_EN           (1<<3)             /* Enable DMA for USBPD */
@@ -6006,21 +6006,21 @@ typedef volatile unsigned long *PUINT32V;
 #define TX_SEL1             (0<<0)
 #define TX_SEL1_SYNC1       (0<<0)             /* 0-SYNC1 */
 #define TX_SEL1_RST1        (1<<0)             /* 1-RST1 */
-#define TX_SEL2_Mask        (3<<2)
+#define TX_SEL2_MASK        (3<<2)
 #define TX_SEL2_SYNC1       (0<<2)             /* 00-SYNC1 */
 #define TX_SEL2_SYNC3       (1<<2)             /* 01-SYNC3 */
 #define TX_SEL2_RST1        (2<<2)             /* 1x-RST1 */
-#define TX_SEL3_Mask        (3<<4)
+#define TX_SEL3_MASK        (3<<4)
 #define TX_SEL3_SYNC1       (0<<4)             /* 00-SYNC1 */
 #define TX_SEL3_SYNC3       (1<<4)             /* 01-SYNC3 */
 #define TX_SEL3_RST1        (2<<4)             /* 1x-RST1 */
-#define TX_SEL4_Mask        (3<<6)
+#define TX_SEL4_MASK        (3<<6)
 #define TX_SEL4_SYNC2       (0<<6)             /* 00-SYNC2 */
 #define TX_SEL4_SYNC3       (1<<6)             /* 01-SYNC3 */
 #define TX_SEL4_RST2        (2<<6)             /* 1x-RST2 */
 
 /* USBPD->STATUS */
-#define BMC_AUX_Mask        (3<<0)              /* Clear BMC auxiliary information */
+#define BMC_AUX_MASK        (3<<0)              /* Clear BMC auxiliary information */
 #define BMC_AUX_INVALID     (0<<0)              /* 00-Invalid */
 #define BMC_AUX_SOP0        (1<<0)              /* 01-SOP0 */
 #define BMC_AUX_SOP1_HRST   (2<<0)              /* 10-SOP1 hard reset */
@@ -6036,13 +6036,13 @@ typedef volatile unsigned long *PUINT32V;
 /* USBPD->PORT_CC2 */
 #define PA_CC_AI            (1<<0)               /* CC port comparator analogue input */
 #define CC_PD               (1<<1)               /* CC port pull-down resistor enable */
-#define CC_PU_Mask          (3<<2)               /* Clear CC port pull-up current */
+#define CC_PU_MASK          (3<<2)               /* Clear CC port pull-up current */
 #define CC_NO_PU            (0<<2)               /* 00-Prohibit pull-up current */
 #define CC_PU_330           (1<<2)               /* 01-330uA */
 #define CC_PU_180           (2<<2)               /* 10-180uA */
 #define CC_PU_80            (3<<2)               /* 11-80uA */
 #define CC_LVE              (1<<4)               /* CC port output low voltage enable */
-#define CC_CMP_Mask         (7<<5)               /* Clear CC_CMP*/
+#define CC_CMP_MASK         (7<<5)               /* Clear CC_CMP*/
 #define CC_NO_CMP           (0<<5)               /* 000-closed */
 #define CC_CMP_22           (2<<5)               /* 010-0.22V */
 #define CC_CMP_45           (3<<5)               /* 011-0.45V */
@@ -6065,92 +6065,13 @@ typedef volatile unsigned long *PUINT32V;
 * 0-LDO buck enabled, limited to approx 3.3V, for PD applications with VDD more than 4V
 * ********************************************************/
 
-
-/* Control Message Types */
-#define DEF_TYPE_RESERVED          0x00
-#define DEF_TYPE_GOODCRC           0x01                                         /* Send By: Source,Sink,Cable Plug */
-#define DEF_TYPE_GOTOMIN           0x02                                         /* Send By: Source */
-#define DEF_TYPE_ACCEPT            0x03                                         /* Send By: Source,Sink,Cable Plug */
-#define DEF_TYPE_REJECT            0x04                                         /* Send By: Source,Sink,Cable Plug */
-#define DEF_TYPE_PING              0x05                                         /* Send By: Source */
-#define DEF_TYPE_PS_RDY            0x06                                         /* Send By: Source,Sink */
-#define DEF_TYPE_GET_SRC_CAP       0x07                                         /* Send By: Sink,DRP */
-#define DEF_TYPE_GET_SNK_CAP       0x08                                         /* Send By: Source,DRP */
-#define DEF_TYPE_DR_SWAP           0x09                                         /* Send By: Source,Sink */
-#define DEF_TYPE_PR_SWAP           0x0A                                         /* Send By: Source,Sink */
-#define DEF_TYPE_VCONN_SWAP        0x0B                                         /* Send By: Source,Sink */
-#define DEF_TYPE_WAIT              0x0C                                         /* Send By: Source,Sink */
-#define DEF_TYPE_SOFT_RESET        0x0D                                         /* Send By: Source,Sink */
-#define DEF_TYPE_DATA_RESET        0x0E                                         /* Send By: Source,Sink */
-#define DEF_TYPE_DATA_RESET_CMP    0x0F                                         /* Send By: Source,Sink */
-#define DEF_TYPE_NOT_SUPPORT       0x10                                         /* Send By: Source,Sink,Cable Plug */
-#define DEF_TYPE_GET_SRC_CAP_EX    0x11                                         /* Send By: Sink,DRP */
-#define DEF_TYPE_GET_STATUS        0x12                                         /* Send By: Source,Sink */
-#define DEF_TYPE_GET_STATUS_R      0X02                                         /* ext=1 */
-#define DEF_TYPE_FR_SWAP           0x13                                         /* Send By: Sink */
-#define DEF_TYPE_GET_PPS_STATUS    0x14                                         /* Send By: Sink */
-#define DEF_TYPE_GET_CTY_CODES     0x15                                         /* Send By: Source,Sink */
-#define DEF_TYPE_GET_SNK_CAP_EX    0x16                                         /* Send By: Source,DRP */
-#define DEF_TYPE_GET_SRC_INFO      0x17                                         /* Send By: Sink,DRP */
-#define DEF_TYPE_GET_REVISION      0x18                                         /* Send By: Source,Sink */
-
-/* Data Message Types */
-#define DEF_TYPE_SRC_CAP           0x01                                         /* Send By: Source,Dual-Role Power */
-#define DEF_TYPE_REQUEST           0x02                                         /* Send By: Sink */
-#define DEF_TYPE_BIST              0x03                                         /* Send By: Tester,Source,Sink */
-#define DEF_TYPE_SNK_CAP           0x04                                         /* Send By: Sink,Dual-Role Power */
-#define DEF_TYPE_BAT_STATUS        0x05                                         /* Send By: Source,Sink */
-#define DEF_TYPE_ALERT             0x06                                         /* Send By: Source,Sink */
-#define DEF_TYPE_GET_CTY_INFO      0x07                                         /* Send By: Source,Sink */
-#define DEF_TYPE_ENTER_USB         0x08                                         /* Send By: DFP */
-#define DEF_TYPE_EPR_REQUEST       0x09                                         /* Send By: Sink */
-#define DEF_TYPE_EPR_MODE          0x0A                                         /* Send By: Source,Sink */
-#define DEF_TYPE_SRC_INFO          0x0B                                         /* Send By: Source */
-#define DEF_TYPE_REVISION          0x0C                                         /* Send By: Source,Sink,Cable Plug */
-#define DEF_TYPE_VENDOR_DEFINED    0x0F                                         /* Send By: Source,Sink,Cable Plug */
-
-/* Vendor Define Message Command */
-#define DEF_VDM_DISC_IDENT         0x01
-#define DEF_VDM_DISC_SVID          0x02
-#define DEF_VDM_DISC_MODE          0x03
-#define DEF_VDM_ENTER_MODE         0x04
-#define DEF_VDM_EXIT_MODE          0x05
-#define DEF_VDM_ATTENTION          0x06
-#define DEF_VDM_DP_S_UPDATE        0x10
-#define DEF_VDM_DP_CONFIG          0x11
-
-/* PD Revision */
-#define DEF_PD_REVISION_10         0x00
-#define DEF_PD_REVISION_20         0x01
-#define DEF_PD_REVISION_30         0x02
-
-
-/* PD PHY Channel */
-#define DEF_PD_CC1                 0x00
-#define DEF_PD_CC2                 0x01
-
 #define PIN_CC1                    GPIO_Pin_14
 #define PIN_CC2                    GPIO_Pin_15
 
-/* PD Tx Status */
-#define DEF_PD_TX_OK               0x00
-#define DEF_PD_TX_FAIL             0x01
-
-/* PDO INDEX */
-#define PDO_INDEX_1                1
-#define PDO_INDEX_2                2
-#define PDO_INDEX_3                3
-#define PDO_INDEX_4                4
-#define PDO_INDEX_5                5
-
 /******************************************************************************/
 
-#define UPD_TMR_TX_48M    (80-1)                                             /* timer value for USB PD BMC transmittal @Fsys=48MHz */
-#define UPD_TMR_RX_48M    (120-1)                                            /* timer value for USB PD BMC receiving @Fsys=48MHz */
-#define UPD_TMR_TX_24M    (40-1)                                             /* timer value for USB PD BMC transmittal @Fsys=24MHz */
-#define UPD_TMR_RX_24M    (60-1)                                             /* timer value for USB PD BMC receiving @Fsys=24MHz */
-#define UPD_TMR_TX_12M    (20-1)                                             /* timer value for USB PD BMC transmittal @Fsys=12MHz */
-#define UPD_TMR_RX_12M    (30-1)                                             /* timer value for USB PD BMC receiving @Fsys=12MHz */
+#define UPD_TMR_TX (FUNCONF_SYSTEM_CORE_CLOCK / 600000 - 1)
+#define UPD_TMR_RX (FUNCONF_SYSTEM_CORE_CLOCK / 400000 - 1)
 
 #define MASK_PD_STAT      0x03                                               /* Bit mask for current PD status */
 #define PD_RX_SOP0        0x01                                               /* SOP0 received */
@@ -6162,117 +6083,6 @@ typedef volatile unsigned long *PUINT32V;
 #define UPD_SOP2          ( TX_SEL1_SYNC1 | TX_SEL2_SYNC3 | TX_SEL3_SYNC1 | TX_SEL4_SYNC3 )     /* SOP3 */
 #define UPD_HARD_RESET    ( TX_SEL1_RST1  | TX_SEL2_RST1  | TX_SEL3_RST1  | TX_SEL4_RST2  )     /* Hard Reset*/
 #define UPD_CABLE_RESET   ( TX_SEL1_RST1  | TX_SEL2_SYNC1 | TX_SEL3_RST1  | TX_SEL4_SYNC3 )     /* Cable Reset*/
-
-
-#define bCC_CMP_22        0X01
-#define bCC_CMP_45        0X02
-#define bCC_CMP_55        0X04
-#define bCC_CMP_66        0X08
-#define bCC_CMP_95        0X10
-#define bCC_CMP_123       0X20
-#define bCC_CMP_220       0X40
-
-/******************************************************************************/
-/* PD State Machine */
-typedef enum
-{
-    STA_IDLE = 0,                                                               /* 0: No task status */
-    STA_DISCONNECT,                                                             /* 1: Disconnection */
-    STA_SRC_CONNECT,                                                            /* 2: SRC connect */
-    STA_RX_SRC_CAP_WAIT,                                                        /* 3: Waiting to receive SRC_CAP */
-    STA_RX_SRC_CAP,                                                             /* 4: SRC_CAP received */
-    STA_TX_REQ,                                                                 /* 5: Send REQUEST */
-    STA_RX_ACCEPT_WAIT,                                                         /* 6: Waiting to receive ACCEPT */
-    STA_RX_ACCEPT,                                                              /* 7: ACCEPT received */
-    STA_RX_REJECT,                                                              /* 8: REJECT received */
-    STA_RX_PS_RDY_WAIT,                                                         /* 9: Waiting to receive PS_RDY */
-    STA_RX_PS_RDY,                                                              /* 10: PS_RDY received */
-    STA_SINK_CONNECT,                                                           /* 11: SNK access */
-    STA_TX_SRC_CAP,                                                             /* 12: Send SRC_CAP */
-    STA_RX_REQ_WAIT,                                                            /* 13: Waiting to receive REQUEST */
-    STA_RX_REQ,                                                                 /* 14: REQUEST received */
-    STA_TX_ACCEPT,                                                              /* 15: Send ACCEPT */
-    STA_TX_REJECT,                                                              /* 16: Send REJECT */
-    STA_ADJ_VOL,                                                                /* 17: Adjustment of output voltage and current */
-    STA_TX_PS_RDY,                                                              /* 18: Send PS_RDY */
-    STA_TX_DR_SWAP,                                                             /* 19: Send DR_SWAP */
-    STA_RX_DR_SWAP_ACCEPT,                                                      /* 20: Waiting to receive the answer ACCEPT from DR_SWAP */
-    STA_TX_PR_SWAP,                                                             /* 21: Send PR_SWAP */
-    STA_RX_PR_SWAP_ACCEPT,                                                      /* 22: Waiting to receive the answer ACCEPT from PR_SWAP */
-    STA_RX_PR_SWAP_PS_RDY,                                                      /* 23: Waiting to receive the answer PS_RDY from PR_SWAP */
-    STA_TX_PR_SWAP_PS_RDY,                                                      /* 24: Send answer PS_RDY for PR_SWAP */
-    STA_PR_SWAP_RECON_WAIT,                                                     /* 25: Wait for PR_SWAP before reconnecting */
-    STA_SRC_RECON_WAIT,                                                         /* 26: Waiting for SRC to reconnect */
-    STA_SINK_RECON_WAIT,                                                        /* 27: Waiting for SNK to reconnect */
-    STA_RX_APD_PS_RDY_WAIT,                                                     /* 28: Waiting for PS_RDY from the receiving adapter */
-    STA_RX_APD_PS_RDY,                                                          /* 29: PS_RDY received from the adapter */
-    STA_MODE_SWITCH,                                                            /* 30: Mode switching */
-    STA_TX_SOFTRST,                                                             /* 31: Sending a software reset */
-    STA_TX_HRST,                                                                /* 32: Send hardware reset */
-    STA_PHY_RST,                                                                /* 33: PHY reset */
-    STA_APD_IDLE_WAIT,                                                          /* 34: Waiting for the adapter to become idle */
-} CC_STATUS;
-
-/******************************************************************************/
-/* PD Message Header Struct */
-typedef union
-{
-    struct _Message_Header
-    {
-        UINT8  MsgType: 5;                                                      /* Message Type */
-        UINT8  PDRole: 1;                                                       /* 0-UFP; 1-DFP */
-        UINT8  SpecRev: 2;                                                      /* 00-Rev1.0; 01-Rev2.0; 10-Rev3.0; */
-        UINT8  PRRole: 1;                                                       /* 0-Sink; 1-Source */
-        UINT8  MsgID: 3;
-        UINT8  NumDO: 3;
-        UINT8  Ext: 1;
-    }Message_Header;
-    UINT16 Data;
-}_Message_Header;
-
-/******************************************************************************/
-/* Bit definition */
-typedef union
-{
-    struct _BITS_
-    {
-        UINT8  Msg_Recvd: 1;                                                    /* Notify the main program of the receipt of a PD packet */
-        UINT8  Connected: 1;                                                    /* PD Physical Layer Connected Flag */
-        UINT8  Stop_Det_Chk: 1;                                                 /* 0-Enable detection; 1-Disable disconnection detection */
-        UINT8  PD_Role: 1;                                                      /* 0-UFP; 1-DFP */
-        UINT8  PR_Role: 1;                                                      /* 0-Sink; 1-Source */
-        UINT8  Auto_Ack_PRRole: 1;                                              /* Role used by auto-responder 0:SINK; 1:SOURCE */
-        UINT8  PD_Version: 1;                                                   /* PD version 0-PD2.0; 1-PD3.0 */
-        UINT8  VDM_Version: 1;                                                  /* VDM Version 0-1.0 1-2.0 */
-        UINT8  HPD_Connected: 1;                                                /* HPD Physical Layer Connected Flag */
-        UINT8  HPD_Det_Chk: 1;                                                  /* 0-turn off HPD connection detection; 1-turn on HPD connection detection */
-        UINT8  CC_Sel_En: 1;                                                    /* 0-CC channel selection toggle enable; 1-CC channel selection toggle disable */
-        UINT8  CC_Sel_State: 1;                                                 /* 0-CC channel selection switches to 0; 1-CC channel selection switches to 1 */
-        UINT8  PD_Comm_Succ: 1;                                                 /* 0-PD communication unsuccessful; 1-PD communication successful; */
-        UINT8  Recv: 3;
-    }Bit;
-    UINT16 Bit_Flag;
-}_BIT_FLAG;
-
-/* PD control-related structures */
-typedef struct _PD_CONTROL
-{
-    CC_STATUS PD_State;                                                         /* PD communication status machine */
-    CC_STATUS PD_State_Last;                                                    /* PD communication status machine (last value) */
-    UINT8  Msg_ID;                                                              /* ID of the message sent */
-    UINT8  Det_Timer;                                                           /* PD connection status detection timing */
-    UINT8  Det_Cnt;                                                             /* Number of PD connection status detections */
-    UINT8  Det_Sel_Cnt;                                                         /* Number of SEL toggles for PD connection status detection */
-    UINT8  HPD_Det_Timer;                                                       /* HPD connection detection timing */
-    UINT8  HPD_Det_Cnt;                                                         /* HPD pin connection status detection count */
-    UINT16 PD_Comm_Timer;                                                       /* PD shared timing variables */
-    UINT8  ReqPDO_Idx;                                                          /* Index of the requested PDO, valid values 1-7 */
-    UINT16 PD_BusIdle_Timer;                                                    /* Bus Idle Time Timer */
-    UINT8  Mode_Try_Cnt;                                                        /* Number of retries for current mode, highest bit marks mode */
-    UINT8  Err_Op_Cnt;                                                          /* Exception operation count */
-    UINT8  Adapter_Idle_Cnt;                                                    /* Adapter communication idle timing */
-    _BIT_FLAG Flag;                                                             /* Flag byte bit definition */
-}PD_CONTROL, *pPD_CONTROL;
 
 /* ch32v00x_wwdg.h -----------------------------------------------------------*/
 
