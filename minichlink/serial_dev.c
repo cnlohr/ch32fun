@@ -65,8 +65,15 @@ int serial_dev_open(serial_dev_t *dev) {
 	}
 #else
 	struct termios attr;
-	if ((dev->fd = open(dev->port, O_RDWR | O_NOCTTY)) == -1) {
+	if ((dev->fd = open(dev->port, O_RDWR | O_NOCTTY | O_NONBLOCK)) == -1) {
 		perror("open");
+		return -1;
+	}
+
+	// clear the nonblock flag
+	if (fcntl(dev->fd, F_SETFL, 0) == -1) {
+		perror("fcntl");
+		close(dev->fd);
 		return -1;
 	}
 
@@ -77,6 +84,7 @@ int serial_dev_open(serial_dev_t *dev) {
 
 	cfmakeraw(&attr);
 	cfsetspeed(&attr, dev->baud);
+	attr.c_cflag |= CLOCAL;
 
 	if (tcsetattr(dev->fd, TCSANOW, &attr) == -1) {
 		perror("tcsetattr");
