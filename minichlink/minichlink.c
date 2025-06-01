@@ -380,7 +380,17 @@ keep_going:
 								if( !IsKBHit() ) break;
 								appendword |= ReadKBByte() << (i*8+8);
 							}
-							appendword |= i+4; // Will go into DATA0.
+
+							// So, previously, we would always use 0x04 as the code for
+							// no bytes to send/receive remaining.  But, it looks like 0x00
+							// is a valid code too.  So if there's no bytes to send, we can
+							// just let the programmer get more data.  
+							//
+							// If we find out in the future there is some reason not to do
+							// this, we can undo this and push the responsibility onto the
+							// programmers to speed along.
+							if( i )
+								appendword |= i+4; // Will go into DATA0.
 						}
 						int r = MCF.PollTerminal( dev, buffer, sizeof( buffer ), appendword, 0 );
 						if( r < -5 )
