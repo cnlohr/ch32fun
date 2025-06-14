@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include "cmdserver.h"
 #include "terminalhelp.h"
 #include "minichlink.h"
 #include "../ch32fun/ch32fun.h"
@@ -384,6 +385,8 @@ keep_going:
 				CaptureKeyboardInput();
 				printf( "Terminal started\n\n" );
 
+				CMDInit();
+
 #if TERMINAL_INPUT_BUFFER
 				char pline_buf[256]; // Buffer that contains current line that is being printed to
 				char input_buf[128]; // Buffer that contains user input until it is sent out
@@ -590,6 +593,12 @@ keep_going:
 					{
 						PollGDBServer( dev );
 					}
+
+					if(1 == CMDPollServer( dev ))
+					{
+						// TODO: signal to GDB server that it should resume.
+					}
+
 				} while( 1 );
 
 				// Currently unreachable - consider reachable-ing

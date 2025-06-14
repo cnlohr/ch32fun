@@ -2,6 +2,7 @@ TOOLS:=minichlink minichlink.so
 
 CFLAGS:=-O0 -g3 -Wall -DCH32V003 -I. -DMINICHLINK
 C_S:=minichlink.c pgm-wch-linke.c pgm-esp32s2-ch32xx.c nhc-link042.c ardulink.c serial_dev.c pgm-b003fun.c minichgdb.c
+H_S:=cmdserver.h funconfig.h hidapi.h libusb.h microgdbstub.h minichlink.h serial_dev.h terminalhelp.h
 
 # General Note: To use with GDB, gdb-multiarch
 # gdb-multilib {file}
@@ -28,17 +29,17 @@ endif
 all : $(TOOLS)
 
 # will need mingw-w64-x86-64-dev gcc-mingw-w64-x86-64
-minichlink.exe : $(C_S)
-	x86_64-w64-mingw32-gcc -o $@ $^ $(LDFLAGS_WINDOWS) $(CFLAGS_WINDOWS)
+minichlink.exe : $(C_S) $(H_S) Makefile
+	x86_64-w64-mingw32-gcc -o $@ $(C_S) $(LDFLAGS_WINDOWS) $(CFLAGS_WINDOWS)
 
-minichlink : $(C_S)
-	gcc -o $@ $^ $(LDFLAGS) $(CFLAGS) $(INCS)
+minichlink : $(C_S) $(H_S) Makefile
+	gcc -o $@ $(C_S) $(LDFLAGS) $(CFLAGS) $(INCS)
 
-minichlink.so : $(C_S)
-	gcc -o $@ $^ $(LDFLAGS) $(CFLAGS) $(INCS) -shared -fPIC
+minichlink.so : $(C_S) $(H_S) Makefile
+	gcc -o $@ $(C_S) $(LDFLAGS) $(CFLAGS) $(INCS) -shared -fPIC
 
-minichlink.dll : $(C_S)
-	x86_64-w64-mingw32-gcc -o $@ $^ $(LDFLAGS_WINDOWS) $(CFLAGS_WINDOWS) $(INCS) -shared -DMINICHLINK_AS_LIBRARY
+minichlink.dll : $(C_S) $(H_S) Makefile
+	x86_64-w64-mingw32-gcc -o $@ $(C_S) $(LDFLAGS_WINDOWS) $(CFLAGS_WINDOWS) $(INCS) -shared -DMINICHLINK_AS_LIBRARY
 
 install_udev_rules :
 	cp 99-minichlink.rules /etc/udev/rules.d/
