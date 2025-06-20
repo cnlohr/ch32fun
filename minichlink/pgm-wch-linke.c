@@ -379,6 +379,9 @@ static int LESetupInterface( void * d )
 		case 4:
 			fprintf(stderr, "WCH Programmer is LinkB version %d.%d\n",rbuff[3], rbuff[4]);
 			break;
+		case 5:
+			fprintf(stderr, "WCH Programmer is LinkW version %d.%d\n",rbuff[3], rbuff[4]);
+			break;
 		case 18:
 			fprintf(stderr, "WCH Programmer is LinkE version %d.%d\n",rbuff[3], rbuff[4]);
 			break;

@@ -50,47 +50,53 @@ typedef enum IRQn
 #define KEYSCAN_IRQn UART2_IRQn
 #define ENCODER_IRQn UART3_IRQn
 
-#define BASE_VECTOR "\n\
-	.balign  2\n\
-	.option   push;\n\
-	.option   norvc;\n\
-	j handle_reset\n\
-	.word   0\n\
-	.word   NMI_Handler                /* NMI Handler */\n\
-	.word   HardFault_Handler          /* Hard Fault Handler */\n\
-	.word   0xF3F9BDA9\n\
-	.word   Ecall_M_Mode_Handler       /* 5 */\n\
-	.word   0\n\
-	.word   0\n\
-	.word   Ecall_U_Mode_Handler       /* 8 */\n\
-	.word   Break_Point_Handler        /* 9 */\n\
-	.word   0\n\
-	.word   0\n\
-	.word   SysTick_Handler            /* SysTick Handler */\n\
-	.word   0\n\
-	.word   SW_Handler                 /* SW Handler */\n\
-	.word   0\n\
-	/* External Interrupts */\n\
-	.word   TMR0_IRQHandler            /* 16: TMR0 */\n\
-	.word   GPIOA_IRQHandler           /* GPIOA */\n\
-	.word   GPIOB_IRQHandler           /* GPIOB */\n\
-	.word   SPI0_IRQHandler            /* SPI0 */\n\
-	.word   BB_IRQHandler              /* BLEB */\n\
-	.word   LLE_IRQHandler             /* BLEL */\n\
-	.word   USB_IRQHandler             /* USB */\n\
-	.word   0 \n\
-	.word   TMR1_IRQHandler            /* TMR1 */\n\
-	.word   TMR2_IRQHandler            /* TMR2 */\n\
-	.word   UART0_IRQHandler           /* UART0 */\n\
-	.word   UART1_IRQHandler           /* UART1 */\n\
-	.word   RTC_IRQHandler             /* RTC */\n\
-	.word   ADC_IRQHandler             /* ADC */\n\
-	.word   I2C_IRQHandler             /* I2C */\n\
-	.word   PWMX_IRQHandler            /* PWMX */\n\
-	.word   TMR3_IRQHandler            /* TMR3 */\n\
-	.word   UART2_IRQHandler           /* UART2 / KEYSCAN */\n\
-	.word   UART3_IRQHandler           /* UART3 / ENCODER */\n\
-	.word   WDOG_BAT_IRQHandler        /* WDOG_BAT */\n"
+#if MCU_PACKAGE == 1 || MCU_PACKAGE == 3 // CH571/3
+#define WORD_OR_JUMP "j"
+#else
+#define WORD_OR_JUMP ".word"
+#endif
+
+#define BASE_VECTOR "\n"\
+	".balign  2\n"\
+	".option   push;\n"\
+	".option   norvc;\n"\
+	"j handle_reset\n"\
+	".word   0\n"\
+	WORD_OR_JUMP " NMI_Handler                /* NMI Handler */\n"\
+	WORD_OR_JUMP " HardFault_Handler          /* Hard Fault Handler */\n"\
+	".word         0xF3F9BDA9\n"\
+	WORD_OR_JUMP " Ecall_M_Mode_Handler       /* 5 */\n"\
+	".word         0\n"\
+	".word         0\n"\
+	WORD_OR_JUMP " Ecall_U_Mode_Handler       /* 8 */\n"\
+	WORD_OR_JUMP " Break_Point_Handler        /* 9 */\n"\
+	".word         0\n"\
+	".word         0\n"\
+	WORD_OR_JUMP " SysTick_Handler            /* SysTick Handler */\n"\
+	".word         0\n"\
+	WORD_OR_JUMP " SW_Handler                 /* SW Handler */\n"\
+	".word         0\n"\
+	"/* External Interrupts */\n"\
+	WORD_OR_JUMP " TMR0_IRQHandler            /* 16: TMR0 */\n"\
+	WORD_OR_JUMP " GPIOA_IRQHandler           /* GPIOA */\n"\
+	WORD_OR_JUMP " GPIOB_IRQHandler           /* GPIOB */\n"\
+	WORD_OR_JUMP " SPI0_IRQHandler            /* SPI0 */\n"\
+	WORD_OR_JUMP " BB_IRQHandler              /* BLEB */\n"\
+	WORD_OR_JUMP " LLE_IRQHandler             /* BLEL */\n"\
+	WORD_OR_JUMP " USB_IRQHandler             /* USB */\n"\
+	".word         0 \n"\
+	WORD_OR_JUMP " TMR1_IRQHandler            /* TMR1 */\n"\
+	WORD_OR_JUMP " TMR2_IRQHandler            /* TMR2 */\n"\
+	WORD_OR_JUMP " UART0_IRQHandler           /* UART0 */\n"\
+	WORD_OR_JUMP " UART1_IRQHandler           /* UART1 */\n"\
+	WORD_OR_JUMP " RTC_IRQHandler             /* RTC */\n"\
+	WORD_OR_JUMP " ADC_IRQHandler             /* ADC */\n"\
+	WORD_OR_JUMP " I2C_IRQHandler             /* I2C */\n"\
+	WORD_OR_JUMP " PWMX_IRQHandler            /* PWMX */\n"\
+	WORD_OR_JUMP " TMR3_IRQHandler            /* TMR3 */\n"\
+	WORD_OR_JUMP " UART2_IRQHandler           /* UART2 / KEYSCAN */\n"\
+	WORD_OR_JUMP " UART3_IRQHandler           /* UART3 / ENCODER */\n"\
+	WORD_OR_JUMP " WDOG_BAT_IRQHandler        /* WDOG_BAT */\n"
 
 // ch570/2 has slightly different interrupts
 #define TMR_IRQHandler TMR1_IRQHandler
@@ -137,7 +143,7 @@ typedef struct
 	__I uint32_t  ISR[8];           // 0
 	__I uint32_t  IPR[8];           // 20H
 	__IO uint32_t ITHRESDR;         // 40H
-	uint8_t       RESERVED[4];      // 44H
+	__IO uint32_t FIBADDRR;         // 44H
 	__O uint32_t  CFGR;             // 48H
 	__I uint32_t  GISR;             // 4CH
 	__IO uint8_t  VTFIDR[4];        // 50H
@@ -188,7 +194,7 @@ typedef struct
 
 typedef enum
 {
-#if MCU_PACKAGE == 3 // CH573
+#if MCU_PACKAGE == 1 || MCU_PACKAGE == 3 // CH571/3
 	CLK_SOURCE_LSI = 0x00,
 	CLK_SOURCE_LSE,
 
@@ -1633,9 +1639,6 @@ typedef enum
 #define R8_UEP7_T_LEN       (*((vu8*)0x4000806C))  // endpoint 7 transmittal length
 #define R8_UEP7_CTRL        (*((vu8*)0x4000806E))  // endpoint 7 control
 
-//some probabily works for ch571/3 too, but not tested
-//so only for ch570/2 for now.
-#if( MCU_PACKAGE == 2 || MCU_PACKAGE == 0) // CH570/2
 
 #define RTC_MAX_COUNT       0xA8BFFFFF
 
@@ -1701,6 +1704,7 @@ RV_STATIC_INLINE void RTCInit()
 		R32_RTC_TRIG = 0;
 		R32_RTC_CTRL |= RB_RTC_LOAD_HI;
 		R32_RTC_CTRL |= RB_RTC_LOAD_LO;
+		R8_RTC_MODE_CTRL |= RB_RTC_TRIG_EN;  //enable RTC trigger
 	);
 
 }
@@ -1724,6 +1728,10 @@ RV_STATIC_INLINE void RTCTrigger(uint32_t cyc)
 	);
 
 }
+
+//some probabily works for ch571/3 too, but not tested
+//so only for ch570/2 for now.
+#if( MCU_PACKAGE == 2 || MCU_PACKAGE == 0) // CH570/2
 
 // enter idle state
 RV_STATIC_INLINE void LowPowerIdle(uint32_t cyc)

@@ -2,8 +2,6 @@
 #include "ch32fun.h"
 #include <string.h>
 
-uint32_t USBDEBUG0, USBDEBUG1, USBDEBUG2;
-
 #define UEP_CTRL_LEN(n) (((uint16_t*)&USBOTG_FS->UEP0_TX_LEN)[n*2])
 #define UEP_CTRL_TX(n)  (((uint8_t*)&USBOTG_FS->UEP0_TX_CTRL)[n*4])
 #define UEP_CTRL_RX(n)  (((uint8_t*)&USBOTG_FS->UEP0_RX_CTRL)[n*4])
@@ -236,6 +234,7 @@ void USBFS_IRQHandler()
 							ctx->USBOTG_SetupReqLen = len;
 							UEP_CTRL_LEN(0) = 0;
 							// Previously would have been a CTRL_RX = ACK && TOG, but not here on the 203.
+
 							UEP_CTRL_RX(0) = CHECK_USBOTG_UEP_R_AUTO_TOG | USBOTG_UEP_R_RES_ACK | USBOTG_UEP_R_TOG;
 							UEP_CTRL_TX(0) = CHECK_USBOTG_UEP_T_AUTO_TOG | USBOTG_UEP_T_TOG;
 							goto replycomplete;
@@ -315,24 +314,10 @@ void USBFS_IRQHandler()
 							}
 						}
 						if( e == e_end )
-						{
 							goto sendstall;
-						}
-
-
-						/* Copy Descriptors to Endp0 DMA buffer */
-						int totalLen = USBOTG_SetupReqLen;
-						if( totalLen > len )
-						{
-							totalLen = len;
-						}
-						len = ( totalLen >= DEF_USBD_UEP0_SIZE ) ? DEF_USBD_UEP0_SIZE : totalLen;
-						DMA7FastCopy( ctrl0buff, ctx->pCtrlPayloadPtr, len ); //memcpy( CTRL0BUFF, ctx->pCtrlPayloadPtr, len );
-						ctx->USBOTG_SetupReqLen = totalLen - len;
-						ctx->pCtrlPayloadPtr += len;
-						UEP_CTRL_LEN(0) = len;
-						UEP_CTRL_TX(0) = CHECK_USBOTG_UEP_T_AUTO_TOG | USBOTG_UEP_T_RES_ACK | USBOTG_UEP_T_TOG;
-						goto replycomplete;
+						if( len > USBOTG_SetupReqLen )
+							len = USBOTG_SetupReqLen;
+						ctx->USBOTG_SetupReqLen = len;
 					}
 
 					/* Set usb address */
@@ -498,7 +483,6 @@ void USBFS_IRQHandler()
 			// This might look a little weird, for error handling but it saves a nontrivial amount of storage, and simplifies
 			// control flow to hard-abort here.
 		sendstall:
-
 			// if one request not support, return stall.  Stall means permanent error.
 			UEP_CTRL_TX(0) = USBOTG_UEP_T_TOG | USBOTG_UEP_T_RES_STALL;
 			UEP_CTRL_RX(0) = USBOTG_UEP_R_TOG | USBOTG_UEP_R_RES_STALL;

@@ -7,7 +7,7 @@
 #define FUSB_CONFIG_EPS       4 // Include EP0 in this count
 #define FUSB_SUPPORTS_SLEEP   0
 #define FUSB_HID_INTERFACES   2
-#define FUSB_CURSED_TURBO_DMA 0 // Hacky, but seems fine, shaves 2.5us off filling 64-byte buffers.
+#define FUSB_CURSED_TURBO_DMA 1 // Hacky, but seems fine, shaves 2.5us off filling 64-byte buffers.
 #define FUSB_HID_USER_REPORTS 1
 #define FUSB_IO_PROFILE       1
 #define FUSB_USE_HPE          FUNCONF_ENABLE_HPE
@@ -125,7 +125,7 @@ static const uint8_t config_descriptor[ ] =
     /* Configuration Descriptor */
     0x09,                                                   // bLength
     0x02,                                                   // bDescriptorType
-    0x84, 0x00,                                             // wTotalLength
+    0x54, 0x00,                                             // wTotalLength
     0x03,                                                   // bNumInterfaces (3)
     0x01,                                                   // bConfigurationValue
     0x00,                                                   // iConfiguration
@@ -146,7 +146,7 @@ static const uint8_t config_descriptor[ ] =
     /* HID Descriptor (HIDAPI) */
     0x09,                                                   // bLength
     0x21,                                                   // bDescriptorType
-    0x10, 0x01,                                             // bcdHID
+    0x00, 0x02,                                             // bcdHID
     0x00,                                                   // bCountryCode
     0x01,                                                   // bNumDescriptors
     0x22,                                                   // bDescriptorType
@@ -158,7 +158,7 @@ static const uint8_t config_descriptor[ ] =
     0x83,                                                   // bEndpointAddress: IN Endpoint 2
     0x03,                                                   // bmAttributes
     0x08, 0x00,                                             // wMaxPacketSize
-    0x0a,                                                   // bInterval: 10mS
+    0xff,                                                   // bInterval: 10mS
 
     /* Interface Descriptor (Keyboard) */
     0x09,                                                   // bLength
@@ -186,7 +186,7 @@ static const uint8_t config_descriptor[ ] =
     0x81,                                                   // bEndpointAddress: IN Endpoint 1
     0x03,                                                   // bmAttributes
     0x08, 0x00,                                             // wMaxPacketSize
-    0x0a,                                                   // bInterval: 10mS
+    0xff,                                                   // bInterval: 10mS
 
     /* Interface Descriptor (Mouse) */
     0x09,                                                   // bLength
@@ -202,7 +202,7 @@ static const uint8_t config_descriptor[ ] =
     /* HID Descriptor (Mouse) */
     0x09,                                                   // bLength
     0x21,                                                   // bDescriptorType
-    0x10, 0x01,                                             // bcdHID
+    0x00, 0x02,                                             // bcdHID
     0x00,                                                   // bCountryCode
     0x01,                                                   // bNumDescriptors
     0x22,                                                   // bDescriptorType
@@ -214,7 +214,7 @@ static const uint8_t config_descriptor[ ] =
     0x82,                                                   // bEndpointAddress: IN Endpoint 2
     0x03,                                                   // bmAttributes
     0x08, 0x00,                                             // wMaxPacketSize
-    0x01,                                                   // bInterval: 1mS
+    0xff,                                                   // bInterval: 1mS
 };
 
 
@@ -259,16 +259,16 @@ const static struct descriptor_list_struct {
 	{0x00000100, device_descriptor, sizeof(device_descriptor)},
 	{0x00000200, config_descriptor, sizeof(config_descriptor)},
 	// interface number // 2200 for hid descriptors.
-	{0x00002200, KeyRepDesc, sizeof(KeyRepDesc)},
-	{0x00012200, MouseRepDesc, sizeof(MouseRepDesc)},
-	{0x00022200, HIDAPIRepDesc, sizeof(HIDAPIRepDesc)},
+	{0x00002200, HIDAPIRepDesc, sizeof(HIDAPIRepDesc)},
+	{0x00012200, KeyRepDesc, sizeof(KeyRepDesc)},
+	{0x00022200, MouseRepDesc, sizeof(MouseRepDesc)},
 
 	{0x00002100, config_descriptor + 18, 9 }, // Not sure why, this seems to be useful for Windows + Android.
 
 	{0x00000300, (const uint8_t *)&string0, 4},
-	{0x04090301, (const uint8_t *)&string1, sizeof(STR_MANUFACTURER)},
-	{0x04090302, (const uint8_t *)&string2, sizeof(STR_PRODUCT)},	
-	{0x04090303, (const uint8_t *)&string3, sizeof(STR_SERIAL)}
+	{0x04090301, (const uint8_t *)&string1, string1.bLength},
+	{0x04090302, (const uint8_t *)&string2, string2.bLength},
+	{0x04090303, (const uint8_t *)&string3, string3.bLength}
 };
 #define DESCRIPTOR_LIST_ENTRIES ((sizeof(descriptor_list))/(sizeof(struct descriptor_list_struct)) )
 

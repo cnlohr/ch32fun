@@ -1,7 +1,7 @@
 #include "ch32fun.h"
 #include <stdio.h>
 
-#define LED PA8
+#define LED PA9
 
 void RTC_IRQHandler(void) __attribute__((interrupt));
 void RTC_IRQHandler(void)

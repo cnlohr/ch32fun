@@ -93,16 +93,17 @@ MEMORY
 		#error "Unknown MCU package"
 	#endif
 #elif TARGET_MCU_LD == 10
-  /* CH57x */
-  #if MCU_PACKAGE == 0 || MCU_PACKAGE == 2
-    FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 240K
-    RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 12K
-  #elif MCU_PACKAGE == 3
-    FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 512K
-    RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 18K
-  #else
-    #error "Unknown MCU package, only ch570, 2 and 3 are supported at the moment"
-  #endif
+	/* CH57x */
+	#if MCU_PACKAGE == 0 || MCU_PACKAGE == 2
+		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 240K
+		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 12K
+	#elif MCU_PACKAGE == 3
+		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 512K
+		RAM (xrw) : ORIGIN = 0x20003800, LENGTH = 16K
+		HIGHRAM (xrw) : ORIGIN = 0x20007800, LENGTH = 2K
+	#else
+		#error "Unknown MCU package, only ch570, 2 and 3 are supported at the moment"
+	#endif
 #else
 	#error "Unknown MCU target"
 #endif
@@ -119,7 +120,7 @@ SECTIONS
 			_einit = .;
 		} >FLASH AT>FLASH
 
-#if TARGET_MCU_LD == 9
+#if TARGET_MCU_LD == 9 || (TARGET_MCU_LD == 10 && MCU_PACKAGE == 3)
 		.highcodelalign : 
 		{       
 			. = ALIGN(4);

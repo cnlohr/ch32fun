@@ -8,7 +8,7 @@
 // This is for total perf testing.
 //
 // for this setup, this is typical:
-//  590.212 KB/s PC->003 / 779.573 KB/s 003->PC
+//  950.274 KB/s PC->203 / 974.453 KB/s 203->PC
 
 #include "hidapi.c"
 
