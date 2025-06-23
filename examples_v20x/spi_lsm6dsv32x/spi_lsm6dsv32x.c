@@ -18,9 +18,8 @@
 #define BOOT_TIME 20 // Boot time for LSM6DSV32X in ms
 #define SPI_CS_PIN PA4 // Chip select pin for SPI (PA4)
 // #define SPI_DEBUG 1 // Enable debug prints for SPI operations
-
-//#define USE_ACC_ROT_TEMP 1  	// Enable accelerometer, gyroscope, and temperature example
-#define USE_GAME_ROT 1			// Enable game rotation vector example
+#define USE_ACC_ROT_TEMP 1  	// Enable accelerometer, gyroscope, and temperature example
+//#define USE_GAME_ROT 1			// Enable game rotation vector example
 
 // Pre-defined functions for platform-specific implementations
 static int32_t platform_write( void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len );
