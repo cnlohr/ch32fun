@@ -1,0 +1,3 @@
+[submodule "examples_v20x/spi_lsm6dsv32x/lsm6dsv32x-pid"]
+	path = examples_v20x/spi_lsm6dsv32x/lsm6dsv32x-pid
+	url = https://github.com/STMicroelectronics/lsm6dsv32x-pid
