@@ -2,6 +2,7 @@
 #define _MINICHLINK_H
 
 #include <stdint.h>
+// #include "chips.h"
 
 enum RAMSplit;
 
@@ -88,7 +89,8 @@ struct MiniChlinkFunctions
 	FlushLLCommands
 */
 
-inline static int IsAddressFlash( uint32_t addy ) { return ( addy & 0xff000000 ) == 0x08000000 || ( addy & 0x1FFF0000 ) == 0x1FFF0000; }
+// inline static int IsAddressFlash( uint32_t addy ) { return ( addy & 0xff000000 ) == 0x08000000 || ( addy & 0x1FFF0000 ) == 0x1FFF0000; }
+inline static int IsAddressFlash( uint32_t addy ) { return !( addy & 0xe0000000 ); }
 
 #define HALT_MODE_HALT_AND_RESET    0
 #define HALT_MODE_REBOOT            1
@@ -124,15 +126,19 @@ enum RiscVChip {
 	CHIP_CH32L10x = 0x0e,
 	CHIP_CH564 = 0x0f,
 
+	// CHIP_CH32V002 = 0x22,
+	// CHIP_CH32V004 = 0x24,
+	// CHIP_CH32V005 = 0x25,
+	// CHIP_CH32V006 = 0x26,
+	CHIP_CH32V00x = 0x4e,
 
-	CHIP_CH32V002 = 0x22,
-	CHIP_CH32V004 = 0x24,
-	CHIP_CH32V005 = 0x25,
-	CHIP_CH32V006 = 0x26,
-
-	CHIP_CH645 = 0x46,
+  CHIP_CH570 = 0x8b,
+  CHIP_CH585 = 0x4b,
+  CHIP_CH645 = 0x46,
 	CHIP_CH641 = 0x49,
 	CHIP_CH32V317 = 0x86,
+	CHIP_CH32M030 = 0x8e,
+	
 };
 
 enum RAMSplit {
@@ -150,6 +156,22 @@ enum RAMSplit {
 	FLASH_DEFAULT = 0xFF,
 };
 
+enum ProgProtocol {
+	PROTOCOL_UNSUPPORTED = 0x00,
+	PROTOCOL_DEFAULT = 0x01,
+	PROTOCOL_CH5xx = 0x02,
+	PROTOCOL_CH56x = 0x03,
+};
+
+enum MemoryArea {
+	DEFAULT_AREA = 0,
+	PROGRAM_AREA = 1,
+	BOOTLOADER_AREA = 2,
+	OPTIONS_AREA = 3,
+	EEPROM_AREA = 4,
+	RAM_AREA = 5,
+};
+
 struct InternalState
 {
 	uint32_t statetag;
@@ -162,10 +184,13 @@ struct InternalState
 	uint32_t ram_size;
 	int sector_size;
 	int flash_size;
+	const struct RiscVChip_s* target_chip;
 	enum RiscVChip target_chip_type;
 	uint32_t target_chip_id;
 	uint8_t flash_sector_status[MAX_FLASH_SECTORS];  // 0 means unerased/unknown. 1 means erased.
 	int nr_registers_for_debug; // Updated by PostSetupConfigureInterface
+	enum MemoryArea current_area;
+  uint32_t clock_set;
 };
 
 
@@ -190,6 +215,7 @@ struct InternalState
 #define DMCPBR       0x7C
 #define DMCFGR       0x7D
 #define DMSHDWCFGR   0x7E
+#define DMCHIPID     0x7F
 
 #if defined( WIN32 ) || defined( _WIN32 )
 #if defined( MINICHLINK_AS_LIBRARY )
@@ -260,6 +286,9 @@ int SetupGDBServer( void * dev );
 int PollGDBServer( void * dev );
 int IsGDBServerInShadowHaltState( void * dev );
 void ExitGDBServer( void * dev );
+
+int DetectMemoryArea( void * dev, uint32_t address );
+int CheckMemoryLocation( void * dev, enum MemoryArea area, uint32_t address, uint32_t length );
 
 #endif
 
