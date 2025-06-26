@@ -84,6 +84,10 @@ If the C/C++ language server clangd is unable to find `ch32fun.h`, the example w
 `make clangd` does this in one step.
 `build_all_clangd.sh` does in `build scripts` does this for all examples.
 
+## Malloc/free unimplemented in ch32fun
+
+Because ch32fun services a wide variety of chips, it's hard to make decisions about what implementation of malloc/free should be used, comparing chips like the ch32v003 with 2kB of RAM, to the CH585 with 128kB of RAM, the decisions about what implementation to use will vary wildly. We've decided it's best for us not to decide for you.  You can choose to use none at all and just allocate statically, or use lists of fixed sizes, or use a heavier free/malloc.  Some malloc implementations you may want to consider are [tinyalloc](https://github.com/thi-ng/tinyalloc), [libmemory](https://github.com/embeddedartistry/libmemory), or other extremely lightweight but less common libraries like [mameMalloc](https://github.com/ar90n/mameMalloc).
+
 ## Quick Reference
  * **REQUIRED** for programming/debugging: `SWIO` is on `PD1`. Do not re-use PD1 for multiple functions.
  * **OPTIONAL** `NRST` is on `PD7`. Not needed, defaults as GPIO in some configurations.
