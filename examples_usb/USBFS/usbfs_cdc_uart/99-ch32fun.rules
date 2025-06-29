@@ -1,0 +1,12 @@
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", MODE="0664", GROUP="plugdev", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="d035"
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="d035", GROUP="plugdev", MODE="0660"
+#KERNEL=="hidraw*", SUBSYSTEM=="hidraw", MODE="0660", GROUP="plugdev"
+
+
+#, TAG+="uaccess", TAG+="udev-acl"
+# KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="d035", GROUP="plugdev", MODE="0664"
+#KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="d035", MODE="0666"
+#KERNEL=="hiddev*", SUBSYSTEM=="usbmisc", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="d035", GROUP="plugdev", MODE="0660", TAG+="uaccess", TAG+="udev-acl"
+#SUBSYSTEM=="usb", ATTR{idVendor}=="1209", ATTR{idProduct}=="d035", MODE="0660", GROUP="plugdev", TAG+="uaccess", TAG+="udev-acl"
+#KERNEL=="hidraw*", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="d035", MODE="0660", GROUP="plugdev", TAG+="uaccess", TAG+="udev-acl"
+
