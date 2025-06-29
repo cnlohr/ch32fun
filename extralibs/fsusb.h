@@ -1,23 +1,6 @@
 #ifndef _FSUSB_H
 #define _FSUSB_H
 
-/*	Full speed USB infrastructure for CH32V203
-	Based off of the official USB stack, but, with significant perf and space
-	reductions.
-
-	Limitations:
-	 * Limited to EPs 0..4.
-	 * By default, functions are using dedicated buffers, not DMA (but there is no reason DMA could not be used instead)
-	 * 
-
-
-	General Notes:
-	 * They seem to be using DMA->RX but TX via non-DMA (the opposite of what they should have done)
-
-	*/
-
-
-
 #include <stdint.h>
 #include "ch32fun.h"
 #include "usb_defines.h"
@@ -26,30 +9,7 @@
 #if defined(CH57x) || defined(CH58x) || defined(CH59x) || defined(CH32X03x) || defined(CH32V10x)
 #if !defined (CH32X03x) && !defined(CH32V10x)
 #define CH5xx
-#endif
-#if !defined (CH32X03x)
-#define DEBUG_PIN PA8
-
-#define DEF_USBD_UEP0_SIZE		   64	 /* usb hs/fs device end-point 0 size */
-#define UEP_SIZE 64
-
-#define DEF_UEP_IN                  0x80
-#define DEF_UEP_OUT                 0x00
-#define DEF_UEP_BUSY                0x01
-#define DEF_UEP_FREE                0x00
-
-#define DEF_UEP0 0
-#define DEF_UEP1 1
-#define DEF_UEP2 2
-#define DEF_UEP3 3
-#define DEF_UEP4 4
-#define DEF_UEP5 5
-#define DEF_UEP6 6
-#define DEF_UEP7 7
-#define UNUM_EP 8
-
 #define USBFS_BASE USB_BASE_ADDR
-
 typedef struct
 {
 	__IO uint8_t  BASE_CTRL;
@@ -121,6 +81,101 @@ typedef struct
 	__IO uint32_t EPX_MODE;
 } USBFS_TypeDef;
 
+#define UEP_CTRL_LEN(n) (((uint8_t*)&USBFS->UEP0_TX_LEN)[n*4])
+#define UEP_CTRL_TX(n)  (((uint8_t*)&USBFS->UEP0_TX_CTRL)[n*4])
+#define UEP_CTRL_RX(n)  (((uint8_t*)&USBFS->UEP0_TX_CTRL)[n*4])
+#define UEP_DMA(n)      (((uint16_t*)&USBFS->UEP0_DMA)[n*2])
+#endif
+
+#if defined(CH32V10x)
+#define USBFS_BASE 0x40023400
+#define USB_IRQn USBFS_IRQn
+typedef struct
+{
+	__IO uint8_t  BASE_CTRL;
+	__IO uint8_t  UDEV_CTRL;
+	__IO uint8_t  INT_EN;
+	__IO uint8_t  DEV_ADDR;
+	__IO uint8_t  USB_STATUS;
+	__IO uint8_t  MIS_ST;
+	__IO uint8_t  INT_FG; // "Combined" register in some situations. (ST_FG)
+	__IO uint8_t  INT_ST;
+	__IO uint8_t RX_LEN;
+	__IO uint8_t  Reserved0;
+	__IO uint16_t  Reserved1;
+	__IO uint8_t  UEP4_1_MOD;
+	__IO uint8_t  UEP2_3_MOD;
+	__IO uint8_t  UEP5_6_MOD;
+	__IO uint8_t  UEP7_MOD;
+	__IO uint16_t UEP0_DMA;
+	__IO uint16_t Reserved3;
+	__IO uint16_t UEP1_DMA;
+	__IO uint16_t Reserved4;
+	__IO uint16_t UEP2_DMA;
+	__IO uint16_t Reserved5;
+	__IO uint16_t UEP3_DMA;
+	__IO uint16_t Reserved6;
+	__IO uint16_t UEP4_DMA;
+	__IO uint16_t Reserved7;
+	__IO uint16_t UEP5_DMA;
+	__IO uint16_t Reserved8;
+	__IO uint16_t UEP6_DMA;
+	__IO uint16_t Reserved9;
+	__IO uint16_t UEP7_DMA;
+	__IO uint16_t Reserved10;
+	__IO uint16_t UEP0_TX_LEN;
+	__IO uint8_t UEP0_TX_CTRL;
+	__IO uint8_t Reserved11;
+	__IO uint16_t UEP1_TX_LEN;
+	__IO uint8_t UEP1_TX_CTRL;
+	__IO uint8_t Reserved12;
+	__IO uint16_t UEP2_TX_LEN;
+	__IO uint8_t UEP2_TX_CTRL;
+	__IO uint8_t Reserved13;
+	__IO uint16_t UEP3_TX_LEN;
+	__IO uint8_t UEP3_TX_CTRL;
+	__IO uint8_t Reserved14;
+	__IO uint16_t UEP4_TX_LEN;
+	__IO uint8_t UEP4_TX_CTRL;
+	__IO uint8_t Reserved15;
+	__IO uint16_t UEP5_TX_LEN;
+	__IO uint8_t UEP5_TX_CTRL;
+	__IO uint8_t Reserved16;
+	__IO uint16_t UEP6_TX_LEN;
+	__IO uint8_t UEP6_TX_CTRL;
+	__IO uint8_t Reserved17;
+	__IO uint16_t UEP7_TX_LEN;
+	__IO uint8_t UEP7_TX_CTRL;
+	__IO uint8_t Reserved18;
+} USBFS_TypeDef;
+
+#define UEP_CTRL_LEN(n) (((uint16_t*)&USBFS->UEP0_TX_LEN)[n*2])
+#define UEP_CTRL_TX(n)  (((uint8_t*)&USBFS->UEP0_TX_CTRL)[n*4])
+#define UEP_CTRL_RX(n)  (((uint8_t*)&USBFS->UEP0_TX_CTRL)[n*4])
+#define UEP_DMA(n)      (((uint16_t*)&USBFS->UEP0_DMA)[n*2])
+#endif
+
+#if !defined (CH32X03x)
+#define DEBUG_PIN PA8
+
+#define DEF_USBD_UEP0_SIZE 64	 /* usb hs/fs device end-point 0 size */
+#define UEP_SIZE 64
+
+#define DEF_UEP_IN   0x80
+#define DEF_UEP_OUT  0x00
+#define DEF_UEP_BUSY 0x01
+#define DEF_UEP_FREE 0x00
+
+#define DEF_UEP0 0
+#define DEF_UEP1 1
+#define DEF_UEP2 2
+#define DEF_UEP3 3
+#define DEF_UEP4 4
+#define DEF_UEP5 5
+#define DEF_UEP6 6
+#define DEF_UEP7 7
+#define UNUM_EP 8
+
 #define USBFS_UEP_T_RES_MASK MASK_UEP_T_RES
 #define USBFS_UEP_T_RES_ACK UEP_T_RES_ACK
 #define USBFS_UEP_T_RES_NAK UEP_T_RES_NAK
@@ -145,11 +200,6 @@ typedef struct
 #define USBFS_UC_DMA_EN RB_UC_DMA_EN
 #define USBFS_UC_DEV_PU_EN RB_UC_DEV_PU_EN
 
-#define UEP_CTRL_LEN(n) (((uint8_t*)&USBFS->UEP0_TX_LEN)[n*4])
-#define UEP_CTRL_TX(n)  (((uint8_t*)&USBFS->UEP0_TX_CTRL)[n*4])
-#define UEP_CTRL_RX(n)  (((uint8_t*)&USBFS->UEP0_TX_CTRL)[n*4])
-#define UEP_DMA(n)  (((uint16_t*)&USBFS->UEP0_DMA)[n*2])
-
 #endif
 
 #define USBFS_UD_PORT_EN RB_UD_PORT_EN
@@ -169,13 +219,13 @@ typedef struct
 #define CHECK_USBFS_UEP_T_AUTO_TOG RB_UEP_AUTO_TOG
 // #define CHECK_USBFS_UEP_R_AUTO_TOG USBOTG_UEP_R_AUTO_TOG
 
-#define USBFS 			((USBFS_TypeDef *)USBFS_BASE)
+#define USBFS           ((USBFS_TypeDef *)USBFS_BASE)
 
 #ifdef CH32X03x
 #define UEP_CTRL_LEN(n) (((uint16_t*)&USBFS->UEP0_TX_LEN)[n*2])
 #define UEP_CTRL_TX(n)  (((uint16_t*)&USBFS->UEP0_CTRL_H)[n*2])
 #define UEP_CTRL_RX(n)  (((uint16_t*)&USBFS->UEP0_CTRL_H)[n*2])
-#define UEP_DMA(n)  (((uint32_t*)&USBFS->UEP0_DMA)[n])
+#define UEP_DMA(n)      (((uint32_t*)&USBFS->UEP0_DMA)[n])
 #define DEBUG_PIN PB12
 #define USB_IRQn USBFS_IRQn
 #endif
@@ -184,12 +234,12 @@ typedef struct
 
 #define DEBUG_PIN PB0
 
-#define USBFS 			((USBOTG_FS_TypeDef *)USBFS_BASE)
+#define USBFS           ((USBOTG_FS_TypeDef *)USBFS_BASE)
 
 #define UEP_CTRL_LEN(n) (((uint16_t*)&USBFS->UEP0_TX_LEN)[n*2])
 #define UEP_CTRL_TX(n)  (((uint8_t*)&USBFS->UEP0_TX_CTRL)[n*4])
 #define UEP_CTRL_RX(n)  (((uint8_t*)&USBFS->UEP0_RX_CTRL)[n*4])
-#define UEP_DMA(n)  (((uint32_t*)&USBFS->UEP0_DMA)[n])
+#define UEP_DMA(n)      (((uint32_t*)&USBFS->UEP0_DMA)[n])
 
 #define CHECK_USBFS_UEP_T_AUTO_TOG USBOTG_UEP_T_AUTO_TOG
 #define CHECK_USBFS_UEP_R_AUTO_TOG USBOTG_UEP_R_AUTO_TOG
@@ -206,7 +256,7 @@ typedef struct
 #define USBFS_UEP_R_TOG USBOTG_UEP_R_TOG
 #define USBFS_UEP_R_RES_STALL USBOTG_UEP_R_RES_STALL
 
-#define USBFS_UDA_GP_BIT USBOTG_UDA_GP_BIT
+// #define USBFS_UDA_GP_BIT USBOTG_UDA_GP_BIT
 #define USBFS_UMS_SUSPEND USBOTG_UMS_SUSPEND
 #define USBFS_UEP1_RX_EN USBOTG_UEP1_RX_EN
 #define USBFS_UEP2_RX_EN USBOTG_UEP2_RX_EN
@@ -240,7 +290,7 @@ typedef struct
 // Mask for the combined USBFS->INT_FG + USBFS->INT_ST
 #define CRB_UIS_IS_NAK    (1<<7)
 #define CRB_U_TOG_OK	    (1<<6)
-#define CRB_U_SIE_FREE		(1<<5)
+#define CRB_U_SIE_FREE    (1<<5)
 #define CRB_UIF_FIFO_OV   (1<<4)
 #define CRB_UIF_HST_SOF   (1<<3)
 #define CRB_UIF_SUSPEND   (1<<2)
@@ -259,7 +309,7 @@ typedef struct
 #define CUIS_TOKEN_IN      0x2
 #define CUIS_TOKEN_SETUP   0x3
 
-#define USBFS_PACKET_SIZE 64
+#define USBFS_PACKET_SIZE  64
 
 extern uint32_t USBDEBUG0, USBDEBUG1, USBDEBUG2;
 
@@ -278,8 +328,6 @@ static inline void copyBuffer( uint8_t * dest, const uint8_t * src, int len );
 static inline void copyBufferComplete();
 #endif
 
-
-
 // Implement the following:
 #if FUSB_HID_USER_REPORTS
 int HandleHidUserGetReportSetup( struct _USBState * ctx, tusb_control_request_t * req );
@@ -294,8 +342,34 @@ void HandleDataOut( struct _USBState * ctx, int endp, uint8_t * data, int len );
 int HandleSetupCustom( struct _USBState * ctx, int setup_code);
 #endif
 
+typedef enum
+{
+	USBFS_EP_OFF = 0,
+	USBFS_EP_IN  = -1,
+	USBFS_EP_OUT = 1,
+} USBFS_EP_mode;
 
-
+#ifndef USBFS_EP1_MODE
+#define USBFS_EP1_MODE  0
+#endif
+#ifndef USBFS_EP2_MODE
+#define USBFS_EP2_MODE  0
+#endif
+#ifndef USBFS_EP3_MODE
+#define USBFS_EP3_MODE  0
+#endif
+#ifndef USBFS_EP4_MODE
+#define USBFS_EP4_MODE  0
+#endif
+#ifndef USBFS_EP5_MODE
+#define USBFS_EP5_MODE  0
+#endif
+#ifndef USBFS_EP6_MODE
+#define USBFS_EP6_MODE  0
+#endif
+#ifndef USBFS_EP7_MODE
+#define USBFS_EP7_MODE  0
+#endif
 
 struct _USBState
 {
@@ -311,13 +385,13 @@ struct _USBState
 	uint8_t  USBFS_DevSleepStatus;
 	uint8_t  USBFS_DevEnumStatus;
 
-	uint8_t  *  pCtrlPayloadPtr;
+	uint8_t* pCtrlPayloadPtr;
 
 	uint8_t ENDPOINTS[FUSB_CONFIG_EPS][64];
-  uint8_t endpoint_dir[FUSB_CONFIG_EPS]; // IN - 0, OUT - 1
+	USBFS_EP_mode endpoint_mode[FUSB_CONFIG_EPS+1]; // IN -1, OUT 1, OFF 0
 
-	#define CTRL0BUFF					(USBFSCTX.ENDPOINTS[0])
-	#define pUSBFS_SetupReqPak			((tusb_control_request_t*)CTRL0BUFF)
+	#define CTRL0BUFF               (USBFSCTX.ENDPOINTS[0])
+	#define pUSBFS_SetupReqPak      ((tusb_control_request_t*)CTRL0BUFF)
 
 #if FUSB_HID_INTERFACES > 0
 	uint8_t USBFS_HidIdle[FUSB_HID_INTERFACES];
