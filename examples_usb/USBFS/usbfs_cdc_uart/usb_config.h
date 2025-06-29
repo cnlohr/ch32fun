@@ -5,6 +5,9 @@
 #include "ch32fun.h"
 
 #define FUSB_CONFIG_EPS       4 // Include EP0 in this count
+#define USBFS_EP1_MODE        1 // OUT
+#define USBFS_EP2_MODE       -1 // IN
+#define USBFS_EP3_MODE        1 // OUT
 #define FUSB_SUPPORTS_SLEEP   0
 #define FUSB_HID_INTERFACES   0
 #define FUSB_CURSED_TURBO_DMA 0 // Hacky, but seems fine, shaves 2.5us off filling 64-byte buffers.
@@ -13,6 +16,7 @@
 #define FUSB_USE_HPE          FUNCONF_ENABLE_HPE
 #define FUSB_USER_HANDLERS    1
 #define FUSB_USE_DMA7_COPY    0
+#define FUSB_VDD_5V           FUNCONF_USE_5V_VDD
 
 #include "usb_defines.h"
 
