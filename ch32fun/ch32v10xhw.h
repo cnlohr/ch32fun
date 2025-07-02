@@ -58,7 +58,7 @@ typedef enum IRQn
 	EXTI15_10_IRQn = 56,       /* External Line[15:10] Interrupts                      */
 	RTCAlarm_IRQn = 57,        /* RTC Alarm through EXTI Line Interrupt                */
 	USBWakeUp_IRQn = 58,       /* USB Device WakeUp from suspend through EXTI Line Interrupt 	*/
-	USBHD_IRQn = 59,           /* USBHD global Interrupt                               */
+	USBFS_IRQn = 59,           /* USBHD global Interrupt                               */
 } IRQn_Type;
 
 #define DEFAULT_INTERRUPT_VECTOR_CONTENTS "\n\
@@ -67,8 +67,8 @@ typedef enum IRQn
 	.option   norvc;\n\
 	j handle_reset\n\
 	.word   0 \n\
-	.word   NMI_Handler                /* NMI */ \n\
-	.word   HardFault_Handler          /* Hard Fault */ \n\
+	j   NMI_Handler                /* NMI */ \n\
+	j   HardFault_Handler          /* Hard Fault */ \n\
 	.word   0 \n\
 	.word   0 \n\
 	.word   0 \n\
@@ -77,66 +77,96 @@ typedef enum IRQn
 	.word   0 \n\
 	.word   0 \n\
 	.word   0 \n\
-	.word   SysTick_Handler            /* SysTick Handler */ \n \
+	j   SysTick_Handler            /* SysTick Handler */ \n \
 	.word   0 \n \
-	.word   SW_Handler                 /* SW Handler */ \n \
+	j   SW_Handler                 /* SW Handler */ \n \
 	.word   0 \n \
-	.word   WWDG_IRQHandler            /* Window Watchdog */ \n \
-	.word   PVD_IRQHandler             /* PVD through EXTI Line detect */ \n \
-	.word   TAMPER_IRQHandler          /* TAMPER */ \n \
-	.word   RTC_IRQHandler             /* RTC */ \n \
-	.word   FLASH_IRQHandler           /* Flash */ \n \
-	.word   RCC_IRQHandler             /* RCC */ \n \
-	.word   EXTI0_IRQHandler           /* EXTI Line 0 */ \n \
-	.word   EXTI1_IRQHandler           /* EXTI Line 1 */ \n \
-	.word   EXTI2_IRQHandler           /* EXTI Line 2 */ \n \
-	.word   EXTI3_IRQHandler           /* EXTI Line 3 */ \n \
-	.word   EXTI4_IRQHandler           /* EXTI Line 4 */ \n \
-	.word   DMA1_Channel1_IRQHandler   /* DMA1 Channel 1 */ \n \
-	.word   DMA1_Channel2_IRQHandler   /* DMA1 Channel 2 */ \n \
-	.word   DMA1_Channel3_IRQHandler   /* DMA1 Channel 3 */ \n \
-	.word   DMA1_Channel4_IRQHandler   /* DMA1 Channel 4 */ \n \
-	.word   DMA1_Channel5_IRQHandler   /* DMA1 Channel 5 */ \n \
-	.word   DMA1_Channel6_IRQHandler   /* DMA1 Channel 6 */ \n \
-	.word   DMA1_Channel7_IRQHandler   /* DMA1 Channel 7 */ \n \
-	.word   ADC1_2_IRQHandler          /* ADC1_2 */ \n \
-	.word   0 \n \
-	.word   0 \n \
+	j   WWDG_IRQHandler            /* Window Watchdog */ \n \
+	j   PVD_IRQHandler             /* PVD through EXTI Line detect */ \n \
+	j   TAMPER_IRQHandler          /* TAMPER */ \n \
+	j   RTC_IRQHandler             /* RTC */ \n \
+	j   FLASH_IRQHandler           /* Flash */ \n \
+	j   RCC_IRQHandler             /* RCC */ \n \
+	j   EXTI0_IRQHandler           /* EXTI Line 0 */ \n \
+	j   EXTI1_IRQHandler           /* EXTI Line 1 */ \n \
+	j   EXTI2_IRQHandler           /* EXTI Line 2 */ \n \
+	j   EXTI3_IRQHandler           /* EXTI Line 3 */ \n \
+	j   EXTI4_IRQHandler           /* EXTI Line 4 */ \n \
+	j   DMA1_Channel1_IRQHandler   /* DMA1 Channel 1 */ \n \
+	j   DMA1_Channel2_IRQHandler   /* DMA1 Channel 2 */ \n \
+	j   DMA1_Channel3_IRQHandler   /* DMA1 Channel 3 */ \n \
+	j   DMA1_Channel4_IRQHandler   /* DMA1 Channel 4 */ \n \
+	j   DMA1_Channel5_IRQHandler   /* DMA1 Channel 5 */ \n \
+	j   DMA1_Channel6_IRQHandler   /* DMA1 Channel 6 */ \n \
+	j   DMA1_Channel7_IRQHandler   /* DMA1 Channel 7 */ \n \
+	j   ADC1_2_IRQHandler          /* ADC1_2 */ \n \
 	.word   0 \n \
 	.word   0 \n \
-	.word   EXTI9_5_IRQHandler         /* EXTI Line 9..5 */ \n \
-	.word   TIM1_BRK_IRQHandler        /* TIM1 Break */ \n \
-	.word   TIM1_UP_IRQHandler         /* TIM1 Update */ \n \
-	.word   TIM1_TRG_COM_IRQHandler    /* TIM1 Trigger and Commutation */ \n \
-	.word   TIM1_CC_IRQHandler         /* TIM1 Capture Compare */ \n \
-	.word   TIM2_IRQHandler            /* TIM2 */ \n \
-	.word   TIM3_IRQHandler            /* TIM3 */ \n \
-	.word   TIM4_IRQHandler            /* TIM4 */ \n \
-	.word   I2C1_EV_IRQHandler         /* I2C1 Event */ \n \
-	.word   I2C1_ER_IRQHandler         /* I2C1 Error */ \n \
-	.word   I2C2_EV_IRQHandler         /* I2C2 Event */ \n \
-	.word   I2C2_ER_IRQHandler         /* I2C2 Error */ \n \
-	.word   SPI1_IRQHandler            /* SPI1 */ \n \
-	.word   SPI2_IRQHandler            /* SPI2 */ \n \
-	.word   USART1_IRQHandler          /* USART1 */ \n \
-	.word   USART2_IRQHandler          /* USART2 */ \n \
-	.word   USART3_IRQHandler          /* USART3 */ \n \
-	.word   EXTI15_10_IRQHandler       /* EXTI Line 15..10 */ \n \
-	.word   RTCAlarm_IRQHandler        /* RTC Alarm through EXTI Line */ \n \
-	.word   USBFSWakeUp_IRQHandler     /* USB Wakeup from suspend */ \n \
-	.word   USBFS_IRQHandler           /* USBFS */ \n \
+	.word   0 \n \
+	.word   0 \n \
+	j   EXTI9_5_IRQHandler         /* EXTI Line 9..5 */ \n \
+	j   TIM1_BRK_IRQHandler        /* TIM1 Break */ \n \
+	j   TIM1_UP_IRQHandler         /* TIM1 Update */ \n \
+	j   TIM1_TRG_COM_IRQHandler    /* TIM1 Trigger and Commutation */ \n \
+	j   TIM1_CC_IRQHandler         /* TIM1 Capture Compare */ \n \
+	j   TIM2_IRQHandler            /* TIM2 */ \n \
+	j   TIM3_IRQHandler            /* TIM3 */ \n \
+	j   TIM4_IRQHandler            /* TIM4 */ \n \
+	j   I2C1_EV_IRQHandler         /* I2C1 Event */ \n \
+	j   I2C1_ER_IRQHandler         /* I2C1 Error */ \n \
+	j   I2C2_EV_IRQHandler         /* I2C2 Event */ \n \
+	j   I2C2_ER_IRQHandler         /* I2C2 Error */ \n \
+	j   SPI1_IRQHandler            /* SPI1 */ \n \
+	j   SPI2_IRQHandler            /* SPI2 */ \n \
+	j   USART1_IRQHandler          /* USART1 */ \n \
+	j   USART2_IRQHandler          /* USART2 */ \n \
+	j   USART3_IRQHandler          /* USART3 */ \n \
+	j   EXTI15_10_IRQHandler       /* EXTI Line 15..10 */ \n \
+	j   RTCAlarm_IRQHandler        /* RTC Alarm through EXTI Line */ \n \
+	j   USBFSWakeUp_IRQHandler     /* USB Wakeup from suspend */ \n \
+	j   USBFS_IRQHandler           /* USBFS */ \n \
 	.option   pop;\n"
 
 /* memory mapped structure for SysTick */
-typedef struct
+
+typedef struct __attribute__((packed))
 {
   __IO uint32_t CTLR;
-  __IO uint32_t CNTL;
-  __IO uint32_t CNTH;
-  __IO uint32_t CMPL;
-  __IO uint32_t CMPH;
+  union
+  {
+    struct
+    {
+      __IO uint8_t CNT0;
+      __IO uint8_t CNT1;
+      __IO uint8_t CNT2;
+      __IO uint8_t CNT3;
+      __IO uint8_t CNT4;
+      __IO uint8_t CNT5;
+      __IO uint8_t CNT6;
+      __IO uint8_t CNT7;
+      __IO uint8_t CMP0;
+      __IO uint8_t CMP1;
+      __IO uint8_t CMP2;
+      __IO uint8_t CMP3;
+      __IO uint8_t CMP4;
+      __IO uint8_t CMP5;
+      __IO uint8_t CMP6;
+      __IO uint8_t CMP7;
+    };
+    struct
+    {
+      __IO uint32_t CNTL;
+      __IO uint32_t CNTH;
+      __IO uint32_t CMPL;
+      __IO uint32_t CMPH;
+    };
+    struct
+    {
+      __IO uint64_t CNT;
+      __IO uint64_t CMP;
+    };
+  };
 } SysTick_Type;
-
 
 #endif /* __ASSEMBLER__*/
 
