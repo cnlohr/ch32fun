@@ -165,6 +165,7 @@ typedef enum
 	CLK_SOURCE_HSE_6_4MHz = (0x20 |  5),
 	CLK_SOURCE_HSE_4MHz =   (0x20 |  8),
 
+	CLK_SOURCE_PLL_80MHz =  (0x40 |  6),
 	CLK_SOURCE_PLL_60MHz =  (0x40 |  8),
 	CLK_SOURCE_PLL_48MHz =  (0x40 | 10),
 	CLK_SOURCE_PLL_32MHz =  (0x40 | 15),

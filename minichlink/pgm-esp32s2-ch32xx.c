@@ -80,6 +80,8 @@ static int ESPWriteReg32( void * dev, uint8_t reg_7_bit, uint32_t value )
 int ESPReadReg32( void * dev, uint8_t reg_7_bit, uint32_t * commandresp )
 {
 	struct ESP32ProgrammerStruct * eps = (struct ESP32ProgrammerStruct *)dev;
+
+  if( reg_7_bit == 0x7f ) reg_7_bit = 0x7a;
 	ESPFlushLLCommands( eps );
 	Write1( eps, (reg_7_bit<<1) | 0 );
 
@@ -520,7 +522,6 @@ int ESPPollTerminal( void * dev, uint8_t * buffer, int maxlen, uint32_t leavefla
 	return rlen - 1;
 }
 
-
 void * TryInit_ESP32S2CHFUN()
 {
 	hid_init();
@@ -536,7 +537,7 @@ void * TryInit_ESP32S2CHFUN()
 	}
 	else if( !!( hd = hid_open( 0x1206, 0x5D10, L"RVSWDIO003-01") ) )
 	{
-		eps->commandbuffersize = 78;
+		eps->commandbuffersize = 255;
 		eps->replysize = 78;
 		eps->programmer_type = PROGRAMMER_TYPE_CH32V003;
 	}
