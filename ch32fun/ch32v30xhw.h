@@ -2547,7 +2547,7 @@ typedef struct{
 #define CAN_TXMI0R_TXRQ                         ((uint32_t)0x00000001) /* Transmit Mailbox Request */
 #define CAN_TXMI0R_RTR                          ((uint32_t)0x00000002) /* Remote Transmission Request */
 #define CAN_TXMI0R_IDE                          ((uint32_t)0x00000004) /* Identifier Extension */
-#define CAN_TXMI0R_EXID                         ((uint32_t)0x001FFFF8) /* Extended Identifier */
+#define CAN_TXMI0R_EXID                         ((uint32_t)0xFFFFFFF8) /* Extended Identifier */
 #define CAN_TXMI0R_STID                         ((uint32_t)0xFFE00000) /* Standard Identifier or Extended Identifier */
 
 /******************  Bit definition for CAN_TXMDT0R register  *******************/
@@ -2571,7 +2571,7 @@ typedef struct{
 #define CAN_TXMI1R_TXRQ                         ((uint32_t)0x00000001) /* Transmit Mailbox Request */
 #define CAN_TXMI1R_RTR                          ((uint32_t)0x00000002) /* Remote Transmission Request */
 #define CAN_TXMI1R_IDE                          ((uint32_t)0x00000004) /* Identifier Extension */
-#define CAN_TXMI1R_EXID                         ((uint32_t)0x001FFFF8) /* Extended Identifier */
+#define CAN_TXMI1R_EXID                         ((uint32_t)0xFFFFFFF8) /* Extended Identifier */
 #define CAN_TXMI1R_STID                         ((uint32_t)0xFFE00000) /* Standard Identifier or Extended Identifier */
 
 /*******************  Bit definition for CAN_TXMDT1R register  ******************/
@@ -2595,7 +2595,7 @@ typedef struct{
 #define CAN_TXMI2R_TXRQ                         ((uint32_t)0x00000001) /* Transmit Mailbox Request */
 #define CAN_TXMI2R_RTR                          ((uint32_t)0x00000002) /* Remote Transmission Request */
 #define CAN_TXMI2R_IDE                          ((uint32_t)0x00000004) /* Identifier Extension */
-#define CAN_TXMI2R_EXID                         ((uint32_t)0x001FFFF8) /* Extended identifier */
+#define CAN_TXMI2R_EXID                         ((uint32_t)0xFFFFFFF8) /* Extended identifier */
 #define CAN_TXMI2R_STID                         ((uint32_t)0xFFE00000) /* Standard Identifier or Extended Identifier */
 
 /*******************  Bit definition for CAN_TXMDT2R register  ******************/
@@ -2618,7 +2618,7 @@ typedef struct{
 /*******************  Bit definition for CAN_RXMI0R register  *******************/
 #define CAN_RXMI0R_RTR                          ((uint32_t)0x00000002) /* Remote Transmission Request */
 #define CAN_RXMI0R_IDE                          ((uint32_t)0x00000004) /* Identifier Extension */
-#define CAN_RXMI0R_EXID                         ((uint32_t)0x001FFFF8) /* Extended Identifier */
+#define CAN_RXMI0R_EXID                         ((uint32_t)0xFFFFFFF8) /* Extended Identifier */
 #define CAN_RXMI0R_STID                         ((uint32_t)0xFFE00000) /* Standard Identifier or Extended Identifier */
 
 /*******************  Bit definition for CAN_RXMDT0R register  ******************/
@@ -2641,7 +2641,7 @@ typedef struct{
 /*******************  Bit definition for CAN_RXMI1R register  *******************/
 #define CAN_RXMI1R_RTR                          ((uint32_t)0x00000002) /* Remote Transmission Request */
 #define CAN_RXMI1R_IDE                          ((uint32_t)0x00000004) /* Identifier Extension */
-#define CAN_RXMI1R_EXID                         ((uint32_t)0x001FFFF8) /* Extended identifier */
+#define CAN_RXMI1R_EXID                         ((uint32_t)0xFFFFFFF8) /* Extended identifier */
 #define CAN_RXMI1R_STID                         ((uint32_t)0xFFE00000) /* Standard Identifier or Extended Identifier */
 
 /*******************  Bit definition for CAN_RXMDT1R register  ******************/
