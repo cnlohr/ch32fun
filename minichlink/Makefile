@@ -1,7 +1,7 @@
 TOOLS:=minichlink minichlink.so
 
 CFLAGS:=-O0 -g3 -Wall -DCH32V003 -I. -DMINICHLINK
-C_S:=minichlink.c pgm-wch-linke.c pgm-esp32s2-ch32xx.c nhc-link042.c ardulink.c serial_dev.c pgm-b003fun.c minichgdb.c
+C_S:=minichlink.c pgm-wch-linke.c pgm-esp32s2-ch32xx.c nhc-link042.c ardulink.c serial_dev.c pgm-b003fun.c minichgdb.c chips.c ch5xx.c
 H_S:=cmdserver.h funconfig.h hidapi.h libusb.h microgdbstub.h minichlink.h serial_dev.h terminalhelp.h
 
 # General Note: To use with GDB, gdb-multiarch
