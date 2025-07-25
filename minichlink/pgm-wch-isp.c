@@ -212,6 +212,8 @@ int ISPWriteBinaryBlob( void * d, uint32_t address_to_write, uint32_t blob_size,
 		return -1;
 	}
 
+	address_to_write = (address_to_write == 0x08000000) ? 0 : address_to_write;
+
 	// erase flash
 	ISPErase(d, address_to_write, blob_size, /*type=*/0);
 
@@ -227,7 +229,7 @@ int ISPWriteBinaryBlob( void * d, uint32_t address_to_write, uint32_t blob_size,
 				stream[(3+5) + (j*8) + k] = (blob_idx < blob_size ? blob[blob_idx] : 0xff) ^ iss->isp_xor_key[k];
 			}
 		}
-		offset = i * 56;
+		offset = address_to_write + (i * 56);
 		memcpy(&stream[3], &offset, 4);
 		stream[7] = (uint8_t)(blob_size -(i*56));
 		wch_isp_command( dev, stream, sizeof(stream), (int*)&transferred, rbuff, 1024 );
