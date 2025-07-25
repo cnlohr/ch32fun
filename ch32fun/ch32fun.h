@@ -348,6 +348,14 @@ typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
 #define   RV_STATIC_INLINE  static  inline
 #endif // __ASSEMBLER__
 
+#include <string.h>
+
+#if __GNUC__ > 10
+	#define ADD_ARCH_ZICSR ".option arch, +zicsr\n"
+#else
+	#define ADD_ARCH_ZICSR
+#endif
+
 #ifdef CH32V003
 	#include "ch32v003hw.h"
 #elif defined( CH32V002 ) || defined( CH32V00x )
@@ -372,11 +380,6 @@ typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
 
 #if defined(__riscv) || defined(__riscv__) || defined( CH32V003FUN_BASE )
 
-#if __GNUC__ > 10
-	#define ADD_ARCH_ZICSR ".option arch, +zicsr\n"
-#else
-	#define ADD_ARCH_ZICSR 
-#endif
 
 #ifndef __ASSEMBLER__
 

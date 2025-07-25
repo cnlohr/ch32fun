@@ -4,15 +4,16 @@ The CH5xx examples currently focus on the BLE chips 57x, 58x and 59x, but it is 
 
 The following table details which demo is working on which chip, since some functionality is still being implemented:
 
-|                   | ch570/2 | ch571/3 | ch58x | ch59x |
-|-------------------|---------|---------|-------|-------|
-| blink             |    √    |    √    |   √   |   √   |
-| debugprintfdemo   |    √    |    √    |   √   |   √   |
-| iSLER             |    √    |    √    |   √   |   √   |
-| lowpower          |    √    |    ×    |   ×   |   √   |
-| RTC_irq           |    √    |    √    |   ×   |   √   |
-| systick_irq       |    √    |    ×    |   √   |   √   |
-| uartdemo          |    √    |    √    |   √   |   √   |
-| ws2812bdemo       |    √    |    √    |   √   |   √   |
+|                   | ch570/2 | ch571/3 | ch582/3 | ch584/5 | ch59x |
+|-------------------|---------|---------|---------|---------|-------|
+| blink             |    √    |    √    |    √    |    ×    |   √   |
+| boot_button       |    ×    |    ×    |    √    |    ×    |   ×   |
+| debugprintfdemo   |    √    |    √    |    √    |    ×    |   √   |
+| iSLER             |    √    |    √    |    √    |    ×    |   √   |
+| lowpower          |    √    |    ×    |    ×    |    ×    |   √   |
+| RTC_irq           |    √    |    √    |    ×    |    ×    |   √   |
+| systick_irq       |    √    |    ×    |    √    |    ×    |   √   |
+| uartdemo          |    √    |    √    |    √    |    ×    |   √   |
+| ws2812bdemo       |    √    |    √    |    √    |    ×    |   √   |
 
 The Makefiles default to ch570, if you want to compile for another chip only the `TARGET_MCU` and `TARGET_MCU_PACKAGE` need to be changed.
