@@ -2,8 +2,8 @@ all : runfromram
 
 TARGET:=app_without_flash
 TARGET_MCU:=CH32V003
-#TARGET_MCU:=CH582
-#TARGET_MCU_PACKAGE:=CH582F
+# TARGET_MCU:=CH582
+# TARGET_MCU_PACKAGE:=CH582F
 
 LINKER_SCRIPT:=app_in_ram.ld
 
@@ -17,7 +17,7 @@ clean : cv_clean
 # Optionally, you could put a -T here to immediately terminal.
 
 runfromram : $(TARGET).bin
-	$(MINICHLINK)/minichlink -ks 0x10 0x80000001 -s 0x10 0x80000003 -s 0x18 0 -w $(TARGET).bin 0x20000000 -s 0x04 0x20000000 -s 0x17 0x002307b1 -s 0x10 0x40000001 -T
+	$(MINICHLINK)/minichlink -ks 0x10 0x80000001 -s 0x10 0x80000003 -s 0x10 0x80000001 -s 0x18 0 -w $(TARGET).bin 0x20000000 -s 0x04 0x20000000 -s 0x17 0x002307b1 -s 0x10 0x40000001 -T
 
 
 flash : cv_flash
