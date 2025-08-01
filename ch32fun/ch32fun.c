@@ -987,7 +987,13 @@ void UART2_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION)))
 void UART3_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void WDOG_BAT_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 
-void handle_reset( void ) __attribute__((section(".text.handle_reset")));
+#if FUNCONF_OVERRIDE_VECTOR_AND_START
+
+//No code.
+
+#else
+
+#if FUNCONF_NO_ISR == 0
 
 #if FUNCONF_ISR_IN_RAM
 	void Init()         __attribute__((naked)) __attribute((section(".init"))) __attribute((weak,alias("InitDefault"))) __attribute((naked));
@@ -1025,14 +1031,13 @@ void handle_reset( void ) __attribute__((section(".text.handle_reset")));
 		#endif
 	}
 #endif
-
+#endif
 
 #if FUNCONF_ISR_IN_RAM
 	#define VECTOR_HANDLER_SECTION ".data.vector_handler"
 #else
 	#define VECTOR_HANDLER_SECTION ".text.vector_handler"
 #endif
-
 
 
 #if defined( CH32V003 ) || defined( CH32X03x ) || defined(CH32V00x)
@@ -1059,10 +1064,13 @@ void handle_reset( void )
 "	li a0, 0x1880\n\
 	csrw mstatus, a0\n"
 #endif
+
+#if FUNCONF_NO_ISR == 0
 "	li a3, 0x3\n\
 	la a0, InterruptVector\n\
 	or a0, a0, a3\n\
 	csrw mtvec, a0\n" 
+#endif
 	: : : "a0", "a3", "memory");
 
 	// Careful: Use registers to prevent overwriting of self-data.
@@ -1185,9 +1193,11 @@ void handle_reset( void )
 "	li t0, 0x0b\n\
 	csrw 0x804, t0\n"
 #endif
+#if FUNCONF_NO_ISR == 0
 "	la t0, InterruptVector\n\
 	ori t0, t0, 3\n\
 	csrw mtvec, t0\n"
+#endif
 	: : [InterruptVector]"r"(InterruptVector) : "t0", "memory"
 	);
 
@@ -1202,6 +1212,8 @@ void handle_reset( void )
 "	csrw mepc, %[main]\n"
 "	mret\n" : : [main]"r"(main) );
 }
+
+#endif
 
 #endif
 

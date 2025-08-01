@@ -83,6 +83,8 @@
 #define FUNCONF_USE_5V_VDD 0            // Enable this if you plan to use your part at 5V - affects USB and PD configration on the x035.
 #define FUNCONF_DEBUG_HARDFAULT    1    // Log fatal errors with "printf"
 #define FUNCONF_ISR_IN_RAM 0            // Put the interrupt vector in RAM.
+#define FUNCONF_NO_ISR 0                // Do not emit ISR vector or handling code.
+#define FUNCONF_OVERRIDE_VECTOR_AND_START 0 // Generate no startup code or interrupt vector.
 */
 
 // Sanity check for when porting old code.
@@ -230,6 +232,14 @@
 
 #ifndef FUNCONF_ISR_IN_RAM
 	#define FUNCONF_ISR_IN_RAM 0
+#endif
+
+#ifndef FUNCONF_NO_ISR
+	#define FUNCONF_NO_ISR 0
+#endif
+
+#ifndef FUNCONF_OVERRIDE_VECTOR_AND_START
+	#define FUNCONF_OVERRIDE_VECTOR_AND_START 0
 #endif
 
 // Default package for CH32V20x
@@ -955,7 +965,13 @@ void funAnalogInit( void );
 // Be sure to call funAnalogInit first.
 int funAnalogRead( int nAnalogNumber );
 
-void handle_reset()            __attribute__((naked)) __attribute((section(".text.handle_reset"))) __attribute__((used));
+
+#if FUNCONF_NO_ISR
+void handle_reset( void )  __attribute__((naked)) __attribute((section(".init"))) __attribute__((used));
+#else 
+void handle_reset( void )  __attribute__((naked)) __attribute((section(".text.handle_reset"))) __attribute__((used));
+#endif
+
 void DefaultIRQHandler( void ) __attribute__((section(VECTOR_HANDLER_SECTION))) __attribute__((naked)) __attribute__((used));
 // used to clear the CSS flag in case of clock fail switch
 #if defined(FUNCONF_USE_CLK_SEC) && FUNCONF_USE_CLK_SEC
