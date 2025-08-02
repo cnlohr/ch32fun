@@ -918,7 +918,7 @@ static inline int USBFS_SendEndpoint( int endp, int len )
 	return 0;
 }
 
-static inline int USBFS_SendEndpointNEW( int endp, uint8_t* data, int len, int copy)
+int USBFS_SendEndpointNEW( int endp, uint8_t* data, int len, int copy)
 {
 	if( USBFSCTX.USBFS_errata_dont_send_endpoint_in_window || USBFSCTX.USBFS_Endp_Busy[ endp ] ) return -1;
 	// This prevents sending while ep0 is receiving

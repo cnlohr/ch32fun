@@ -811,7 +811,7 @@ void PrintHex( uint32_t n )
 // If you don't override a specific handler, it will just spin forever.
 void DefaultIRQHandler( void )
 {
-#if FUNCONF_DEBUG_HARDFAULT && ( FUNCONF_USE_DEBUGPRINTF || FUNCONF_USE_UARTPRINTF )
+#if FUNCONF_DEBUG_HARDFAULT && ( FUNCONF_USE_DEBUGPRINTF || FUNCONF_USE_UARTPRINTF || FUNCONF_USE_USBPRINTF )
 	//This is kind of like a crash handler.
 	//printf( "DEAD MSTATUS:%08x MTVAL:%08x MCAUSE:%08x MEPC:%08x\n", (int)__get_MSTATUS(), (int)__get_MTVAL(), (int)__get_MCAUSE(), (int)__get_MEPC() );
 	PrintHex( __get_MEPC() ); // "addr2line -e debugprintfdemo.elf 0x000007e6" ---> debugprintfdemo.c:45
@@ -1382,9 +1382,23 @@ WEAK int putchar(int c)
 }
 #endif
 
+#if defined( FUNCONF_USE_USBPRINTF ) && FUNCONF_USE_USBPRINTF
+extern int USBFS_SendEndpointNEW( int endp, uint8_t* data, int len, int copy);
+WEAK int _write(int fd, const char *buf, int size)
+{
+	while(USBFS_SendEndpointNEW(3, (uint8_t*)buf, size, 1) == -1); // -1 == busy
+	return size;
+}
+
+WEAK int putchar(int c)
+{
+	uint8_t single = c;
+	while(USBFS_SendEndpointNEW(3, &single, 1, 1) == -1); // -1 == busy
+	return 1;
+}
+#endif
+
 #if defined( FUNCONF_USE_DEBUGPRINTF ) && FUNCONF_USE_DEBUGPRINTF
-
-
 void handle_debug_input( int numbytes, uint8_t * data ) __attribute__((weak));
 void handle_debug_input( int numbytes, uint8_t * data ) { (void)numbytes; (void)data; }
 
@@ -1541,6 +1555,7 @@ int WaitForDebuggerToAttach( int timeout_ms )
 
 #if (defined( FUNCONF_USE_DEBUGPRINTF ) && !FUNCONF_USE_DEBUGPRINTF) && \
 	(defined( FUNCONF_USE_UARTPRINTF ) && !FUNCONF_USE_UARTPRINTF) && \
+	(defined( FUNCONF_USE_USBPRINTF ) && !FUNCONF_USE_USBPRINTF) && \
 	(defined( FUNCONF_NULL_PRINTF ) && FUNCONF_NULL_PRINTF)
 
 WEAK int _write(int fd, const char *buf, int size)
