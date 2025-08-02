@@ -1,6 +1,6 @@
 # ch32fun
 
-An open source development environment (tooling, headers, examples) for the [CH32V003](http://www.wch-ic.com/products/CH32V003.html) (and many other chips within the CH32V family) with gcc-riscv64 that can be used in Windows (Native), Linux and/or WSL.  The CH32V003 is 10-cent part with a RISC-V EC core that runs at 48MHz, has 16kB of flash and 2kB of RAM and a bunch of peripherals.  It also comes in SOP-8, QFN-20 and SOIC packages.  You can get the datasheet [here](http://www.wch-ic.com/downloads/CH32V003DS0_PDF.html).
+An open source development environment (tooling, headers, examples) for the [CH32V003](http://www.wch-ic.com/products/CH32V003.html) (and many other riscv chips made by WCH) with gcc-riscv64 that can be used in Windows (Native), Linux and/or WSL.  The CH32V003 is 10-cent part with a RISC-V EC core that runs at 48MHz, has 16kB of flash and 2kB of RAM and a bunch of peripherals.  It also comes in SOP-8, QFN-20 and SOIC packages.  You can get the datasheet [here](http://www.wch-ic.com/downloads/CH32V003DS0_PDF.html).
 
 The goal of this project is to develop the tooling and environment for efficient use of the CH32V003.  Avoid complicated HALs, and unleash the hardware! The existing EVT is massive, and dev environment weighty.  This project specifically avoids the HAL and makes it so you can just use the [TRM](http://www.wch-ic.com/downloads/CH32V003RM_PDF.html). In contrast, blinky is only 500 bytes with ch32fun, boots faster, and significantly simpler overall.
 
@@ -12,6 +12,7 @@ ch32fun contains:
   * The official WCH Link-E Programmer.
   * An Arduino-based interface, [Ardulink](https://gitlab.com/BlueSyncLine/arduino-ch32v003-swio).
   * Support for the ch32v003-based programmer for all SWD/SWIO boards using [The rv003usb SWDIO programmer](https://github.com/cnlohr/rv003usb/tree/master/rvswdio_programmer)
+  * Support for built-in USB ISP bootloader that is present on all WCH chips with USB peripheral
   * Supports gdbserver-style-debugging for use with Visual Studio.
   * Supports printf-over-single-wire. (At about 400kBaud)
 3. An extra copy of libgcc so you can use unusual risc-v build chains, located in the `misc/libgcc.a`.
@@ -21,7 +22,9 @@ ch32fun contains:
 
 ## Other family support
 
-Currently, there is experimental support for the ch32v103, ch32v203, ch32v208, ch32v303, ch32v305 and ch32v307.  GDB is mostly tested on the 003, but works, to a limited degree on the other processors.
+Currently, there is support for the ch32x035, ch32v002, ch32v004, ch32v005, ch32v006, ch32v007, ch32v103, ch32v203, ch32v208, ch32v303, ch32v305 and ch32v307. Recently support for ch570, ch572, ch571, ch573, ch581, ch582, ch583, ch584, ch585 and ch591, ch592 was added. Some obscure chips like ch32m030, ch641, ch643, ch645 should also work, test reports on those will be appreciated.
+
+GDB is mostly tested on the 003, but works, to a limited degree on the other processors.
 
 ## Getting Started
 

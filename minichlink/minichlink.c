@@ -31,6 +31,7 @@ static void StaticUpdatePROGBUFRegs( void * dev ) __attribute__((used));
 int DefaultReadBinaryBlob( void * dev, uint32_t address_to_read_from, uint32_t read_size, uint8_t * blob );
 int DefaultDelayUS( void * dev, int us );
 void PostSetupConfigureInterface( void * dev );
+int DefaultConfigureReadProtection( void * dev, int one_if_yes_protect );
 void TestFunction(void * v );
 static void readCSR( void * dev, uint32_t csr );
 struct MiniChlinkFunctions MCF;
@@ -332,7 +333,7 @@ keep_going:
 				if( MCF.HaltMode ) MCF.HaltMode( dev, HALT_MODE_HALT_AND_RESET );
 				if( MCF.ConfigureReadProtection )
 				{
-					fprintf(stderr, "This will erase the flash entirely!");
+					fprintf(stderr, "This will erase the flash entirely!\n");
 					fprintf(stderr, "Press Enter to proceed, Ctrl+C to abort.");
 					while(!IsKBHit());
 					// TODO: revert after testing
@@ -927,34 +928,34 @@ keep_going:
 				free( image );
 				break;
 			}
-      case 'N':
-      {
-        if( MCF.EnableDebug )
-        {
-          printf("Enabling debug\n");
-          if( MCF.EnableDebug( dev, 0 ) )
+			case 'N':
+			{
+				if( MCF.EnableDebug )
+				{
+					printf("Enabling debug\n");
+					if( MCF.EnableDebug( dev, 0 ) )
 					{
 						return -13;
 					}
-        }
-        break;
-      }
-      case 'n':
-      {
-        if( MCF.EnableDebug )
-        {
-          fprintf( stderr, "This will disable debug module. And you will be only able to program the chip using the bootloader.\nPress Enter to continue\n");
+				}
+				break;
+			}
+			case 'n':
+			{
+				if( MCF.EnableDebug )
+				{
+					fprintf( stderr, "This will disable debug module. And you will be only able to program the chip using the bootloader.\nPress Enter to continue\n");
 					while(!IsKBHit());
-          ReadKBByte();
-          fprintf( stderr, "Are you absolutely sure about it?\nPress Enter to continue, or Ctrl+C to cancel\n");
+					ReadKBByte();
+					fprintf( stderr, "Are you absolutely sure about it?\nPress Enter to continue, or Ctrl+C to cancel\n");
 					while(!IsKBHit());
-          if( MCF.EnableDebug( dev, 1 ) )
+					if( MCF.EnableDebug( dev, 1 ) )
 					{
 						return -13;
 					}
-        }
-        break;
-      }
+				}
+				break;
+			}
 			case 'Y':
 			{
 				if( iss->target_chip_type == CHIP_CH570 ||
@@ -962,14 +963,15 @@ keep_going:
 					  iss->target_chip_type == CHIP_CH58x ||
 					  iss->target_chip_type == CHIP_CH585 ||
 					  iss->target_chip_type == CHIP_CH59x) CH5xxBlink(dev, 0, 8, 0);
-        break;
+				break;
 			}
-        
+				
 			case 'y':
 			{
 				// MCF.HaltMode( dev, HALT_MODE_HALT_BUT_NO_RESET );
-        readCSR( dev, 0x7b1 );
-        break;
+				// readCSR( dev, 0x7b0 );
+				readCSR( dev, 0x300 );
+				break;
 			}
 			
 		}
@@ -1210,7 +1212,6 @@ int DefaultSetupInterface( void * dev )
 		fprintf( stderr, "Error: Could not read dmstatus. r = %d\n", r );
 		return r;
 	}
-  fprintf( stderr, "Got code %08x\n", reg );
 
 	iss->statetag = STTAG( "STRT" );
 	return 0;
@@ -1443,7 +1444,7 @@ static int DefaultDetermineChipType( void * dev )
 					else if( chip_id == 0x73 )
 					{
 						uint32_t ch573_variant = 0;
-            ch5xx_read_options( dev, 0x7f00c, (uint8_t*)&ch573_variant );
+						ch5xx_read_options( dev, 0x7f00c, (uint8_t*)&ch573_variant );
 						if( (int)(ch573_variant << 18) < 0 )
 						{
 							iss->target_chip = &ch573q;
@@ -1510,6 +1511,22 @@ static int DefaultDetermineChipType( void * dev )
 				iss->target_chip = &ch32v007;
 				chip_id_address = 0x1ffff704;
 			}
+			else if( (masked_id & 0xff000000) == 0x41000000 )
+			{
+				switch ((sevenf_id & 0xfff00000) >> 20)
+				{
+					case 415:
+						iss->target_chip = &ch32h415;
+						break;
+					case 416:
+						iss->target_chip = &ch32h416;
+						break;
+					case 417:
+						iss->target_chip = &ch32h417;
+						break;
+				}
+				chip_id_address = 0x1ffff704; // Maybe wrong, will have to check
+			}
 
 			if( masked_id2 == 0x64100500 )
 			{
@@ -1542,21 +1559,24 @@ static int DefaultDetermineChipType( void * dev )
 			{
 				switch ((sevenf_id & 0xfff00000) >> 20)
 				{
-				case 0x203:
-					iss->target_chip = &ch32v203;
-					break;
-				case 0x208:
-					iss->target_chip = &ch32v208;
-					break;
-				case 0x303:
-					iss->target_chip = &ch32v303;
-					break;
-				case 0x305:
-					iss->target_chip = &ch32v305;
-					break;
-				case 0x307:
-					iss->target_chip = &ch32v307;
-					break;
+					case 0x203:
+						iss->target_chip = &ch32v203;
+						break;
+					case 0x205:
+						iss->target_chip = &ch32v205;	// Need to confirm that it actually appears here
+						break;
+					case 0x208:
+						iss->target_chip = &ch32v208;
+						break;
+					case 0x303:
+						iss->target_chip = &ch32v303;
+						break;
+					case 0x305:
+						iss->target_chip = &ch32v305;
+						break;
+					case 0x307:
+						iss->target_chip = &ch32v307;
+						break;
 				}
 				chip_id_address = 0x1ffff704;
 			}
@@ -1641,6 +1661,8 @@ chip_identified:
 				MCF.Erase = CH5xxErase;
 				MCF.SetClock = CH5xxSetClock;
 				MCF.GetUUID = CH5xxReadUUID;
+				MCF.ConfigureNRSTAsGPIO = CH5xxConfigureNRSTAsGPIO;
+				if( iss->target_chip_type == CHIP_CH570 ) MCF.ConfigureReadProtection = DefaultConfigureReadProtection;
 			}
 
 			uint8_t * part_type = (uint8_t*)&iss->target_chip_id;
@@ -1651,7 +1673,7 @@ chip_identified:
 			fprintf( stderr, "Part UUID: %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n", uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7] );
 			fprintf( stderr, "Part Type: %02x-%02x-%02x-%02x\n", part_type[3], part_type[2], part_type[1], part_type[0] );
 			fprintf( stderr, "Read protection: %s\n", (read_protection > 0)?"enabled":"disabled" );
-		}	
+		}
 		// Cleanup
 		MCF.WriteReg32( dev, DMDATA0, old_x8 );
 		MCF.WriteReg32( dev, DMCOMMAND, 0x00231008 ); // Copy data to x8
@@ -3004,14 +3026,14 @@ int DefaultPollTerminal( void * dev, uint8_t * buffer, int maxlen, uint32_t leav
 int DefaultUnbrick( void * dev )
 {
 	printf( "Entering Unbrick Mode\n" );
-	MCF.Control5v( dev, 0 );
+	if( MCF.Control5v ) MCF.Control5v( dev, 0 );
 	MCF.Control3v3( dev, 0 );
 
 	MCF.DelayUS( dev, 60000 );
 	MCF.DelayUS( dev, 60000 );
 	MCF.DelayUS( dev, 60000 );
 	MCF.DelayUS( dev, 60000 );
-	MCF.Control5v( dev, 1 );
+	if( MCF.Control5v ) MCF.Control5v( dev, 1 );
 	MCF.Control3v3( dev, 1 );
 	printf( "Connection starting\n" );
 	MCF.FlushLLCommands( dev );
@@ -3096,30 +3118,31 @@ int DefaultUnbrick( void * dev )
 	return -5;
 }
 
-int DefaultConfigureNRSTAsGPIO( void * dev, int one_if_yes_gpio  )
+int DefaultConfigureNRSTAsGPIO( void * dev, int one_if_yes_gpio )
 {
 	fprintf( stderr, "Error: DefaultConfigureNRSTAsGPIO does not work via the programmer here.  Please see the demo \"optionbytes\"\n" );
 	return -5;
 }
 
-int DefaultConfigureReadProtection( void * dev, int one_if_yes_protect  )
+int DefaultConfigureReadProtection( void * dev, int one_if_yes_protect )
 {
-  struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
-  if( iss->target_chip_type == CHIP_CH570 && one_if_yes_protect == 0 )
-  {
-    ch570_disable_read_protection( dev );
-  }
-  else
-  {
-    fprintf( stderr, "Error: DefaultConfigureReadProtection does not work via the programmer here.  Please see the demo \"optionbytes\"\n" );
-    return -5;
-  }
-  return 0;
+	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
+	if( iss->target_chip_type == CHIP_CH570 && one_if_yes_protect == 0 )
+	{
+		fprintf( stderr, "Disabling protection on CH570/2\n" );
+		ch570_disable_read_protection( dev );
+	}
+	else
+	{
+		fprintf( stderr, "Error: DefaultConfigureReadProtection does not work via the programmer here.  Please see the demo \"optionbytes\"\n" );
+		return -5;
+	}
+	return 0;
 }
 
 int DefaultEnableDebug( void * dev, uint8_t disable )
 {
-  fprintf( stderr, "Error: This is only possibe using ISP mode on some CH5xx chips.\n" );
+	fprintf( stderr, "Error: This is only possibe using ISP mode on some CH5xx chips.\n" );
 	return -5;
 }
 

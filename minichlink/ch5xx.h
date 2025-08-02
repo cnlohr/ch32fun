@@ -42,5 +42,6 @@ int CH5xxReadBinaryBlob(void* dev, uint32_t address_to_read_from, uint32_t read_
 void CH5xxBlink(void* dev, uint8_t port, uint8_t pin, uint32_t delay);
 void CH5xxTestPC(void* dev);
 int CH5xxPrintInfo(void* dev);
+int CH5xxConfigureNRSTAsGPIO(void * dev, int one_if_yes_gpio);
 
 #endif

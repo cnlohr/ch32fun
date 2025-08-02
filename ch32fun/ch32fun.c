@@ -1596,7 +1596,7 @@ void SystemInit( void )
 #if defined(FUNCONF_USE_PLL) && FUNCONF_USE_PLL
 	#if defined(CH32V003) || defined(CH32V00x)
 		#define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PLLSRC_HSI_Mul2    // HCLK = SYSCLK = APB1 And, enable PLL
-	#elif defined(CH32V20x_D8W)
+	#elif defined(CH32V20x_D8) || defined(CH32V20x_D8W) 
 		#define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PPRE2_DIV1 | RCC_PPRE1_DIV1 | PLL_MULTIPLICATION
 	#else
 		#define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PPRE2_DIV1 | RCC_PPRE1_DIV2 | PLL_MULTIPLICATION

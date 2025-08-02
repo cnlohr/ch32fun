@@ -133,7 +133,7 @@ int ESPReadAllCPURegisters( void * dev, uint32_t * regret )
 			return -2;
 		}
 		e++;
-		memcpy( regret + i, e, 4 ); 
+		memcpy( regret + i, e, 4 );
 		e += 4;
 	}
 	return 0;
@@ -307,7 +307,6 @@ retry:
 	eps->replylen = eps->replybuffer[0] + 1; // Include the header byte.
 	return r;
 }
-	
 
 int ESPControl3v3( void * dev, int bOn )
 {
@@ -322,7 +321,6 @@ int ESPControl3v3( void * dev, int bOn )
 		Write2LE( eps, 0x02fe );
 	return 0;
 }
-
 
 int ESPReadWord( void * dev, uint32_t address_to_read, uint32_t * data )
 {
@@ -353,8 +351,8 @@ int ESPWriteWord( void * dev, uint32_t address_to_write, uint32_t data )
 		ESPFlushLLCommands( eps );
   
 	Write2LE( eps, 0x08fe );
-	Write4LE( eps, address_to_write );	
-	Write4LE( eps, data );	
+	Write4LE( eps, address_to_write );
+	Write4LE( eps, data );
   eps->replysize += 2;
 	return 0;
 }
@@ -448,7 +446,7 @@ int ESPVoidHighLevelState( void * dev )
 {
 	struct ESP32ProgrammerStruct * eps = (struct ESP32ProgrammerStruct *)dev;
 	Write2LE( eps, 0x05fe );
-	ESPFlushLLCommands( dev );	
+	ESPFlushLLCommands( dev );
 	DefaultVoidHighLevelState( dev );
 	return 0;
 }
@@ -503,14 +501,14 @@ int ESPVendorCommand( void * dev, const char * cmd )
 			return -9;
 		}
 		Write2LE( dev, 0x0cfe );
-		Write1( dev, fields[0] ); 
-		Write1( dev, fields[1] ); 
-		Write1( dev, fields[2] ); 
-		Write1( dev, fields[3] ); 
-		Write1( dev, fields[4] ); 
-		Write1( dev, 0 ); 
-		Write1( dev, 0 ); 
-		Write1( dev, 0 ); 
+		Write1( dev, fields[0] );
+		Write1( dev, fields[1] );
+		Write1( dev, fields[2] );
+		Write1( dev, fields[3] );
+		Write1( dev, fields[4] );
+		Write1( dev, 0 );
+		Write1( dev, 0 );
+		Write1( dev, 0 );
 		ESPFlushLLCommands( dev );
 	}
 	else
@@ -523,7 +521,7 @@ int ESPVendorCommand( void * dev, const char * cmd )
 int ESPPollTerminal( void * dev, uint8_t * buffer, int maxlen, uint32_t leaveflagA, int leaveflagB )
 {
 	struct ESP32ProgrammerStruct * eps = (struct ESP32ProgrammerStruct *)dev;
-	ESPFlushLLCommands( dev );	
+	ESPFlushLLCommands( dev );
 	Write1( dev, 0xfe );
 	Write1( dev, 0x0d );
 	Write4LE( dev, leaveflagA );
@@ -747,13 +745,13 @@ int ESPCH5xxErase( void * dev, uint32_t addr, uint32_t len, int type )
 	return (int8_t)eps->replybuffer[1];
 }
 
-int ESPCH5xxWriteBinaryBlob( void * dev, uint32_t address_to_write, uint32_t blob_size, const uint8_t* blob )
-{
+int ESPCH5xxWriteBinaryBlob(void * dev, uint32_t address_to_write, uint32_t blob_size, const uint8_t * blob) {
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
-	uint8_t write_mode = 0;
 
 	int ret = 0;
-	
+
+	if (blob_size == 0) return 0;
+
 	if (!iss->current_area) DetectMemoryArea(dev, address_to_write);
 	if (!CheckMemoryLocation(dev, 0, address_to_write, blob_size)) {
 		fprintf(stderr, "Data doesn't fit into memory location\n");
@@ -762,16 +760,17 @@ int ESPCH5xxWriteBinaryBlob( void * dev, uint32_t address_to_write, uint32_t blo
 
 	MCF.SetClock(dev, 0);
 
+	uint8_t write_mode = 0;
+
 	uint32_t sector_size = iss->target_chip->sector_size;
-	if (iss->current_area == EEPROM_AREA) sector_size = 256;
-	else if (iss->current_area == RAM_AREA) sector_size = 4;
+	if (iss->current_area == RAM_AREA) sector_size = 4;
 	uint8_t* start_pad = malloc(sector_size);
 	uint8_t* end_pad = malloc(sector_size);
 	
 	uint32_t spad = address_to_write - ((address_to_write / sector_size) * sector_size);
 	uint32_t epad = (address_to_write + blob_size) - ((address_to_write + blob_size) / sector_size) * sector_size;
 	uint32_t new_blob_size = blob_size;
-	
+
 	if (iss->target_chip_type == CHIP_CH570) {
 		uint32_t options;
 		MCF.ReadWord(dev, 0x40001058, &options);
@@ -781,24 +780,33 @@ int ESPCH5xxWriteBinaryBlob( void * dev, uint32_t address_to_write, uint32_t blo
 	}
 
 	if (iss->current_area == PROGRAM_AREA) {
-		// if (blob_size > 4096) 
+		// if (blob_size > 4096)
 		write_mode = 1; // Always use microblob for program flash for now
 		
 		if (spad) {
-			MCF.ReadBinaryBlob(dev, ((address_to_write + spad) - sector_size), (sector_size - spad), start_pad);
-			memcpy(start_pad + (sector_size - spad), blob, spad);
-			new_blob_size -= spad;
+			if (spad + blob_size <= sector_size) {
+				MCF.ReadBinaryBlob(dev, (address_to_write - spad), sector_size, start_pad);
+				memcpy(start_pad + spad, blob, blob_size);
+				epad = 0;
+			} else {
+				MCF.ReadBinaryBlob(dev, (address_to_write - spad), spad, start_pad);
+				memcpy(start_pad + spad, blob, sector_size - spad);
+			}
+			if (new_blob_size >= sector_size - spad) new_blob_size -= sector_size - spad;
+			else new_blob_size = 0;
 		}
 		if (epad) {
-			memcpy(end_pad, blob + (blob_size - epad), epad);
+			if (new_blob_size) memcpy(end_pad, blob + (blob_size - epad), epad);
 			MCF.ReadBinaryBlob(dev, (address_to_write + blob_size), sector_size - epad, end_pad + epad);
-			new_blob_size -= epad;
+			if (new_blob_size >= epad) new_blob_size -= epad;
+			else new_blob_size = 0;
 		}
 
 		if (spad) {
 			ESPCH5xxErase(dev, ((address_to_write + spad) - sector_size), new_blob_size + spad + epad, 0);
 			esp_ch5xx_write_flash(dev, address_to_write - spad, start_pad, sector_size, write_mode);
-			esp_ch5xx_write_flash(dev, address_to_write + (sector_size - spad), (uint8_t*)(blob + (sector_size - spad)), new_blob_size, write_mode);
+			if (spad + blob_size > sector_size)
+				esp_ch5xx_write_flash(dev, address_to_write + (sector_size - spad), (uint8_t*)(blob + (sector_size - spad)), new_blob_size, write_mode);
 		} else {
 			ESPCH5xxErase(dev, address_to_write, new_blob_size + epad, 0);
 			esp_ch5xx_write_flash(dev, address_to_write, (uint8_t*)(blob), new_blob_size, write_mode);
@@ -811,22 +819,31 @@ int ESPCH5xxWriteBinaryBlob( void * dev, uint32_t address_to_write, uint32_t blo
 		ret = -2;
 		goto end;
 	} else if (iss->current_area == OPTIONS_AREA) {
-
+		
 		if (spad) {
-			esp_ch5xx_read_options_bulk(dev, ((address_to_write + spad) - sector_size), start_pad, (sector_size - spad));
-			memcpy(start_pad + (sector_size - spad), blob, spad);
-			new_blob_size -= spad;
+			if (spad + blob_size <= sector_size) {
+				esp_ch5xx_read_options_bulk(dev, (address_to_write - spad), start_pad, sector_size);
+				memcpy(start_pad + spad, blob, blob_size);
+				epad = 0;
+			} else {
+				esp_ch5xx_read_options_bulk(dev, (address_to_write - spad), start_pad, spad);
+				memcpy(start_pad + spad, blob, sector_size - spad);
+			}
+			if (new_blob_size >= sector_size - spad) new_blob_size -= sector_size - spad;
+			else new_blob_size = 0;
 		}
 		if (epad) {
-			memcpy(end_pad, blob + (blob_size - epad), epad);
+			if (new_blob_size) memcpy(end_pad, blob + (blob_size - epad), epad);
 			esp_ch5xx_read_options_bulk(dev, (address_to_write + blob_size), end_pad + epad, sector_size - epad);
-			new_blob_size -= epad;
+			if (new_blob_size >= epad) new_blob_size -= epad;
+			else new_blob_size = 0;
 		}
 
 		if (spad) {
 			ESPCH5xxErase(dev, ((address_to_write + spad) - sector_size), new_blob_size + spad + epad, 0);
 			esp_ch5xx_write_flash(dev, address_to_write - spad, start_pad, sector_size, write_mode);
-			esp_ch5xx_write_flash(dev, address_to_write + (sector_size - spad), (uint8_t*)(blob + (sector_size - spad)), new_blob_size, write_mode);
+			if (spad + blob_size > sector_size)
+				esp_ch5xx_write_flash(dev, address_to_write + (sector_size - spad), (uint8_t*)(blob + (sector_size - spad)), new_blob_size, write_mode);
 		} else {
 			ESPCH5xxErase(dev, address_to_write, new_blob_size + epad, 0);
 			esp_ch5xx_write_flash(dev, address_to_write, (uint8_t*)(blob), new_blob_size, write_mode);
@@ -836,20 +853,29 @@ int ESPCH5xxWriteBinaryBlob( void * dev, uint32_t address_to_write, uint32_t blo
 	} else if (iss->current_area == EEPROM_AREA) {
 
 		if (spad) {
-			esp_ch5xx_read_eeprom(dev, ((address_to_write + spad) - sector_size), start_pad, (sector_size - spad));
-			memcpy(start_pad + (sector_size - spad), blob, spad);
-			new_blob_size -= spad;
+			if (spad + blob_size <= sector_size) {
+				esp_ch5xx_read_eeprom(dev, (address_to_write - spad), start_pad, sector_size);
+				memcpy(start_pad + spad, blob, blob_size);
+				epad = 0;
+			} else {
+				esp_ch5xx_read_eeprom(dev, (address_to_write - spad), start_pad, spad);
+				memcpy(start_pad + spad, blob, sector_size - spad);
+			}
+			if (new_blob_size >= sector_size - spad) new_blob_size -= sector_size - spad;
+			else new_blob_size = 0;
 		}
 		if (epad) {
-			memcpy(end_pad, blob + (blob_size - epad), epad);
+			if (new_blob_size) memcpy(end_pad, blob + (blob_size - epad), epad);
 			esp_ch5xx_read_eeprom(dev, (address_to_write + blob_size), end_pad + epad, sector_size - epad);
-			new_blob_size -= epad;
+			if (new_blob_size >= epad) new_blob_size -= epad;
+			else new_blob_size = 0;
 		}
 
 		if (spad) {
 			ESPCH5xxErase(dev, ((address_to_write + spad) - sector_size), new_blob_size + spad + epad, 0);
 			esp_ch5xx_write_flash(dev, address_to_write - spad, start_pad, sector_size, write_mode);
-			esp_ch5xx_write_flash(dev, address_to_write + (sector_size - spad), (uint8_t*)(blob + (sector_size - spad)), new_blob_size, write_mode);
+			if (spad + blob_size > sector_size)
+				esp_ch5xx_write_flash(dev, address_to_write + (sector_size - spad), (uint8_t*)(blob + (sector_size - spad)), new_blob_size, write_mode);
 		} else {
 			ESPCH5xxErase(dev, address_to_write, new_blob_size + epad, 0);
 			esp_ch5xx_write_flash(dev, address_to_write, (uint8_t*)(blob), new_blob_size, write_mode);
@@ -857,7 +883,6 @@ int ESPCH5xxWriteBinaryBlob( void * dev, uint32_t address_to_write, uint32_t blo
 		if (epad) esp_ch5xx_write_flash(dev, (address_to_write + blob_size) - epad, end_pad, sector_size, write_mode);
 
 	} else if (iss->current_area == RAM_AREA) {
-
 		if (spad) {
 			for (int i = 0; i < spad; i++) {
 				ret = MCF.WriteByte(dev, address_to_write+i, *((uint8_t*)(blob+i)));
@@ -890,7 +915,7 @@ int ESPCH5xxWriteBinaryBlob( void * dev, uint32_t address_to_write, uint32_t blo
 		goto end;
 	}
 
-	fprintf(stderr, "\nDone writing\n");
+	fprintf(stderr, "Done writing\n");
 end:
 	free(start_pad);
 	free(end_pad);
@@ -950,7 +975,7 @@ int ESPDetermineChipTypeOLD( void * dev )
 		// Tricky, this function needs to clean everything up because it may be used entering debugger.
 		uint32_t old_data0;
 		MCF.ReadReg32( dev, DMDATA0, &old_data0 );
-		MCF.WriteReg32( dev, DMCOMMAND, 0x00221008 );		// Copy data from x8.
+		MCF.WriteReg32( dev, DMCOMMAND, 0x00221008 ); // Copy data from x8.
 		uint32_t old_x8;
 		MCF.ReadReg32( dev, DMDATA0, &old_x8 );
 
@@ -961,15 +986,15 @@ int ESPDetermineChipTypeOLD( void * dev )
 
 		MCF.WriteReg32( dev, DMABSTRACTAUTO, 0x00000000 );
 		MCF.WriteReg32( dev, DMCOMMAND, 0x00220000 | 0xf12 );
-		MCF.WriteReg32( dev, DMCOMMAND, 0x00220000 | 0xf12 );  // Need to double-read, not sure why.
+		MCF.WriteReg32( dev, DMCOMMAND, 0x00220000 | 0xf12 ); // Need to double-read, not sure why.
 		MCF.ReadReg32( dev, DMDATA0, &marchid );
 
-		MCF.WriteReg32( dev, DMPROGBUF0, 0x90024000 );		// c.ebreak <<== c.lw x8, 0(x8)
-		MCF.WriteReg32( dev, DMDATA0, 0x1ffff704 );			// Special chip ID location.
-		MCF.WriteReg32( dev, DMCOMMAND, 0x00271008 );		// Copy data to x8, and execute.
+		MCF.WriteReg32( dev, DMPROGBUF0, 0x90024000 ); // c.ebreak <<== c.lw x8, 0(x8)
+		MCF.WriteReg32( dev, DMDATA0, 0x1ffff704 ); // Special chip ID location.
+		MCF.WriteReg32( dev, DMCOMMAND, 0x00271008 ); // Copy data to x8, and execute.
 		MCF.WaitForDoneOp( dev, 0 );
 
-		MCF.WriteReg32( dev, DMCOMMAND, 0x00221008 );		// Copy data from x8.
+		MCF.WriteReg32( dev, DMCOMMAND, 0x00221008 ); // Copy data from x8.
 		MCF.ReadReg32( dev, DMDATA0, &vendorid );
 
 		uint32_t chip_type = (vendorid & 0xfff00000)>>20;
@@ -1079,8 +1104,8 @@ int ESPDetermineChipTypeOLD( void * dev )
 			iss->ram_size = iss->target_chip->ram_size;
 			iss->sector_size = iss->target_chip->sector_size;
 			iss->nr_registers_for_debug = 32; // Maybe add a core type variable to RiscVChip_s?
-			if( iss->target_chip_type == CHIP_CH32V00x || 
-				iss->target_chip_type == CHIP_CH32V003 ||  
+			if( iss->target_chip_type == CHIP_CH32V00x ||
+				iss->target_chip_type == CHIP_CH32V003 ||
 				iss->target_chip_type == CHIP_CH641 )
 			{
 				iss->nr_registers_for_debug = 16;
@@ -1088,7 +1113,7 @@ int ESPDetermineChipTypeOLD( void * dev )
 			
 			uint8_t uuid[8];
 			if( MCF.GetUUID( dev, uuid ) ) fprintf( stderr, "Couldn't read UUID\n" );
-			fprintf( stderr, "Detected %s\n", iss->target_chip->name_str ); 
+			fprintf( stderr, "Detected %s\n", iss->target_chip->name_str );
 			fprintf( stderr, "Flash Storage: %d kB\n", iss->flash_size );
 			fprintf( stderr, "Part UUID: %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n", uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7] );
 			fprintf( stderr, "Read protection: %s\n", (read_protection > 0)?"enabled":"disabled" );
@@ -1096,7 +1121,7 @@ int ESPDetermineChipTypeOLD( void * dev )
 
 		// Cleanup
 		MCF.WriteReg32( dev, DMDATA0, old_x8 );
-		MCF.WriteReg32( dev, DMCOMMAND, 0x00231008 );		// Copy data to x8
+		MCF.WriteReg32( dev, DMCOMMAND, 0x00231008 ); // Copy data to x8
 		MCF.WriteReg32( dev, DMDATA0, old_data0 );
 		iss->statetag = STTAG( "XXXX" );
 	}
@@ -1119,8 +1144,6 @@ int ESPDetermineChipType( void * dev )
 		{
 			return -9;
 		}
-		// int tail = eps->replylen-5;
-		// memcpy( data, eps->reply + tail + 1, 4 );
 		// fprintf( stderr, "%02x %02x %02x %02x %02x %02x %02x %02x\n", eps->reply[0], eps->reply[1], eps->reply[2], eps->reply[3], eps->reply[4], eps->reply[5], eps->reply[6], eps->reply[7]);
 
 		uint16_t reply = *((uint16_t*)&eps->replybuffer[6]);
@@ -1129,8 +1152,6 @@ int ESPDetermineChipType( void * dev )
 		uint32_t chip_id_address = 0x1ffff7c4;
 		uint32_t flash_size_address = 0x1ffff7e0;
 
-		// fprintf( stderr, "%04x %08x\n", reply, sevenf_id);
-		// return -1;
 		switch ( reply & 0x7FFF )
 		{
 			case 0x564:
@@ -1273,7 +1294,7 @@ int ESPDetermineChipType( void * dev )
 			case ((3 << 12) | 0x317):
 				iss->target_chip = &ch32v317;
 				chip_id_address = 0x1ffff704;
-				break;	
+				break;
 			default:
 				iss->target_chip = NULL;
 				break;
@@ -1326,6 +1347,7 @@ int ESPDetermineChipType( void * dev )
 				MCF.Erase = ESPCH5xxErase;
 				MCF.ReadBinaryBlob = ESPCH5xxReadBinaryBlob;
 				MCF.GetUUID = ESPCH5xxReadUUID;
+        MCF.ConfigureNRSTAsGPIO = CH5xxConfigureNRSTAsGPIO;
 			}
 
 			uint8_t * part_type = (uint8_t*)&iss->target_chip_id;

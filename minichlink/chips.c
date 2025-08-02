@@ -117,7 +117,7 @@ const struct RiscVChip_s ch32x033 = {
 	.options_size = 256,
 	.interface_speed = 0x01,
 	.protocol = PROTOCOL_DEFAULT,
-  .isp_id_mask = 0x235a,
+	.isp_id_mask = 0x235a,
 };
 
 const struct RiscVChip_s ch32x035 = {
@@ -135,7 +135,7 @@ const struct RiscVChip_s ch32x035 = {
 	.options_size = 256,
 	.interface_speed = 0x01,
 	.protocol = PROTOCOL_DEFAULT,
-  .isp_id_mask = 0x235f,
+	.isp_id_mask = 0x235f,
 };
 
 const struct RiscVChip_s ch32v103 = {
@@ -154,7 +154,7 @@ const struct RiscVChip_s ch32v103 = {
 	.interface_speed = 0x01,
 	.protocol = PROTOCOL_DEFAULT,
 	.no_autoexec = 1,
-  .isp_id_mask = 0x153f,
+	.isp_id_mask = 0x153f,
 };
 
 const struct RiscVChip_s ch32l103 = {
@@ -172,7 +172,7 @@ const struct RiscVChip_s ch32l103 = {
 	.options_size = 256,
 	.interface_speed = 0x01,
 	.protocol = PROTOCOL_DEFAULT,
-  .isp_id_mask = 0x253f,
+	.isp_id_mask = 0x253f,
 };
 
 const struct RiscVChip_s ch32v203 = {
@@ -190,7 +190,24 @@ const struct RiscVChip_s ch32v203 = {
 	.options_size = 128,
 	.interface_speed = 0x01,
 	.protocol = PROTOCOL_DEFAULT,
-  .isp_id_mask = 0x193f,
+	.isp_id_mask = 0x193f,
+};
+
+const struct RiscVChip_s ch32v205 = {
+	.name_str = "CH32V205",
+	.family_id = CHIP_CH32V205,
+	.model_id = 0x2050,
+	.ram_base = 0x20000000,
+	.ram_size = 32*1024,
+	.sector_size = 256,
+	.flash_offset = 0x08000000,
+	.flash_size = 256*1024,
+	.bootloader_offset = 0x1FFF0000,
+	.bootloader_size = 3*1024+256,
+	.options_offset = 0x1FFFF800,
+	.options_size = 128,
+	.interface_speed = 0x01,
+	.protocol = PROTOCOL_DEFAULT,
 };
 
 const struct RiscVChip_s ch32v208 = {
@@ -208,7 +225,7 @@ const struct RiscVChip_s ch32v208 = {
 	.options_size = 128,
 	.interface_speed = 0x01,
 	.protocol = PROTOCOL_DEFAULT,
-  .isp_id_mask = 0x198f,
+	.isp_id_mask = 0x198f,
 };
 
 const struct RiscVChip_s ch32v303 = {
@@ -226,7 +243,7 @@ const struct RiscVChip_s ch32v303 = {
 	.options_size = 128,
 	.interface_speed = 0x01,
 	.protocol = PROTOCOL_DEFAULT,
-  .isp_id_mask = 0x173f,
+	.isp_id_mask = 0x173f,
 };
 
 const struct RiscVChip_s ch32v305 = {
@@ -244,7 +261,7 @@ const struct RiscVChip_s ch32v305 = {
 	.options_size = 128,
 	.interface_speed = 0x01,
 	.protocol = PROTOCOL_DEFAULT,
-  .isp_id_mask = 0x175f,
+	.isp_id_mask = 0x175f,
 };
 
 const struct RiscVChip_s ch32v307 = {
@@ -262,7 +279,7 @@ const struct RiscVChip_s ch32v307 = {
 	.options_size = 128,
 	.interface_speed = 0x01,
 	.protocol = PROTOCOL_DEFAULT,
-  .isp_id_mask = 0x177f,
+	.isp_id_mask = 0x177f,
 };
 
 const struct RiscVChip_s ch32v317 = {
@@ -276,6 +293,57 @@ const struct RiscVChip_s ch32v317 = {
 	.flash_size = 480*1024,
 	.bootloader_offset = 0x1FFF8000,
 	.bootloader_size = 28*1024,
+	.options_offset = 0x1FFFF800,
+	.options_size = 128,
+	.interface_speed = 0x01,
+	.protocol = PROTOCOL_UNSUPPORTED,
+};
+
+const struct RiscVChip_s ch32h415 = {
+	.name_str = "CH32H415",
+	.family_id = CHIP_CH32H41x,
+	.model_id = 0x4150,
+	.ram_base = 0x200a0000,
+	.ram_size = 896*1024,
+	.sector_size = 256,
+	.flash_offset = 0x08000000,
+	.flash_size = 960*1024,
+	.bootloader_offset = 0x1FFF0000,
+	.bootloader_size = 56*1024,
+	.options_offset = 0x1FFFF800,
+	.options_size = 128,
+	.interface_speed = 0x01,
+	.protocol = PROTOCOL_UNSUPPORTED,
+};
+
+const struct RiscVChip_s ch32h416 = {
+	.name_str = "CH32H416",
+	.family_id = CHIP_CH32H41x,
+	.model_id = 0x4160,
+	.ram_base = 0x200a0000,
+	.ram_size = 896*1024,
+	.sector_size = 256,
+	.flash_offset = 0x08000000,
+	.flash_size = 480*1024,
+	.bootloader_offset = 0x1FFF0000,
+	.bootloader_size = 56*1024,
+	.options_offset = 0x1FFFF800,
+	.options_size = 128,
+	.interface_speed = 0x01,
+	.protocol = PROTOCOL_UNSUPPORTED,
+};
+
+const struct RiscVChip_s ch32h417 = {
+	.name_str = "CH32H417",
+	.family_id = CHIP_CH32H41x,
+	.model_id = 0x4170,
+	.ram_base = 0x200a0000,
+	.ram_size = 896*1024,
+	.sector_size = 256,
+	.flash_offset = 0x08000000,
+	.flash_size = 960*1024,
+	.bootloader_offset = 0x1FFF0000,
+	.bootloader_size = 56*1024,
 	.options_offset = 0x1FFFF800,
 	.options_size = 128,
 	.interface_speed = 0x01,
@@ -352,7 +420,7 @@ const struct RiscVChip_s ch565 = {
 	.options_size = 0,
 	.interface_speed = 0x02,
 	.protocol = PROTOCOL_UNSUPPORTED,
-  .isp_id_mask = 0x1165,
+	.isp_id_mask = 0x1165,
 };
 
 const struct RiscVChip_s ch569 = {
@@ -372,7 +440,7 @@ const struct RiscVChip_s ch569 = {
 	.options_size = 0,
 	.interface_speed = 0x02,
 	.protocol = PROTOCOL_UNSUPPORTED,
-  .isp_id_mask = 0x1169,
+	.isp_id_mask = 0x1169,
 };
 
 const struct RiscVChip_s ch570 = {
@@ -390,9 +458,9 @@ const struct RiscVChip_s ch570 = {
 	.bootloader_size = 0,
 	.options_offset = 0x0003E000,
 	.options_size = 8*1024,
-	.interface_speed = 0x01,
+	.interface_speed = 0x03,
 	.protocol = PROTOCOL_CH5xx,
-  .isp_id_mask = 0x1370,
+	.isp_id_mask = 0x1370,
 };
 
 const struct RiscVChip_s ch571 = {
@@ -413,7 +481,7 @@ const struct RiscVChip_s ch571 = {
 	.interface_speed = 0x02,
 	.protocol = PROTOCOL_CH5xx,
 	.no_autoexec = 1,
-  .isp_id_mask = 0x1371,
+	.isp_id_mask = 0x1371,
 };
 
 const struct RiscVChip_s ch572 = {
@@ -431,9 +499,9 @@ const struct RiscVChip_s ch572 = {
 	.bootloader_size = 0,
 	.options_offset = 0x0003E000,
 	.options_size = 8*1024,
-	.interface_speed = 0x01,
+	.interface_speed = 0x03,
 	.protocol = PROTOCOL_CH5xx,
-  .isp_id_mask = 0x1372,
+	.isp_id_mask = 0x1372,
 };
 
 const struct RiscVChip_s ch573 = {
@@ -454,7 +522,7 @@ const struct RiscVChip_s ch573 = {
 	.interface_speed = 0x02,
 	.protocol = PROTOCOL_CH5xx,
 	.no_autoexec = 1,
-  .isp_id_mask = 0x1373,
+	.isp_id_mask = 0x1373,
 };
 
 const struct RiscVChip_s ch573q = {
@@ -492,10 +560,10 @@ const struct RiscVChip_s ch581 = {
 	.bootloader_size = 24*1024,
 	.options_offset = 0x0007E000,
 	.options_size = 8*1024,
-	.interface_speed = 0x02,
+	.interface_speed = 0x03,
 	.protocol = PROTOCOL_CH5xx,
 	.no_autoexec = 1,
-  .isp_id_mask = 0x1681,
+	.isp_id_mask = 0x1681,
 };
 
 const struct RiscVChip_s ch582 = {
@@ -513,10 +581,10 @@ const struct RiscVChip_s ch582 = {
 	.bootloader_size = 24*1024,
 	.options_offset = 0x0007E000,
 	.options_size = 8*1024,
-	.interface_speed = 0x01,
+	.interface_speed = 0x03,
 	.protocol = PROTOCOL_CH5xx,
 	.no_autoexec = 1,
-  .isp_id_mask = 0x1682,
+	.isp_id_mask = 0x1682,
 };
 
 const struct RiscVChip_s ch583 = {
@@ -534,10 +602,10 @@ const struct RiscVChip_s ch583 = {
 	.bootloader_size = 24*1024,
 	.options_offset = 0x0007E000,
 	.options_size = 8*1024,
-	.interface_speed = 0x02,
+	.interface_speed = 0x03,
 	.protocol = PROTOCOL_CH5xx,
 	.no_autoexec = 1,
-  .isp_id_mask = 0x1683,
+	.isp_id_mask = 0x1683,
 };
 
 const struct RiscVChip_s ch584 = {
@@ -558,7 +626,7 @@ const struct RiscVChip_s ch584 = {
 	.interface_speed = 0x02,
 	.protocol = PROTOCOL_CH5xx,
 	.no_autoexec = 1,
-  .isp_id_mask = 0x1684,
+	.isp_id_mask = 0x1684,
 };
 
 const struct RiscVChip_s ch585 = {
@@ -579,7 +647,7 @@ const struct RiscVChip_s ch585 = {
 	.interface_speed = 0x02,
 	.protocol = PROTOCOL_CH5xx,
 	.no_autoexec = 1,
-  .isp_id_mask = 0x1685,
+	.isp_id_mask = 0x1685,
 };
 
 const struct RiscVChip_s ch591 = {
@@ -597,9 +665,9 @@ const struct RiscVChip_s ch591 = {
 	.bootloader_size = 24*1024,
 	.options_offset = 0x0007E000,
 	.options_size = 8*1024,
-	.interface_speed = 0x02,
+	.interface_speed = 0x03,
 	.protocol = PROTOCOL_CH5xx,
-  .isp_id_mask = 0x2291,
+	.isp_id_mask = 0x2291,
 };
 
 const struct RiscVChip_s ch592 = {
@@ -617,9 +685,9 @@ const struct RiscVChip_s ch592 = {
 	.bootloader_size = 24*1024,
 	.options_offset = 0x0007E000,
 	.options_size = 8*1024,
-	.interface_speed = 0x02,
+	.interface_speed = 0x03,
 	.protocol = PROTOCOL_CH5xx,
-  .isp_id_mask = 0x2292,
+	.isp_id_mask = 0x2292,
 };
 
 const struct RiscVChip_s ch641 = {
@@ -654,7 +722,7 @@ const struct RiscVChip_s ch643 = {
 	.options_size = 256,
 	.interface_speed = 0x01,
 	.protocol = PROTOCOL_DEFAULT,
-  .isp_id_mask = 0x243f,
+	.isp_id_mask = 0x243f,
 };
 
 const struct RiscVChip_s ch645 = {
@@ -686,11 +754,15 @@ const struct RiscVChip_s * chip_collection[] = {
 	&ch32v103,
 	&ch32l103,
 	&ch32v203,
+	&ch32v205,
 	&ch32v208,
 	&ch32v303,
 	&ch32v305,
 	&ch32v307,
 	&ch32v317,
+	&ch32h415,
+	&ch32h416,
+	&ch32h417,
 	&ch564,
 	&ch564c,
 	&ch565,

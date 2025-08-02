@@ -803,7 +803,7 @@ int USBFSSetup()
 #endif
 
 #if defined (CH32V20x) || defined (CH32V30x)
-#if (defined (CH32V20x_D8W) || defined (CH32V20x_D8)) && defined (FUNCONF_USE_HSE)
+#if (defined (CH32V20x_D8W) || defined (CH32V20x_D8)) && (defined (FUNCONF_USE_HSE) && FUNCONF_USE_HSE)
 	RCC->CFGR0 = (RCC->CFGR0 & ~(3<<22)) | (3<<22);
 #else
 #if (FUNCONF_SYSTEM_CORE_CLOCK != 144000000) && (FUNCONF_SYSTEM_CORE_CLOCK != 96000000) && (FUNCONF_SYSTEM_CORE_CLOCK != 48000000)

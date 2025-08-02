@@ -1,6 +1,4 @@
 /*
-	Set of functions to program CH5xx series of chips by WCH.
-	For use with minichlink that is part of ch32fun.
 	Copyright 2025 monte-monte
 */
 
@@ -44,7 +42,6 @@ unsigned char ch5xx_blink_bin[] = {
 unsigned int ch5xx_blink_bin_len = 24;
 
 // By default all chips run at the lowest possible frequency. (For example CH585 runs at 5.33MHz)
-// Some of them needs to set it higher to be able to be programmed reliably.
 // WCH-LinkE sets needed frequency automatically with it's built-in functions. But it will be reset if we reset the chip.
 // Also we still need to do that every time we use other programmers.
 int CH5xxSetClock(void * dev, uint32_t clock) {
@@ -103,7 +100,6 @@ int CH5xxSetClock(void * dev, uint32_t clock) {
 	return 0;
 }
 
-// Some critical registers of CH5xx are only writeable in "safe mode", this requires a special procedure.
 // Such registers marked "RWA" in the datasheet
 void ch5xx_write_safe(void * dev, uint32_t addr, uint32_t value, uint8_t mode) {
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
@@ -494,8 +490,6 @@ for (int i = 0; i < len; i += 4) {
 	return 0;
 }
 
-// On some of CH5xx chips (CH592 for example) there is mysterious second UUID.
-// What's the purpose of it? It's not documented, it's only mentioned with the function that reads it.
 int ch5xx_read_secret_uuid(void * dev, uint8_t * buffer) {
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
 	if(!iss->target_chip) {
@@ -627,6 +621,9 @@ int CH5xxReadUUID(void * dev, uint8_t * buffer) {
 // By the way, what happened to ch5xx_write_flash_using_microblob?!
 int ch5xx_write_flash_using_microblob2(void * dev, uint32_t start_addr, uint8_t* data, uint32_t len) {
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
+
+	if (len == 0) return 0;
+
 	int r;
 	uint8_t timer = 0;
 	uint32_t dmdata0;
@@ -730,10 +727,12 @@ write_end:
 int ch5xx_write_flash(void * dev, uint32_t start_addr, uint8_t* data, uint32_t len) {
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
 #if DEBUG_CH5xx_MINICHLINK
-	fprintf(stderr, "Writing flash slowly. addr = %d, len = %d\n", start_addr, len);
+	fprintf(stderr, "Writing flash slowly. addr = %08x, len = %d\n", start_addr, len);
 #endif
 
 	// uint32_t data_to_write = 0x00000001;
+	if (len == 0) return 0;
+
 	uint32_t position = 0;
 
 	ch5xx_flash_open(dev, 0xe0);
@@ -819,7 +818,6 @@ void ch570_write_word_special(void * dev, uint32_t address, uint32_t word) {
 
 // This is only present in CH570/2 (as far as I know). I believe this serves the same purpose as "write safe" procedure.
 // Apparently the difference is that it enters "safe mode" permanently until it's closed, or chip is reset.
-// Maybe this is related to increased number of RWA registers in CH570/2.
 void ch570_disable_acauto(void * dev) {
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
 	// MCF.WriteReg32(dev, DMCOMMAND, 0x00230000 | 0x1005); // Write t0 from DATA0.
@@ -937,7 +935,6 @@ int ch5xx_verify_data(void* dev, uint32_t addr, uint8_t* data, uint32_t len) {
 	return 0;
 }
 
-// Flash controller of CH5xx chips has different mode of erasing for better performance.
 // You can erase in 256/4096/32768/65536 bytes chunks. 32K option is only present on CH32.
 int CH5xxErase(void* dev, uint32_t addr, uint32_t len, int type) {
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
@@ -954,7 +951,6 @@ int CH5xxErase(void* dev, uint32_t addr, uint32_t len, int type) {
 		printf("Whole-chip erase\n");
 		addr = iss->target_chip->flash_offset;
 		len = iss->target_chip->flash_size;
-		// memset( iss->flash_sector_status, 1, sizeof( iss->flash_sector_status ) );
 	}
 #if DEBUG_CH5xx_MINICHLINK	
 	printf( "len = %d, addr = %d\n", len, addr);
@@ -989,7 +985,7 @@ int CH5xxErase(void* dev, uint32_t addr, uint32_t len, int type) {
 			iss->flash_sector_status[sector] = 1;
 		}
 #if DEBUG_CH5xx_MINICHLINK
-		fprintf(stderr, "Erasing chunk = %d, using %d sector size\n", chunk_to_erase, sector_size);
+		fprintf(stderr, "Erasing chunk = %08x, using %d sector size, cmd = %02x\n", chunk_to_erase, sector_size, flash_cmd);
 #endif
 		ch5xx_flash_addr(dev, flash_cmd, chunk_to_erase);
 		ret = ch5xx_flash_wait(dev);
@@ -1003,13 +999,14 @@ int CH5xxErase(void* dev, uint32_t addr, uint32_t len, int type) {
 }
 
 // General function to write data to flash. It will pad data to a single block, erase needed ammount,
-// and ther use the best suited function to write based on the size of the data.
 int CH5xxWriteBinaryBlob(void * dev, uint32_t address_to_write, uint32_t blob_size, const uint8_t * blob) {
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
 
 	int (*write_function)(void * dev, uint32_t start_addr, uint8_t* data, uint32_t len);
 
 	int ret = 0;
+
+	if (blob_size == 0) return 0;
 
 	if (!iss->current_area) DetectMemoryArea(dev, address_to_write);
 	if (!CheckMemoryLocation(dev, 0, address_to_write, blob_size)) {
@@ -1020,8 +1017,7 @@ int CH5xxWriteBinaryBlob(void * dev, uint32_t address_to_write, uint32_t blob_si
 	MCF.SetClock(dev, 0);
 	
 	uint32_t sector_size = iss->target_chip->sector_size;
-	if (iss->current_area == EEPROM_AREA) sector_size = 256;
-	else if (iss->current_area == RAM_AREA) sector_size = 4;
+	if (iss->current_area == RAM_AREA) sector_size = 4;
 	uint8_t* start_pad = malloc(sector_size);
 	uint8_t* end_pad = malloc(sector_size);
 	
@@ -1029,7 +1025,7 @@ int CH5xxWriteBinaryBlob(void * dev, uint32_t address_to_write, uint32_t blob_si
 	uint32_t epad = (address_to_write + blob_size) - ((address_to_write + blob_size) / sector_size) * sector_size;
 	uint32_t new_blob_size = blob_size;
 #if DEBUG_CH5xx_MINICHLINK
-	fprintf(stderr, "spad = %d, epad = %d, new_blob_size = %d\n", spad, epad, new_blob_size);
+	fprintf(stderr, "spad = %d, epad = %d, blob_size = %d\n", spad, epad, blob_size);
 #endif
 
 	if (iss->target_chip_type == CHIP_CH570) {
@@ -1046,20 +1042,29 @@ int CH5xxWriteBinaryBlob(void * dev, uint32_t address_to_write, uint32_t blob_si
 		// write_function = &ch5xx_write_flash_using_microblob2;
 		// write_function = &ch5xx_write_flash;
 		if (spad) {
-			MCF.ReadBinaryBlob(dev, ((address_to_write + spad) - sector_size), (sector_size - spad), start_pad);
-			memcpy(start_pad + (sector_size - spad), blob, spad);
-			new_blob_size -= spad;
+			if (spad + blob_size <= sector_size) {
+				MCF.ReadBinaryBlob(dev, (address_to_write - spad), sector_size, start_pad);
+				memcpy(start_pad + spad, blob, blob_size);
+				epad = 0;
+			} else {
+				MCF.ReadBinaryBlob(dev, (address_to_write - spad), spad, start_pad);
+				memcpy(start_pad + spad, blob, sector_size - spad);
+			}
+			if (new_blob_size >= sector_size - spad) new_blob_size -= sector_size - spad;
+			else new_blob_size = 0;
 		}
 		if (epad) {
-			memcpy(end_pad, blob + (blob_size - epad), epad);
+			if (new_blob_size) memcpy(end_pad, blob + (blob_size - epad), epad);
 			MCF.ReadBinaryBlob(dev, (address_to_write + blob_size), sector_size - epad, end_pad + epad);
-			new_blob_size -= epad;
+			if (new_blob_size >= epad) new_blob_size -= epad;
+			else new_blob_size = 0;
 		}
 
 		if (spad) {
 			CH5xxErase(dev, ((address_to_write + spad) - sector_size), new_blob_size + spad + epad, 0);
 			write_function(dev, address_to_write - spad, start_pad, sector_size);
-			write_function(dev, address_to_write + (sector_size - spad), (uint8_t*)(blob + (sector_size - spad)), new_blob_size);
+			if (spad + blob_size > sector_size)
+				write_function(dev, address_to_write + (sector_size - spad), (uint8_t*)(blob + (sector_size - spad)), new_blob_size);
 		} else {
 			CH5xxErase(dev, address_to_write, new_blob_size + epad, 0);
 			write_function(dev, address_to_write, (uint8_t*)(blob), new_blob_size);
@@ -1073,56 +1078,70 @@ int CH5xxWriteBinaryBlob(void * dev, uint32_t address_to_write, uint32_t blob_si
 		goto end;
 	} else if (iss->current_area == OPTIONS_AREA) {
 		write_function = &ch5xx_write_flash;
-
+		
 		if (spad) {
-			ch5xx_read_options_bulk(dev, ((address_to_write + spad) - sector_size), start_pad, (sector_size - spad));
-			memcpy(start_pad + (sector_size - spad), blob, spad);
-			new_blob_size -= spad;
+			if (spad + blob_size <= sector_size) {
+				ch5xx_read_options_bulk(dev, (address_to_write - spad), start_pad, sector_size);
+				memcpy(start_pad + spad, blob, blob_size);
+				epad = 0;
+			} else {
+				ch5xx_read_options_bulk(dev, (address_to_write - spad), start_pad, spad);
+				memcpy(start_pad + spad, blob, sector_size - spad);
+			}
+			if (new_blob_size >= sector_size - spad) new_blob_size -= sector_size - spad;
+			else new_blob_size = 0;
 		}
 		if (epad) {
-			memcpy(end_pad, blob + (blob_size - epad), epad);
+			if (new_blob_size) memcpy(end_pad, blob + (blob_size - epad), epad);
 			ch5xx_read_options_bulk(dev, (address_to_write + blob_size), end_pad + epad, sector_size - epad);
-			new_blob_size -= epad;
+			if (new_blob_size >= epad) new_blob_size -= epad;
+			else new_blob_size = 0;
 		}
 
 		if (spad) {
 			CH5xxErase(dev, ((address_to_write + spad) - sector_size), new_blob_size + spad + epad, 0);
 			write_function(dev, address_to_write - spad, start_pad, sector_size);
-			write_function(dev, address_to_write + (sector_size - spad), (uint8_t*)(blob + (sector_size - spad)), new_blob_size);
+			if (spad + blob_size > sector_size)
+				write_function(dev, address_to_write + (sector_size - spad), (uint8_t*)(blob + (sector_size - spad)), new_blob_size);
 		} else {
 			CH5xxErase(dev, address_to_write, new_blob_size + epad, 0);
 			write_function(dev, address_to_write, (uint8_t*)(blob), new_blob_size);
 		}
 		if (epad) write_function(dev, (address_to_write + blob_size) - epad, end_pad, sector_size);
-		// fprintf(stderr, "Can't write to Options area on these chips yet\n");
-		// ret = -2;
-		// goto end;
+		
 	} else if (iss->current_area == EEPROM_AREA) {
 		write_function = &ch5xx_write_flash;
 
 		if (spad) {
-			ch5xx_read_eeprom(dev, ((address_to_write + spad) - sector_size), start_pad, (sector_size - spad));
-			memcpy(start_pad + (sector_size - spad), blob, spad);
-			new_blob_size -= spad;
+			if (spad + blob_size <= sector_size) {
+				ch5xx_read_eeprom(dev, (address_to_write - spad), start_pad, sector_size);
+				memcpy(start_pad + spad, blob, blob_size);
+				epad = 0;
+			} else {
+				ch5xx_read_eeprom(dev, (address_to_write - spad), start_pad, spad);
+				memcpy(start_pad + spad, blob, sector_size - spad);
+			}
+			if (new_blob_size >= sector_size - spad) new_blob_size -= sector_size - spad;
+			else new_blob_size = 0;
 		}
 		if (epad) {
-			memcpy(end_pad, blob + (blob_size - epad), epad);
+			if (new_blob_size) memcpy(end_pad, blob + (blob_size - epad), epad);
 			ch5xx_read_eeprom(dev, (address_to_write + blob_size), end_pad + epad, sector_size - epad);
-			new_blob_size -= epad;
+			if (new_blob_size >= epad) new_blob_size -= epad;
+			else new_blob_size = 0;
 		}
 
 		if (spad) {
 			CH5xxErase(dev, ((address_to_write + spad) - sector_size), new_blob_size + spad + epad, 0);
 			write_function(dev, address_to_write - spad, start_pad, sector_size);
-			write_function(dev, address_to_write + (sector_size - spad), (uint8_t*)(blob + (sector_size - spad)), new_blob_size);
+			if (spad + blob_size > sector_size)
+				write_function(dev, address_to_write + (sector_size - spad), (uint8_t*)(blob + (sector_size - spad)), new_blob_size);
 		} else {
 			CH5xxErase(dev, address_to_write, new_blob_size + epad, 0);
 			write_function(dev, address_to_write, (uint8_t*)(blob), new_blob_size);
 		}
 		if (epad) write_function(dev, (address_to_write + blob_size) - epad, end_pad, sector_size);
-		// fprintf(stderr, "Can't write to EEPROM area on these chips yet\n");
-		// ret = -2;
-		// goto end;
+
 	} else if (iss->current_area == RAM_AREA) {
 		if (spad) {
 			for (int i = 0; i < spad; i++) {
@@ -1148,7 +1167,7 @@ int CH5xxWriteBinaryBlob(void * dev, uint32_t address_to_write, uint32_t blob_si
 					fprintf(stderr, "Error on WriteByte while writing to RAM.\n");
 					goto end;
 				}
-			} 
+			}
 		}
 	} else {
 		fprintf(stderr, "Unknown memory region. Not writing.\n");
@@ -1164,7 +1183,6 @@ end:
 	return ret;
 }
 
-// Main flash of CH5xx chips can be read using normal functions in minichlink.
 // The only strangeness is that empty memory will be masked and will show as some magic word (For example 0xa9bdf9f3 for CH570/2).
 // Other memory areas, like EEPROM or options require special procedure.
 int CH5xxReadBinaryBlob(void* dev, uint32_t address_to_read_from, uint32_t read_size, uint8_t* blob) {
@@ -1184,9 +1202,6 @@ int CH5xxReadBinaryBlob(void* dev, uint32_t address_to_read_from, uint32_t read_
 	} else if (iss->current_area == EEPROM_AREA) {
 		ch5xx_read_eeprom(dev, address_to_read_from, blob, read_size);
 	} else if (iss->current_area == BOOTLOADER_AREA) {
-		// fprintf(stderr, "Havent figured out yet how to read the bootloader. Aborting\n");
-		// ret = -2;
-		// goto end;
 		ch5xx_read_eeprom(dev, address_to_read_from, blob, read_size);
 		// MCF.ReadBinaryBlob(dev, address_to_read_from, read_size, blob);
 	} else if (iss->current_area == PROGRAM_AREA || iss->current_area == RAM_AREA) {
@@ -1358,7 +1373,6 @@ void CH5xxTestPC(void* dev) {
 	fprintf(stderr, "a1 = %08x\n", rr);
 }
 
-// Set of values for CH5xx is different compared to CH32 chips.
 // That's why we have a separate function to print infor about there chips.
 int CH5xxPrintInfo(void* dev) {
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
@@ -1400,25 +1414,126 @@ int CH5xxPrintInfo(void* dev) {
 	}
 	if (iss->target_chip_type == CHIP_CH570 || iss->target_chip_type == CHIP_CH585) {
 		printf("Reset - %s\n", (option_bytes&0x8)?"enabled":"disabled");
-		if (iss->target_chip_type == CHIP_CH570) printf("Boot pin - PA%d\n", (option_bytes&0x10)?7:8);
+		if (iss->target_chip_type == CHIP_CH570) printf("Reset pin - PA%d\n", (option_bytes&0x10)?7:8);
 		else printf("Debug - %s\n", (option_bytes&0x10)?"enabled":"disabled");
 		printf("IWDG - %s\n", (option_bytes&0x20)?"enabled":"disabled");
 		printf("Bootloader - %s\n", (option_bytes&0x40)?"enabled":"disabled");
-		if (iss->target_chip_type == CHIP_CH570) printf("Readout protection - %s\n", ((option_bytes&0x00FF0000)==0x3a0000)?"disabled":"enabled");
-		// else printf("Readout protection - %s\n", (option_bytes&80)?"disabled":"enabled");
 	} else {
 		printf("Reset - %s\n", (option_bytes&0x8)?"enabled":"disabled");
 		printf("Bootloader pin - PB%d\n", (option_bytes&0x200)?22:11);
 		printf("Debug - %s\n", (option_bytes&0x10)?"enabled":"disabled");
 		printf("Bootloader - %s\n", (option_bytes&0x40)?"enabled":"disabled");
 		printf("UART_NO_KEY(what is that?) - %s\n", (option_bytes&0x100)?"enabled":"disabled");
-		// printf("Readout protection - %s\n", (option_bytes&80)?"disabled":"enabled");
 	}
 
-	// uint32_t dmdata0_offset = 0xe0000380;
-	// MCF.ReadReg32(dev, DMHARTINFO, &dmdata0_offset);
-	// dmdata0_offset = 0xe0000000 | (dmdata0_offset & 0x7ff);
-	// fprintf(stderr, "DMDATA0 offset = %08x\n", dmdata0_offset);
+	return 0;
+}
 
+void ch5xx_special_reset_validate_options(void * dev) {
+	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
+	
+	MCF.WriteReg32(dev, DMABSTRACTAUTO, 0x00000000); // Disable Autoexec.
+
+	MCF.WriteReg32(dev, DMDATA0, 0x40001000);
+	MCF.WriteReg32(dev, DMCOMMAND, 0x00230000 | 0x100d); // Write a3 from DATA0.
+	MCF.WriteReg32(dev, DMDATA0, 0x57);
+	MCF.WriteReg32(dev, DMCOMMAND, 0x00230000 | 0x100e); // Write a4 from DATA0.
+	MCF.WriteReg32(dev, DMDATA0, 0xa8);
+	MCF.WriteReg32(dev, DMCOMMAND, 0x00230000 | 0x100f); // Write a5 from DATA0.
+	MCF.WriteReg32(dev, DMDATA0, 0xffff);
+	MCF.WriteReg32(dev, DMCOMMAND, 0x00230000 | 0x100c); // Write a2 from DATA0.
+	MCF.WriteReg32(dev, DMDATA0, 1);
+	MCF.WriteReg32(dev, DMCOMMAND, 0x00230000 | 0x100b); // Write a1 from DATA0.
+
+	MCF.WriteReg32(dev, DMPROGBUF0, 0x04e68023); // sb  a4,0x40(a3)
+	MCF.WriteReg32(dev, DMPROGBUF1, 0x04f68023); // sb  a5,0x40(a3)
+	// Write 0xffff to R16_INT32K_TUNE
+	MCF.WriteReg32(dev, DMPROGBUF2, 0x02c69623); // sh  a2,0x2c(a3)
+	// Write 1 to R8_RST_WDOG_CTRL to reboot
+	MCF.WriteReg32(dev, DMPROGBUF3, 0x04b68323); // sb  a1,0x46(a3)
+	MCF.WriteReg32(dev, DMPROGBUF4, 0x04068023); // sb zero, 64(a3)
+  // Endless loop, target should reset
+	MCF.WriteReg32(dev, DMPROGBUF5, 0x9002a001); // c.j 0; c.ebreak	
+	
+	iss->statetag = STTAG( "XXXX" );
+
+	// fprintf(stderr, "Executing command\n");
+	MCF.WriteReg32(dev, DMCOMMAND, 0x00271000); // Execute program.
+}
+
+void ch5xx_flash_powerup(void * dev) {
+  ch5xx_flash_open(dev, 0xe0);
+  ch5xx_flash_begin(dev, 0xab);
+  ch5xx_flash_close(dev);
+}
+
+void ch5xx_flash_powerdown(void * dev) {
+  ch5xx_flash_open(dev, 0xe0);
+  ch5xx_flash_begin(dev, 0xb9);
+  ch5xx_flash_close(dev);
+}
+
+void ch5xx_flash_sw_reset(void * dev) {
+	ch5xx_flash_open(dev, 0xe0);
+	ch5xx_flash_begin(dev, 0x66);
+	ch5xx_flash_end(dev);
+	ch5xx_flash_begin(dev, 0x99);
+	ch5xx_flash_close(dev);
+}
+
+void ch5xx_flash_unlock(void * dev, uint8_t cmd) {
+  // cmd: 0 - unlock all, 0x44 - lock boot code, 0x50 - lock all code and flash, 0x3c - lock something, unclear what exactly
+  fprintf(stderr, "CH5xx flash unlock\n");
+  ch5xx_flash_open(dev, 0xe0);
+  ch5xx_flash_wait(dev);
+  ch5xx_flash_begin(dev, 6);
+  ch5xx_flash_end(dev);
+  ch5xx_flash_begin(dev, 1);
+  ch5xx_flash_out(dev, cmd);
+  ch5xx_flash_out(dev, 2);
+  ch5xx_flash_wait(dev);
+  ch5xx_flash_close(dev);
+}
+
+int CH5xxConfigureNRSTAsGPIO(void * dev, int one_if_yes_gpio) {
+	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
+	uint32_t options;
+
+  MCF.SetClock(dev, 0);
+	
+	uint32_t options_address = 0x7EFFC;
+	if (iss->target_chip_type == CHIP_CH570) options_address = 0x3EFFC;
+
+	ch5xx_read_options_bulk(dev, options_address, (uint8_t*)&options, 4);
+  printf("Current option bytes - %08x\n", options);
+
+	if ((options&0x8) && one_if_yes_gpio == 0) {
+		printf("Reset is already set as reset\n");
+		return 0;
+	} else if ( !(options&0x8) && one_if_yes_gpio > 0) {
+		printf("Reset is already set as GPIO\n");
+		return 0;
+	} else {
+		if (one_if_yes_gpio) options &= ~(0x08);
+		else options |= 0x08;
+		printf("New option bytes - %08x\n", options);
+		if (iss->target_chip_type == CHIP_CH570) {
+			CH5xxWriteBinaryBlob(dev, options_address, 4, (uint8_t*)&options);
+		} else {
+      if (iss->target_chip_type == CHIP_CH58x) {
+        fprintf(stderr, "\nOn CH582 this only works if you have empty flash. And even then you may need to retry couple times.\n");
+      } else {
+        fprintf(stderr, "\nThis won't work, even though it should. Currently it only works via ISP\n");
+      }
+      // From what I could deduce this only works if you're in BOOTLOADER mode
+      // Which can be checked by reading R8_GLOB_CFG_INFO - 0x40001045pgm-wch-isp.c
+      // I don't know any way to force this mode. If you find a way, please tell us!
+			CH5xxErase(dev, 0x7e000, 4096, 0);
+			ch5xx_write_flash(dev, 0x7effc, (uint8_t*)&options, 4);
+			ch5xx_special_reset_validate_options(dev);
+		}
+	}
+	
+	printf("New setting will be enabled after power reset.\n");
 	return 0;
 }

@@ -20,7 +20,7 @@ struct RiscVChip_s {
 	uint8_t interface_speed; // WCH-LinkE has 3 speed settings for SWD communcation 6MHz, 4MHz and 400KHz. Some chips can't handle the highest speed
 	enum ProgProtocol protocol;	// Currently there are 2 distinct flashing protocols one is for CH32 chips and the other is for CH5xx chips
 	uint8_t no_autoexec; // Some chips seem to lack autoexec functionality in DM (3.12.8 in RISC-V External Debug Support manual)
-  uint16_t isp_id_mask;
+	uint16_t isp_id_mask; // ID to detect model of the chip using ISP bootloader
 };
 
 const struct RiscVChip_s* FindChip(uint32_t chip_id);
@@ -37,11 +37,15 @@ extern const struct RiscVChip_s ch32x035;
 extern const struct RiscVChip_s ch32v103;
 extern const struct RiscVChip_s ch32l103;
 extern const struct RiscVChip_s ch32v203;
+extern const struct RiscVChip_s ch32v205;
 extern const struct RiscVChip_s ch32v208;
 extern const struct RiscVChip_s ch32v303;
 extern const struct RiscVChip_s ch32v305;
 extern const struct RiscVChip_s ch32v307;
 extern const struct RiscVChip_s ch32v317;
+extern const struct RiscVChip_s ch32h415;
+extern const struct RiscVChip_s ch32h416;
+extern const struct RiscVChip_s ch32h417;
 extern const struct RiscVChip_s ch32m030;
 extern const struct RiscVChip_s ch564;
 extern const struct RiscVChip_s ch564c;

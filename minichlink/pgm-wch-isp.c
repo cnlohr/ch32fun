@@ -197,7 +197,7 @@ int ISPSetupInterface( void * d ) {
 	wch_isp_command( dev, "\xa7\x02\x00\x1f\x00", 5, (int*)&transferred, rbuff, 1024 );
 	if( transferred == 30 ) {
 		if( iss->target_chip->protocol == PROTOCOL_CH5xx && iss->target_chip_type != CHIP_CH570) read_protection = (rbuff[14] & 0x80);
-		else if( iss->target_chip->protocol == PROTOCOL_CH5xx && iss->target_chip_type != CHIP_CH570 ) read_protection = (rbuff[16] == 0x3a);
+		else if( iss->target_chip->protocol == PROTOCOL_CH5xx && iss->target_chip_type == CHIP_CH570 ) read_protection = (rbuff[16] == 0x3a);
 		else read_protection = (rbuff[6] == 0xa5);
 		printf( "Bootloader version: %d.%d%d\n", rbuff[19], rbuff[20], rbuff[21] );
 		printf( "Flash Storage: %d kB\n", iss->flash_size );
@@ -278,11 +278,11 @@ int ISPPrintChipInfo( void * d )
 				if (iss->target_chip_type == CHIP_CH570 || iss->target_chip_type == CHIP_CH585)
 				{
 					printf("Reset - %s\n", (option_bytes&0x8)?"enabled":"disabled");
-					if (iss->target_chip_type == CHIP_CH570) printf("Boot pin - PA%d\n", (option_bytes&0x10)?7:8);
+					if (iss->target_chip_type == CHIP_CH570) printf("Reset pin - PA%d\n", (option_bytes&0x10)?7:8);
 					else printf("Debug - %s\n", (option_bytes&0x10)?"enabled":"disabled");
 					printf("IWDG - %s\n", (option_bytes&0x20)?"enabled":"disabled");
 					printf("Bootloader - %s\n", (option_bytes&0x40)?"enabled":"disabled");
-					if (iss->target_chip_type == CHIP_CH570) printf("Readout protection - %s\n", ((option_bytes&0x00FF0000)==0x3a0000)?"disabled":"enabled");
+					// if (iss->target_chip_type == CHIP_CH570) printf("Readout protection - %s\n", ((option_bytes&0x00FF0000)==0x3a0000)?"disabled":"enabled");
 					// else printf("Readout protection - %s\n", (option_bytes&80)?"disabled":"enabled");
 				} 
 				else 
@@ -624,7 +624,7 @@ void * TryInit_WCHISP() {
 	MCF.Erase = ISPErase;
 	MCF.WriteBinaryBlob = ISPWriteBinaryBlob;
 	MCF.HaltMode = ISPHaltMode;
-  MCF.PrintChipInfo = ISPPrintChipInfo;
+	MCF.PrintChipInfo = ISPPrintChipInfo;
 	MCF.ConfigureNRSTAsGPIO = ISPConfigureNRSTAsGPIO;
 	MCF.ConfigureReadProtection = ISPConfigureReadProtection;
 	MCF.EnableDebug = ISPCH5xxEnableDebug;
