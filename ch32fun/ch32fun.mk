@@ -332,7 +332,7 @@ clangd_clean :
 	rm -f compile_commands.json
 	rm -rf .cache
 
-FLASH_COMMAND?=$(MINICHLINK)/minichlink -w $< $(WRITE_SECTION) -b
+FLASH_COMMAND?=$(MINICHLINK)/minichlink -E -w $< $(WRITE_SECTION) -b
 
 .PHONY : $(GENERATED_LD_FILE)
 $(GENERATED_LD_FILE) :
