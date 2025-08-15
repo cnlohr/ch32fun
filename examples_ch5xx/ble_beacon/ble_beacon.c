@@ -2,18 +2,41 @@
 #include "iSLER.h"
 #include <stdio.h>
 
-#ifdef CH570_CH572 // this comes from iSLER.h
+#ifdef CH570_CH572
 #define LED PA9
 #else
 #define LED PA8
 #endif
 
 #define SLEEPTIME_MS 300
-#define RB_PWR_RAM_MAIN 0x10 // RB_PWR_RAM16K for ch570/2, RB_PWR_RAM30K for ch582/3, RB_PWR_RAM24K for ch59x
 
-uint8_t adv[] = {0x66, 0x55, 0x44, 0x33, 0x22, 0x11, // MAC (reversed)
-				 0x03, 0x19, 0x00, 0x00, // 0x19: "Appearance", 0x00, 0x00: "Unknown"
-				 0x08, 0x09, 'c', 'h', '3', '2', 'f', 'u', 'n'}; // 0x09: "Complete Local Name"
+//uint8_t adv[] = {0x66, 0x55, 0x44, 0x33, 0x22, 0x11, // MAC (reversed)
+//				 0x03, 0x19, 0x00, 0x00, // 0x19: "Appearance", 0x00, 0x00: "Unknown"
+//				 0x08, 0x09, 'c', 'h', '3', '2', 'f', 'u', 'n'}; // 0x09: "Complete Local Name"
+uint8_t adv[] = {
+	0x66, 0x55, 0x44, 0x33, 0x22, 0x11, // MAC (reversed)
+	// ---- Advertising Flags Field ----
+	0x02, // Length of field
+	0x01, // AD Type: Flags
+	0x06, // LE General Discoverable Mode, BR/EDR Not Supported
+
+	// ---- Service Data Field (Health Thermometer) ----
+	0x07, // Length of field
+	0x16, // AD Type: Service Data - 16-bit UUID
+	0x09, // Service UUID LSB (0x1809)
+	0x18, // Service UUID MSB
+
+	// Temperature Data: 69.420 (Mantissa: 69420, Exponent: -3)
+	0x2C, // Mantissa LSB
+	0x0F, // Mantissa MID
+	0x01, // Mantissa MSB
+	0xFD, // Exponent (-3)
+
+	// ---- Complete Local Name Field ("MySensor") ----
+	0x09, // Length of field (1 byte for type + 8 bytes for name)
+	0x09, // AD Type: Complete Local Name
+	'M', 'y', 'S', 'e', 'n', 's', 'o', 'r'
+};
 uint8_t adv_channels[] = {37,38,39};
 
 __attribute__((interrupt))
@@ -27,7 +50,7 @@ void allPinPullUp(void)
 	R32_PA_DIR = 0; //Direction input
 	R32_PA_PD_DRV = 0; //Disable pull-down
 	R32_PA_PU = P_All; //Enable pull-up
-#ifdef PB
+#if PB
 	R32_PB_DIR = 0; //Direction input
 	R32_PB_PD_DRV = 0; //Disable pull-down
 	R32_PB_PU = P_All; //Enable pull-up
@@ -66,7 +89,7 @@ int main() {
 		for(int c = 0; c < sizeof(adv_channels); c++) {
 			Frame_TX(adv, sizeof(adv), adv_channels[c], PHY_1M);
 		}
-		LowPower( MS_TO_RTC(SLEEPTIME_MS), (RB_PWR_RAM2K | RB_PWR_RAM_MAIN | RB_PWR_EXTEND) ); // PWR_RAM can be optimized
+		LowPower( MS_TO_RTC(SLEEPTIME_MS), (RB_PWR_RAM2K | RB_PWR_RAMX | RB_PWR_EXTEND) ); // PWR_RAM can be optimized
 		RFCoreInit(txPower);
 		DCDCEnable();
 		blink(1);

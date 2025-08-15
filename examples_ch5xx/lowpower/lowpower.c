@@ -1,7 +1,7 @@
 #include "ch32fun.h"
 #include <stdio.h>
 
-#if defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2)
+#ifdef CH570_CH572
 #define LED PA9
 #else
 #define LED PA8
@@ -23,7 +23,7 @@ void allPinPullUp(void)
 	R32_PA_DIR = 0; //Direction input
 	R32_PA_PD_DRV = 0; //Disable pull-down
 	R32_PA_PU = P_All; //Enable pull-up
-#ifdef PB
+#if PB
 	R32_PB_DIR = 0; //Direction input
 	R32_PB_PD_DRV = 0; //Disable pull-down
 	R32_PB_PU = P_All; //Enable pull-up
@@ -57,11 +57,11 @@ int main()
 	uint8_t i = 5;
 	while(i--)
 	{ 
-		LowPower( MS_TO_RTC(SLEEPTIME_MS), (RB_PWR_RAM2K) );
+		LowPowerIdle( MS_TO_RTC(SLEEPTIME_MS) );
 		DCDCEnable();
 		blink_led(2);
 		
-		LowPower( MS_TO_RTC(SLEEPTIME_MS), (RB_PWR_RAM2K) );
+		LowPowerSleep( MS_TO_RTC(SLEEPTIME_MS), (RB_PWR_RAM2K) );
 		DCDCEnable();
 		blink_led(3);
 	}

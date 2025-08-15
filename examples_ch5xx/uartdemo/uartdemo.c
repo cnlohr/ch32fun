@@ -1,7 +1,13 @@
 #include "ch32fun.h"
 #include <stdio.h>
 
+#ifdef CH570_CH572
+#define PIN_BUTTON PA1
+#define BUTTON_PRESSED funDigitalRead( PIN_BUTTON )
+#else
 #define PIN_BUTTON PB22
+#define BUTTON_PRESSED !funDigitalRead( PIN_BUTTON )
+#endif
 
 int main()
 {
@@ -18,7 +24,7 @@ int main()
 	char msg[] = "ch32fun is awesome!\r\n";
 	while(1)
 	{
-		if(!funDigitalRead( PIN_BUTTON )) { // remove "if(!funDigitalRead( PIN_BUTTON ))" if you don't have a button
+		if( BUTTON_PRESSED ) { // remove "if( BUTTON_PRESSED )" if you don't have a button
 			putchar(msg[i++]);
 		}
 		i %= sizeof(msg);
