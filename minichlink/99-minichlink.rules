@@ -1,28 +1,19 @@
-SUBSYSTEM=="usb", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="8010", GROUP="plugdev", MODE="0660"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="8010", GROUP="dialout", MODE="0660"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="8010", GROUP="plugdev", MODE="0660", RUN+="/bin/sh -c '/usr/bin/setfacl -m g:dialout:rw /dev/%k || :'"
 
 # Programmer in ARM mode
-SUBSYSTEM=="usb", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="8012", GROUP="plugdev", MODE="0660"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="8012", GROUP="dialout", MODE="0660"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="8012", GROUP="plugdev", MODE="0660", RUN+="/bin/sh -c '/usr/bin/setfacl -m g:dialout:rw /dev/%k || :'"
 
 # Programmer in IAP mode
-SUBSYSTEM=="usb", ATTRS{idVendor}=="4348", ATTRS{idProduct}=="55e0", GROUP="plugdev", MODE="0660"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="4348", ATTRS{idProduct}=="55e0", GROUP="dialout", MODE="0660"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="4348", ATTRS{idProduct}=="55e0", GROUP="plugdev", MODE="0660", RUN+="/bin/sh -c '/usr/bin/setfacl -m g:dialout:rw /dev/%k || :'"
 
-SUBSYSTEM=="usb", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="4004", GROUP="plugdev", MODE="0660"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="4004", GROUP="dialout", MODE="0660"
-KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="4004", GROUP="plugdev", MODE="0660"
-KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="4004", GROUP="dialout", MODE="0660"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="4004", GROUP="plugdev", MODE="0660", RUN+="/bin/sh -c '/usr/bin/setfacl -m g:dialout:rw /dev/%k || :'"
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="4004", GROUP="plugdev", MODE="0660", RUN+="/bin/sh -c '/usr/bin/setfacl -m g:dialout:rw /dev/%k || :'"
 
 # rv003usb bootloader
-KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="b003", GROUP="plugdev", MODE="0660"
-KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="b003", GROUP="dialout", MODE="0660"
-#KERNEL=="hiddev*", SUBSYSTEM=="usbmisc", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="b003", GROUP="plugdev", MODE="0660"
-#KERNEL=="hiddev*", SUBSYSTEM=="usbmisc", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="b003", GROUP="dialout", MODE="0660"
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="b003", GROUP="plugdev", MODE="0660", RUN+="/bin/sh -c '/usr/bin/setfacl -m g:dialout:rw /dev/%k || :'"
+#KERNEL=="hiddev*", SUBSYSTEM=="usbmisc", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="b003", GROUP="plugdev", MODE="0660", RUN+="/bin/sh -c '/usr/bin/setfacl -m g:dialout:rw /dev/%k || :'"
 
 # ch32v003 programming rvswdio dongle
-SUBSYSTEM=="usb", ATTRS{idVendor}=="1206", ATTRS{idProduct}=="5d10", GROUP="plugdev", MODE="0660"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="1206", ATTRS{idProduct}=="5d10", GROUP="dialout", MODE="0660"
-KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1206", ATTRS{idProduct}=="5d10", GROUP="plugdev", MODE="0660"
-KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1206", ATTRS{idProduct}=="5d10", GROUP="dialout", MODE="0660"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1206", ATTRS{idProduct}=="5d10", GROUP="plugdev", MODE="0660", RUN+="/bin/sh -c '/usr/bin/setfacl -m g:dialout:rw /dev/%k || :'"
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1206", ATTRS{idProduct}=="5d10", GROUP="plugdev", MODE="0660", RUN+="/bin/sh -c '/usr/bin/setfacl -m g:dialout:rw /dev/%k || :'"
 
