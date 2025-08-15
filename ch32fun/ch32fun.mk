@@ -332,7 +332,7 @@ clangd_clean :
 	rm -f compile_commands.json
 	rm -rf .cache
 
-FLASH_COMMAND?=$(MINICHLINK)/minichlink -E -w $< $(WRITE_SECTION) -b
+FLASH_COMMAND?=$(MINICHLINK)/minichlink -w $< $(WRITE_SECTION) -b
 
 .PHONY : $(GENERATED_LD_FILE)
 $(GENERATED_LD_FILE) :
@@ -345,6 +345,10 @@ $(TARGET).elf : $(FILES_TO_COMPILE) $(LINKER_SCRIPT) $(EXTRA_ELF_DEPENDENCIES)
 # Not used in the default 003fun toolchain, but used in more sophisticated toolchains.
 ch32fun.o : $(SYSTEM_C)
 	$(PREFIX)-gcc -c -o $@ $(SYSTEM_C) $(CFLAGS)
+
+cv_reflash : $(TARGET).bin
+	make -C $(MINICHLINK) all
+	$(MINICHLINK)/minichlink -E -w $< $(WRITE_SECTION) -b
 
 cv_flash : $(TARGET).bin
 	make -C $(MINICHLINK) all
