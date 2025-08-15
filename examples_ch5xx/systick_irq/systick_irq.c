@@ -4,7 +4,12 @@
 // Number of ticks elapsed per millisecond
 #define SYSTICK_ONE_MILLISECOND ((uint32_t)FUNCONF_SYSTEM_CORE_CLOCK / 1000)
 
-#define LED      PA9 // for WeAct boards ch59x,ch58x,ch57x use PA8
+#if defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2)
+#define LED PA9
+#else
+#define LED PA8
+#endif
+
 #define INTERVAL 300*SYSTICK_ONE_MILLISECOND
 
 /*

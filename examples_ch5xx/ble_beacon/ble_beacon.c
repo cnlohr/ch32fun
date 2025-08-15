@@ -9,6 +9,7 @@
 #endif
 
 #define SLEEPTIME_MS 300
+#define RB_PWR_RAM_MAIN 0x10 // RB_PWR_RAM16K for ch570/2, RB_PWR_RAM30K for ch582/3, RB_PWR_RAM24K for ch59x
 
 uint8_t adv[] = {0x66, 0x55, 0x44, 0x33, 0x22, 0x11, // MAC (reversed)
 				 0x03, 0x19, 0x00, 0x00, // 0x19: "Appearance", 0x00, 0x00: "Unknown"
@@ -19,6 +20,18 @@ __attribute__((interrupt))
 void RTC_IRQHandler(void) {
 	// clear trigger flag
 	R8_RTC_FLAG_CTRL = RB_RTC_TRIG_CLR;
+}
+
+void allPinPullUp(void)
+{
+	R32_PA_DIR = 0; //Direction input
+	R32_PA_PD_DRV = 0; //Disable pull-down
+	R32_PA_PU = P_All; //Enable pull-up
+#ifdef PB
+	R32_PB_DIR = 0; //Direction input
+	R32_PB_PD_DRV = 0; //Disable pull-down
+	R32_PB_PU = P_All; //Enable pull-up
+#endif
 }
 
 void blink(int n) {
@@ -38,6 +51,8 @@ int main() {
 	RTCInit(); // Set the RTC counter to 0
 	SleepInit(); // Enable wakeup from sleep by RTC, and enable RTC IRQ
 
+	allPinPullUp(); // this reduces sleep from ~70uA to 1uA
+
 	funGpioInitAll();
 	funPinMode( LED, GPIO_CFGLR_OUT_2Mhz_PP );
 
@@ -51,7 +66,7 @@ int main() {
 		for(int c = 0; c < sizeof(adv_channels); c++) {
 			Frame_TX(adv, sizeof(adv), adv_channels[c], PHY_1M);
 		}
-		LowPower( MS_TO_RTC(SLEEPTIME_MS), (RB_PWR_RAM2K | RB_PWR_RAM24K | RB_PWR_EXTEND) ); // PWR_RAM can be optimized
+		LowPower( MS_TO_RTC(SLEEPTIME_MS), (RB_PWR_RAM2K | RB_PWR_RAM_MAIN | RB_PWR_EXTEND) ); // PWR_RAM can be optimized
 		RFCoreInit(txPower);
 		DCDCEnable();
 		blink(1);

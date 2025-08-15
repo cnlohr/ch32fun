@@ -4777,8 +4777,22 @@ Examples:
 #define SysTick         ((SysTick_Type *) SysTick_BASE)
 
 
+#define PA0 0
 #define PA1 1
 #define PA2 2
+#define PA3 3
+#define PA4 4
+#define PA5 5
+#define PA6 6
+#define PA7 7
+#define PB0 16
+#define PB1 17
+#define PB2 18
+#define PB3 19
+#define PB4 20
+#define PB5 21
+#define PB6 22
+// There is not PB7 in V006
 #define PC0 32
 #define PC1 33
 #define PC2 34

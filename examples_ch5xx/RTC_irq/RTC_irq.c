@@ -1,9 +1,15 @@
 #include "ch32fun.h"
 #include <stdio.h>
 
+#if defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2)
 #define LED PA9
+#else
+#define LED PA8
+#endif
 
-void RTC_IRQHandler(void) __attribute__((interrupt));
+#define SLEEPTIME_MS 333
+
+__attribute__((interrupt))
 void RTC_IRQHandler(void)
 {
 	// clear timer and trigger flags
@@ -15,7 +21,7 @@ void RTC_IRQHandler(void)
 	// Set a trigger again.
 	// The TMR function of the RTC can also be used for this,
 	// but like this the demo basically shows both
-	RTCTrigger( MS_TO_RTC(333) );
+	RTCTrigger( MS_TO_RTC(SLEEPTIME_MS) );
 }
 
 
@@ -23,7 +29,10 @@ int main(void)
 {
 	SystemInit();
 
-	RTCInit(); // initialize RTC count to 0
+	RTCInit(); // initialize RTC count to 0	
+	SYS_SAFE_ACCESS(
+		R8_RTC_MODE_CTRL |= RB_RTC_TRIG_EN; // enable RTC interrupt trigger
+	);
 	NVIC_EnableIRQ(RTC_IRQn); // enable RTC IRQ to hit the RTC_IRQHandler
 
 	funGpioInitAll(); // no-op on ch5xx
@@ -31,7 +40,7 @@ int main(void)
 	funPinMode(LED, GPIO_CFGLR_OUT_2Mhz_PP);
 
 	// set RTC IRQ trigger to hit the RTC_IRQHandler, in specified amount of RTC ticks
-	RTCTrigger( MS_TO_RTC(333) );
+	RTCTrigger( MS_TO_RTC(SLEEPTIME_MS) );
 
 	while(1);
 }

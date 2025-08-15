@@ -260,7 +260,7 @@ int CMDPollServer( void * dev )
 		}
 		else if( g_cmdListenMode == 2 )
 		{
-			if( g_cmdServerSocket ) 	close( g_cmdServerSocket );
+			if( g_cmdServerSocket ) 	closesocket( g_cmdServerSocket );
 			g_cmdServerSocket = 0;
 			g_cmdListenMode = 1;
 			CMDListen();
