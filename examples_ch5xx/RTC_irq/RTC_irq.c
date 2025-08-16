@@ -1,7 +1,7 @@
 #include "ch32fun.h"
 #include <stdio.h>
 
-#if defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2)
+#ifdef CH570_CH572
 #define LED PA9
 #else
 #define LED PA8
@@ -29,10 +29,7 @@ int main(void)
 {
 	SystemInit();
 
-	RTCInit(); // initialize RTC count to 0	
-	SYS_SAFE_ACCESS(
-		R8_RTC_MODE_CTRL |= RB_RTC_TRIG_EN; // enable RTC interrupt trigger
-	);
+	RTCInit(); // initialize RTC count to 0, enable Trigger
 	NVIC_EnableIRQ(RTC_IRQn); // enable RTC IRQ to hit the RTC_IRQHandler
 
 	funGpioInitAll(); // no-op on ch5xx

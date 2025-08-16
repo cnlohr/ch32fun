@@ -1,3 +1,4 @@
+// Small example showing how to use SPI and DMA to drive rgb leds
 // NOTE: CONNECT WS2812's to PA7 (CH570/2) or to PA14 (CH582/3, CH591/2)
 
 #include "ch32fun.h"
@@ -9,14 +10,13 @@
 #define WSGRB // For SK6805-EC15
 #define NR_LEDS 64
 
-#if defined(CH57x)
+#ifdef CH570_CH572
 #define DEBUG_LED PA9
 #else
 #define DEBUG_LED PA8
 #endif
 
 #include "ws2812b_dma_spi_led_driver.h"
-
 #include "color_utilities.h"
 
 uint16_t phases[NR_LEDS];
@@ -41,11 +41,11 @@ int main()
 	SystemInit();
 
 	// Enable GPIO PA9 (for debugging)
-  funPinMode(DEBUG_LED, GPIO_CFGLR_OUT_10Mhz_PP);
-  funDigitalWrite(DEBUG_LED, 0); // Turn on GPIO PA9
-  Delay_Ms(500);
-  
-  WS2812BDMAInit();
+	funPinMode(DEBUG_LED, GPIO_CFGLR_OUT_10Mhz_PP);
+	funDigitalWrite(DEBUG_LED, 0); // Turn on GPIO PA9
+	Delay_Ms(500);
+
+	WS2812BDMAInit();
 	frameno = 0;
 
 	for( k = 0; k < NR_LEDS; k++ ) phases[k] = k<<8;
@@ -56,7 +56,7 @@ int main()
 	{
 	
 		// funDigitalWrite( DEBUG_LED, 0 ); // Turn on GPIO PA9
-    // Wait for LEDs to totally finish.
+		// Wait for LEDs to totally finish.
 		while( WS2812BLEDInUse );
 
 		frameno++;
@@ -86,7 +86,7 @@ int main()
 
 		WS2812BDMAStart( NR_LEDS );
 
-    funDigitalWrite( DEBUG_LED, 1 ); // Turn it off
-    Delay_Ms( 20 );
+		funDigitalWrite( DEBUG_LED, 1 ); // Turn it off
+		Delay_Ms( 20 );
 	}
 }

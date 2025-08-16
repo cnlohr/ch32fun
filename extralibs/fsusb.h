@@ -6,9 +6,8 @@
 #include "usb_defines.h"
 #include "usb_config.h"
 
-#if defined(CH57x) || defined(CH58x) || defined(CH59x) || defined(CH32X03x) || defined(CH32V10x)
+#if defined(CH5xx) || defined(CH32X03x) || defined(CH32V10x)
 #if !defined (CH32X03x) && !defined(CH32V10x)
-#define CH5xx
 #define USBFS_BASE USB_BASE_ADDR
 typedef struct
 {
