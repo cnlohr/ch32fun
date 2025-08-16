@@ -578,19 +578,19 @@ int ISPCH5xxEnableDebug( void * d, uint8_t disable )
 	wch_isp_command( dev, "\xa7\x02\x00\x1f\x00", 5, (int*)&transferred, rbuff, 1024 );
 	printf("Current config: %02x%02x%02x%02x%02x%02x%02x%02x %02x%02x%02x%02x\n", rbuff[6], rbuff[7], rbuff[8], rbuff[9], rbuff[10], rbuff[11], rbuff[12], rbuff[13], rbuff[14], rbuff[15], rbuff[16], rbuff[17]);
 
-	if( (rbuff[14] & 0x10) && disable == 0 )
+	if( ((rbuff[14] & 0x10) && (rbuff[14] & 0x80))  && disable == 0 )
 	{
 		printf( "Debug module is already enabled!\n" );
 		return 0;
 	}
-	else if( !(rbuff[14] & 0x10) && disable > 0 )
+	else if( (!(rbuff[14] & 0x10) && !(rbuff[14] & 0x80)) && disable > 0 )
 	{
 		printf( "Debug module is already disabled!\n" );
 		return 0;	
 	}
 	else
 	{
-		if( disable ) rbuff[14] &= ~(0x10);
+		if( disable ) rbuff[14] &= ~(0x90);
 		else rbuff[14] |= 0x90;
 
 		// Set valid signature

@@ -406,7 +406,8 @@ keep_going:
 				else if( argchar[1] == 'T' )
 				{
 					// In case we aren't running already.
-					MCF.HaltMode( dev, 1 );
+					if( iss->target_chip_type == CHIP_CH58x ) MCF.HaltMode( dev, HALT_MODE_RESUME );
+					else MCF.HaltMode( dev, HALT_MODE_REBOOT );
 				}
 
 				CaptureKeyboardInput();
@@ -1229,15 +1230,18 @@ static int DefaultGetUUID( void * dev, uint8_t * buffer )
 	uint8_t local_buffer[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 	enum RiscVChip chip = iss->target_chip_type;
 
-	if( chip == CHIP_CH32M030 )
+	if( iss->target_chip->protocol == PROTOCOL_DEFAULT )
 	{
+		MCF.WriteReg32( dev, DMABSTRACTAUTO, 0 );
 		MCF.WriteReg32( dev, DMPROGBUF0, 0x90024000 ); // c.ebreak <<== c.lw x8, 0(x8)
-		MCF.WriteReg32( dev, DMDATA0, 0x1ffff3a8 );			
+		if( chip == CHIP_CH32M030 ) MCF.WriteReg32( dev, DMDATA0, 0x1ffff3a8 );
+		else MCF.WriteReg32( dev, DMDATA0, 0x1ffff7e8 );
 		MCF.WriteReg32( dev, DMCOMMAND, 0x00271008 ); // Copy data to x8, and execute.
 		MCF.WaitForDoneOp( dev, 0 );
 		MCF.WriteReg32( dev, DMCOMMAND, 0x00221008 ); // Copy data from x8.
 		MCF.ReadReg32( dev, DMDATA0, (uint32_t*)local_buffer );
-		MCF.WriteReg32( dev, DMDATA0, 0x1ffff3ac );			
+		if( chip == CHIP_CH32M030 ) MCF.WriteReg32( dev, DMDATA0, 0x1ffff3ac );
+		else MCF.WriteReg32( dev, DMDATA0, 0x1ffff7ec );
 		MCF.WriteReg32( dev, DMCOMMAND, 0x00271008 ); // Copy data to x8, and execute.
 		MCF.WaitForDoneOp( dev, 0 );
 		MCF.WriteReg32( dev, DMCOMMAND, 0x00221008 ); // Copy data from x8.
@@ -1245,39 +1249,7 @@ static int DefaultGetUUID( void * dev, uint8_t * buffer )
 		*((uint32_t*)buffer) = local_buffer[0]<<24|local_buffer[1]<<16|local_buffer[2]<<8|local_buffer[3];
 		*(((uint32_t*)buffer)+1) = local_buffer[4]<<24|local_buffer[5]<<16|local_buffer[6]<<8|local_buffer[7];
 	}
-	else if( chip == CHIP_CH32V003 ||
-	         chip == CHIP_CH32V00x ||
-	         chip == CHIP_CH32L10x ||
-	         chip == CHIP_CH32V10x ||
-	         chip == CHIP_CH32V20x ||
-	         chip == CHIP_CH32V30x ||
-	         chip == CHIP_CH32V317 ||
-	         chip == CHIP_CH32X03x ||
-	         chip == CHIP_CH564 ||
-	         chip == CHIP_CH641 ||
-	         chip == CHIP_CH643 ||
-	         chip == CHIP_CH645 )
-	{
-		MCF.WriteReg32( dev, DMPROGBUF0, 0x90024000 ); // c.ebreak <<== c.lw x8, 0(x8)
-		MCF.WriteReg32( dev, DMDATA0, 0x1ffff7e8 );			
-		MCF.WriteReg32( dev, DMCOMMAND, 0x00271008 ); // Copy data to x8, and execute.
-		MCF.WaitForDoneOp( dev, 0 );
-		MCF.WriteReg32( dev, DMCOMMAND, 0x00221008 ); // Copy data from x8.
-		MCF.ReadReg32( dev, DMDATA0, (uint32_t*)local_buffer );
-		MCF.WriteReg32( dev, DMDATA0, 0x1ffff7ec );
-		MCF.WriteReg32( dev, DMCOMMAND, 0x00271008 ); // Copy data to x8, and execute.
-		MCF.WaitForDoneOp( dev, 0 );
-		MCF.WriteReg32( dev, DMCOMMAND, 0x00221008 ); // Copy data from x8.
-		MCF.ReadReg32( dev, DMDATA0, (uint32_t*)(local_buffer + 4) );
-		*((uint32_t*)buffer) = local_buffer[0]<<24|local_buffer[1]<<16|local_buffer[2]<<8|local_buffer[3];
-		*(((uint32_t*)buffer)+1) = local_buffer[4]<<24|local_buffer[5]<<16|local_buffer[6]<<8|local_buffer[7];
-	}
-	else if( chip == CHIP_CH56x ||
- 	         chip == CHIP_CH570 ||
- 	         chip == CHIP_CH57x ||
- 	         chip == CHIP_CH58x ||
- 	         chip == CHIP_CH585 ||
- 	         chip == CHIP_CH59x )
+	else if( iss->target_chip->protocol == PROTOCOL_CH5xx )
 	{
 		ret = CH5xxReadUUID( dev, local_buffer );
 		memcpy(buffer, local_buffer, 8);
@@ -3025,7 +2997,6 @@ int DefaultPollTerminal( void * dev, uint8_t * buffer, int maxlen, uint32_t leav
 
 int DefaultUnbrick( void * dev )
 {
-	if( MCF.ResetInterface) MCF.ResetInterface( dev );
 	printf( "Entering Unbrick Mode\n" );
 	if( MCF.Control5v ) MCF.Control5v( dev, 0 );
 	MCF.Control3v3( dev, 0 );
@@ -3034,10 +3005,12 @@ int DefaultUnbrick( void * dev )
 	MCF.DelayUS( dev, 60000 );
 	MCF.DelayUS( dev, 60000 );
 	MCF.DelayUS( dev, 60000 );
+	MCF.DelayUS( dev, 60000 );
+	MCF.FlushLLCommands( dev );
+	if( MCF.ResetInterface ) MCF.ResetInterface( dev );
 	if( MCF.Control5v ) MCF.Control5v( dev, 1 );
 	MCF.Control3v3( dev, 1 );
 	printf( "Connection starting\n" );
-	MCF.FlushLLCommands( dev );
 
 	int timeout = 0;
 	int max_timeout = 500; // An absurdly long time.

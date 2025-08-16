@@ -1363,6 +1363,15 @@ int ESPDetermineChipType( void * dev )
 	return 0;
 }
 
+static int ESPResetInterface( void * dev )
+{
+	Write2LE( dev, 0x0efe ); // Trigger Init.
+	ESPFlushLLCommands( dev );
+	Write2LE( dev, 0x0afe ); // Reset programmer internals
+	ESPFlushLLCommands( dev );
+	return 0;
+}
+
 void * TryInit_ESP32S2CHFUN()
 {
 	hid_init();
@@ -1401,6 +1410,7 @@ void * TryInit_ESP32S2CHFUN()
 	MCF.Exit = ESPExit;
 	MCF.VoidHighLevelState = ESPVoidHighLevelState;
 	MCF.VendorCommand = ESPVendorCommand;
+	MCF.ResetInterface = ESPResetInterface;
 
 #if 1
 	// These are optional. Disabling these is a good mechanismto make sure the core functions still work.
