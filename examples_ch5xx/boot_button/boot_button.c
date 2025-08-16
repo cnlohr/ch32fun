@@ -1,6 +1,15 @@
+/*
+ * This demo jumps to the built-in bootloader, so it can be programmed over ISP.
+ * Most ch5xx dev boards come with a "boot" or "download" button, when this
+ * is pressed the chip resets and executes the ISP bootloader which presents
+ * itself on USB to the host.
+ * NOTE: this does not work together with "FUNCONF_USE_USBPRINTF"! For use
+ * in combination with that refer to the examples_usb/USBFS/usbfs_cdc_tty demo.
+ */
+
 #include "ch32fun.h"
 
-#if defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2) // ch570/2
+#ifdef CH570_CH572
 #define PIN_LED    PA9
 #define PIN_BUTTON PA1
 #define BUTTON_PRESSED funDigitalRead( PIN_BUTTON )

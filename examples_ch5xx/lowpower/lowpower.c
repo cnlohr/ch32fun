@@ -1,3 +1,7 @@
+/*
+ * Demomstration of low power Idle and Sleep modes.
+ * The RTC is used to trigger an interrupt to exit those modes, which was entered with WFI
+ */
 #include "ch32fun.h"
 #include <stdio.h>
 
@@ -11,6 +15,7 @@
 #define LED_OFF FUN_HIGH
 #define SLEEPTIME_MS 1000
 
+// RTC interrupt handler to wake up from sleep
 __attribute__((interrupt))
 void RTC_IRQHandler(void)
 {
@@ -31,6 +36,7 @@ void allPinPullUp(void)
 }
 
 void blink_led(int n) {
+	// this blink function uses LowPowerIdle instead of Delay_Ms
 	for(int i = n-1; i >= 0; i--) {
 		funDigitalWrite( LED, LED_ON );
 		LowPowerIdle( MS_TO_RTC(33) );
@@ -45,7 +51,7 @@ int main()
 
 	DCDCEnable(); // Enable the internal DCDC
 	LSIEnable(); // Disable LSE, enable LSI
-	RTCInit(); // Set the RTC counter to 0
+	RTCInit(); // Set the RTC counter to 0 and enable RTC Trigger
 	SleepInit(); // Enable wakeup from sleep by RTC, and enable RTC IRQ
 
 	allPinPullUp();
@@ -58,11 +64,11 @@ int main()
 	while(i--)
 	{ 
 		LowPowerIdle( MS_TO_RTC(SLEEPTIME_MS) );
-		DCDCEnable();
+		DCDCEnable(); // During low power mode, the DCDC is disabled so we need to enable it
 		blink_led(2);
 		
 		LowPowerSleep( MS_TO_RTC(SLEEPTIME_MS), (RB_PWR_RAM2K) );
-		DCDCEnable();
+		DCDCEnable(); // During low power mode, the DCDC is disabled so we need to enable it
 		blink_led(3);
 	}
 

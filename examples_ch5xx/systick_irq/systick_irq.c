@@ -4,7 +4,7 @@
 // Number of ticks elapsed per millisecond
 #define SYSTICK_ONE_MILLISECOND ((uint32_t)FUNCONF_SYSTEM_CORE_CLOCK / 1000)
 
-#if defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2)
+#ifdef CH570_CH572
 #define LED PA9
 #else
 #define LED PA8

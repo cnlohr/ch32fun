@@ -1,3 +1,4 @@
+// Small example showing how to use SPI and DMA to drive rgb leds
 // NOTE: CONNECT WS2812's to PA7 (CH570/2) or to PA14 (CH582/3, CH591/2)
 
 #include "ch32fun.h"

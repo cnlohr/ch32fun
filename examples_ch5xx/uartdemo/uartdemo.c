@@ -1,3 +1,5 @@
+/* Small example showing how to use the UART for printf or sending single characters */
+
 #include "ch32fun.h"
 #include <stdio.h>
 
