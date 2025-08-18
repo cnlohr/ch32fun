@@ -3294,7 +3294,6 @@ typedef enum
 #define GPIO_CNF_OUT_OD_AF   12
 
 /* Configuration Mode enumeration */
-/*
 typedef enum
 {
     GPIO_Mode_AIN = 0x0,
@@ -3306,7 +3305,6 @@ typedef enum
     GPIO_Mode_AF_OD = 0x1C,
     GPIO_Mode_AF_PP = 0x18
 } GPIOMode_TypeDef;
-*/
 
 #ifndef __ASSEMBLER__
 
