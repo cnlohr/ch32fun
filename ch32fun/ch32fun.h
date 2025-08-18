@@ -381,12 +381,8 @@ typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
 	#include "ch32v20xhw.h"
 #elif defined( CH32V30x )
 	#include "ch32v30xhw.h"
-#elif defined( CH57x )
-	#include "ch57xhw.h"
-#elif defined( CH58x )
-	#include "ch58xhw.h"
-#elif defined( CH59x )
-	#include "ch59xhw.h"
+#elif defined( CH57x ) || defined( CH58x ) || defined( CH59x )
+	#include "ch5xxhw.h"
 #endif
 
 #if defined(__riscv) || defined(__riscv__) || defined( CH32V003FUN_BASE )

@@ -3,8 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#if defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2)
-#define CH570_CH572
+#ifdef CH570_CH572
 #define CRCPOLY1           BB2
 #define ACCESSADDRESS1     BB3
 #define CTRL_TX            BB13
@@ -24,8 +23,7 @@
 #define CTRL_CFG_PHY_2M    (BB->CTRL_CFG & 0xfffffcff)
 #define LL_STATUS_TX       0x20000
 #define CTRL_CFG_START_TX  0x1000000
-#elif defined(CH57x) && (MCU_PACKAGE == 1 || MCU_PACKAGE == 3)
-#define CH571_CH573
+#elif defined(CH571_CH573)
 #define ACCESSADDRESS1     BB2
 #define CTRL_TX            BB11
 #define TMR                LL24
@@ -39,8 +37,7 @@
 #define CTRL_CFG_PHY_1M    (BB->CTRL_CFG | 0x10000000)
 #define LL_STATUS_TX       0x20000
 #define CTRL_CFG_START_TX  (BB->CTRL_CFG & 0xefffffff)
-#elif defined(CH58x) && (MCU_PACKAGE == 2 || MCU_PACKAGE == 3)
-#define CH582_CH583
+#elif defined(CH582_CH583)
 #define ACCESSADDRESS1     BB2
 #define CTRL_TX            BB11
 #define TMR                LL25
@@ -59,12 +56,7 @@
 #define CTRL_CFG_PHY_CODED ((BB->CTRL_CFG & 0xffff0fff) | 0x2000)
 #define LL_STATUS_TX       0x2000
 #define CTRL_CFG_START_TX  0x800000
-#elif (defined(CH59x) && (MCU_PACKAGE == 1 || MCU_PACKAGE == 2)) || (defined(CH58x) && (MCU_PACKAGE == 4 || MCU_PACKAGE == 5))
-#if defined(CH59x)
-#define CH591_CH592
-#elif defined(CH58x)
-#define CH584_CH585
-#endif
+#elif (defined(CH584_CH585) || defined(CH591_CH592))
 #define ACCESSADDRESS1     BB2
 #define CTRL_TX            BB11
 #define TMR                LL25
