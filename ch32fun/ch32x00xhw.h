@@ -690,6 +690,7 @@ typedef struct
 #define AFIO                                    ((AFIO_TypeDef *)AFIO_BASE)
 #define EXTI                                    ((EXTI_TypeDef *)EXTI_BASE)
 #define GPIOA                                   ((GPIO_TypeDef *)GPIOA_BASE)
+#define GPIOB                                   ((GPIO_TypeDef *)GPIOB_BASE)
 #define GPIOC                                   ((GPIO_TypeDef *)GPIOC_BASE)
 #define GPIOD                                   ((GPIO_TypeDef *)GPIOD_BASE)
 #define ADC1                                    ((ADC_TypeDef *)ADC1_BASE)
@@ -3680,6 +3681,7 @@ typedef enum
 
 /* GPIO_Port_Sources */
 #define GPIO_PortSourceGPIOA           ((uint8_t)0x00)
+#define GPIO_PortSourceGPIOB           ((uint8_t)0x01)
 #define GPIO_PortSourceGPIOC           ((uint8_t)0x02)
 #define GPIO_PortSourceGPIOD           ((uint8_t)0x03)
 
@@ -4139,13 +4141,15 @@ typedef struct{
 #define RCC_AHBPeriph_SRAM               ((uint32_t)0x00000004)
 
 /* APB2_peripheral */
-#define RCC_APB2Periph_AFIO              ((uint32_t)0x00000001)
+#define RCC_APB2Periph_AFIO              ((uint32_t)0x00000000)
 #define RCC_APB2Periph_GPIOA             ((uint32_t)0x00000004)
+#define RCC_APB2Periph_GPIOB             ((uint32_t)0x00000008)
 #define RCC_APB2Periph_GPIOC             ((uint32_t)0x00000010)
 #define RCC_APB2Periph_GPIOD             ((uint32_t)0x00000020)
 #define RCC_APB2Periph_ADC1              ((uint32_t)0x00000200)
 #define RCC_APB2Periph_TIM1              ((uint32_t)0x00000800)
 #define RCC_APB2Periph_SPI1              ((uint32_t)0x00001000)
+#define RCC_APB2Periph_USART2            ((uint32_t)0x00002000)
 #define RCC_APB2Periph_USART1            ((uint32_t)0x00004000)
 
 /* APB1_peripheral */
