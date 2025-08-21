@@ -3283,16 +3283,6 @@ typedef enum
 	GPIO_Speed_30MHz = 3, // Alias 30MHz to 50MHz.
 } GPIOSpeed_TypeDef;
 
-#endif
-
-#define GPIO_CNF_IN_ANALOG   0
-#define GPIO_CNF_IN_FLOATING 4
-#define GPIO_CNF_IN_PUPD     8
-#define GPIO_CNF_OUT_PP      0
-#define GPIO_CNF_OUT_OD      4
-#define GPIO_CNF_OUT_PP_AF   8
-#define GPIO_CNF_OUT_OD_AF   12
-
 /* Configuration Mode enumeration */
 typedef enum
 {
@@ -3305,6 +3295,16 @@ typedef enum
     GPIO_Mode_AF_OD = 0x1C,
     GPIO_Mode_AF_PP = 0x18
 } GPIOMode_TypeDef;
+
+#endif
+
+#define GPIO_CNF_IN_ANALOG   0
+#define GPIO_CNF_IN_FLOATING 4
+#define GPIO_CNF_IN_PUPD     8
+#define GPIO_CNF_OUT_PP      0
+#define GPIO_CNF_OUT_OD      4
+#define GPIO_CNF_OUT_PP_AF   8
+#define GPIO_CNF_OUT_OD_AF   12
 
 #ifndef __ASSEMBLER__
 
