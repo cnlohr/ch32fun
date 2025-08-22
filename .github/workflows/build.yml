@@ -3,29 +3,28 @@ name: Build CI
 on: [push, pull_request]
 
 jobs:
-  find-examples: # Job that list subdirectories
+  build-all:
     runs-on: ubuntu-latest
-    outputs:
-      dir: ${{ steps.set-dirs.outputs.dir }} # generate output name dir by using inner step output
     steps:
       - uses: actions/checkout@v4
-      - id: set-dirs # Give it an id to handle to get step outputs in the outputs key above
-        run: echo "::set-output name=dir::$(find examples* -maxdepth 2 -name Makefile -print0 |xargs -0 -n 1 dirname | jq -R -s -c 'split("\n")[:-1]')"
-        # Define step output named dir base on ls command transformed to JSON thanks to jq
-  # Build using native Makefile buildsystem
-  makefile-build:
-    needs: [find-examples] # Depends on previous job
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        example: ${{fromJson(needs.find-examples.outputs.dir)}}
-    steps:
-    - uses: actions/checkout@v4
-    - name: Install Dependencies
-      run: sudo apt-get update && sudo apt-get install -y build-essential make libnewlib-dev gcc-riscv64-unknown-elf libusb-1.0-0-dev libudev-dev
-    - name: Build ${{ matrix.example }}
-      run: cd ${{ matrix.example }} && make V=1 -j3 $(basename ${{ matrix.example }}.elf) && riscv64-unknown-elf-size $(basename ${{ matrix.example }}.elf)
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential make libnewlib-dev gcc-riscv64-unknown-elf libusb-1.0-0-dev libudev-dev
+
+      - name: Build all examples
+        run: |
+          set -e
+          for dir in $(find examples* -maxdepth 2 -name Makefile -print0 | xargs -0 -n 1 dirname); do
+            echo "============================"
+            echo "Building example: $dir"
+            echo "============================"
+            cd "$dir"
+            make V=1 -j3 "$(basename "$dir").elf"
+            riscv64-unknown-elf-size "$(basename "$dir").elf"
+            cd - >/dev/null
+          done
   # Build using PlatformIO
   pio-build:
     strategy:
