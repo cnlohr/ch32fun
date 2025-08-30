@@ -1,15 +1,17 @@
 ifeq ($(OS),Windows_NT)
 	WHICH:=where
+	NULLDEV:=nul
 else
 	WHICH:=which
+	NULLDEV:=/dev/null
 endif
 
 # Default/fallback prefix
 PREFIX_DEFAULT:=riscv64-elf
 
-ifneq ($(shell $(WHICH) riscv64-unknown-elf-gcc),)
+ifneq ($(shell $(WHICH) riscv64-unknown-elf-gcc 2>$(NULLDEV)),)
 	PREFIX_DEFAULT:=riscv64-unknown-elf
-else ifneq ($(shell $(WHICH) riscv-none-elf-gcc),)
+else ifneq ($(shell $(WHICH) riscv-none-elf-gcc 2>$(NULLDEV)),)
 	PREFIX_DEFAULT:=riscv-none-elf
 endif
 
@@ -42,7 +44,11 @@ endif
 CFLAGS?=-g -Os -flto -ffunction-sections -fdata-sections -fmessage-length=0 -msmall-data-limit=8
 LDFLAGS+=-Wl,--print-memory-usage -Wl,-Map=$(TARGET).map
 
-GCCVERSION13 := $(shell expr `$(PREFIX)-gcc -dumpversion | cut -f1 -d.` \>= 13)
+# Get GCC major version in a shell-agnostic way
+GCCVERSION := $(shell $(PREFIX)-gcc -dumpversion)
+GCCMAJOR := $(firstword $(subst ., ,$(GCCVERSION)))
+# every major version below 13 maps to 0, anything 13 or above maps to 1
+GCCVERSION13 := $(if $(filter 1 2 3 4 5 6 7 8 9 10 11 12,$(GCCMAJOR)),0,1)
 
 ifeq ($(findstring CH32V00,$(TARGET_MCU)),CH32V00) # CH32V002, 3, 4, 5, 6, 7
 	MCU_PACKAGE?=1

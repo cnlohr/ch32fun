@@ -27,6 +27,19 @@ jobs:
                 echo "============================"
                 (cd "$dir" && make V=1 -j3 "$(basename "$dir").elf" && riscv64-unknown-elf-size "$(basename "$dir").elf")
             '
+  build-all-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install xPack GCC + Make
+        shell: pwsh
+        run: |
+          ./misc/install_xpack_gcc.ps1 -SkipPrompts
+      - name: Build all examples
+        shell: cmd
+        run: |
+          cd build_scripts
+          build_all.cmd
   # Build using PlatformIO
   pio-build:
     strategy:

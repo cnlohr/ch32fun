@@ -180,6 +180,11 @@ if (-NOT $NoPath)
 		[Environment]::SetEnvironmentVariable('PATH', $NewPATH, $PathScope);
 		Write-Host '  You may need to restart your terminal before you can use xpack gcc.';
 	}
+	# Detect GitHub Actions runner and export for future steps
+    if ($env:GITHUB_ACTIONS -eq 'true') {
+        Write-Host "Detected GitHub Actions runner. Prepending xPack bin to PATH for workflow steps..."
+        Add-Content -Path $env:GITHUB_ENV -Value "PATH=$XpackBinPath`:$env:PATH"
+    }
 }
 
 Write-Host 'Finished!';
