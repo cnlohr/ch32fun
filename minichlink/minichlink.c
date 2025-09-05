@@ -60,27 +60,27 @@ void * MiniCHLinkInitAsDLL( struct MiniChlinkFunctions ** MCFO, const init_hints
 	{
 		if( (dev = TryInit_WCHISP()) )
 		{
-			fprintf( stderr, "Found MCU in bootloader mode\n" );
+			fprintf( stdout, "Found MCU in bootloader mode\n" );
 		}
 		else if( (dev = TryInit_WCHLinkE()) )
 		{
-			fprintf( stderr, "Found WCH Link\n" );
+			fprintf( stdout, "Found WCH Link\n" );
 		}
 		else if( (dev = TryInit_ESP32S2CHFUN()) )
 		{
-			fprintf( stderr, "Found ESP32S2-Style Programmer\n" );
+			fprintf( stdout, "Found ESP32S2-Style Programmer\n" );
 		}
 		else if ((dev = TryInit_NHCLink042()))
 		{
-			fprintf( stderr, "Found NHC-Link042 Programmer\n" );
+			fprintf( stdout, "Found NHC-Link042 Programmer\n" );
 		}
 		else if ((dev = TryInit_B003Fun(SimpleReadNumberInt(init_hints->serial_port, 0x1209b003))))
 		{
-			fprintf( stderr, "Found B003Fun Bootloader\n" );
+			fprintf( stdout, "Found B003Fun Bootloader\n" );
 		}
 		else if ( init_hints->serial_port && strncmp( init_hints->serial_port, "0x", 2 ) && (dev = TryInit_Ardulink(init_hints)))
 		{
-			fprintf( stderr, "Found Ardulink Programmer\n" );
+			fprintf( stdout, "Found Ardulink Programmer\n" );
 		}
 	}
 
@@ -401,7 +401,7 @@ keep_going:
 				}
 				if( argchar[1] == 'G' )
 				{
-					fprintf( stderr, "GDBServer Running\n" );
+					fprintf( stdout, "GDBServer Running\n" );
 				}
 				else if( argchar[1] == 'T' )
 				{
@@ -1640,11 +1640,11 @@ chip_identified:
 			uint8_t * part_type = (uint8_t*)&iss->target_chip_id;
 			uint8_t uuid[8];
 			if( MCF.GetUUID( dev, uuid ) ) fprintf( stderr, "Couldn't read UUID\n" );
-			fprintf( stderr, "Detected %s\n", iss->target_chip->name_str );
-			fprintf( stderr, "Flash Storage: %d kB\n", iss->flash_size );
-			fprintf( stderr, "Part UUID: %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n", uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7] );
-			fprintf( stderr, "Part Type: %02x-%02x-%02x-%02x\n", part_type[3], part_type[2], part_type[1], part_type[0] );
-			fprintf( stderr, "Read protection: %s\n", (read_protection > 0)?"enabled":"disabled" );
+			fprintf( stdout, "Detected %s\n", iss->target_chip->name_str );
+			fprintf( stdout, "Flash Storage: %d kB\n", iss->flash_size );
+			fprintf( stdout, "Part UUID: %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n", uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7] );
+			fprintf( stdout, "Part Type: %02x-%02x-%02x-%02x\n", part_type[3], part_type[2], part_type[1], part_type[0] );
+			fprintf( stdout, "Read protection: %s\n", (read_protection > 0)?"enabled":"disabled" );
 		}
 		// Cleanup
 		MCF.WriteReg32( dev, DMDATA0, old_x8 );
@@ -3104,7 +3104,7 @@ int DefaultConfigureReadProtection( void * dev, int one_if_yes_protect )
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
 	if( iss->target_chip_type == CHIP_CH570 && one_if_yes_protect == 0 )
 	{
-		fprintf( stderr, "Disabling protection on CH570/2\n" );
+		fprintf( stdout, "Disabling protection on CH570/2\n" );
 		ch570_disable_read_protection( dev );
 	}
 	else
@@ -3321,7 +3321,7 @@ int DetectMemoryArea( void * dev, uint32_t address )
 		if( ret ) return ret;
 	}
 	const struct RiscVChip_s * chip = iss->target_chip;
-	fprintf( stderr, "Detecting Memory Area\n" );
+	fprintf( stdout, "Detecting Memory Area\n" );
 	if( address < chip->flash_offset)
 	{
 		fprintf( stderr, "The starting address is lower than FLASH start. Aborting\n" );
