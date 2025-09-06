@@ -1670,17 +1670,21 @@ void SystemInit( void )
 			SYS_SAFE_ACCESS(
 				R8_HFCK_PWR_CTRL |= RB_CLK_PLL_PON;
 				R8_FLASH_CFG = 0x01;
-				R8_FLASH_SCK |= 1<<4; //50M
+				R8_FLASH_SCK |= 1<<4;
 			);
 		}
-		else    // 32M div
+		else
 		{
 			SYS_SAFE_ACCESS(
 				R8_FLASH_CFG = (sc & 0x1F) ? 0x02 : 0x07;
 			);
 		}
 		SYS_SAFE_ACCESS(
+#ifdef CH570_CH572
 			R8_CLK_SYS_CFG = sc;
+#else // CH584_585
+			R16_CLK_SYS_CFG = sc;
+#endif
 		);
 	}
 #else // ch5xx EXCEPT ch570/2 ch584/5
@@ -1694,7 +1698,9 @@ void SystemInit( void )
 			R32_CLK_SYS_CFG = (0 << 6) | (sc & 0x1f) | RB_TX_32M_PWR_EN | RB_PLL_PWR_EN;
 		);
 		ADD_N_NOPS(4);
-		R8_FLASH_CFG = 0X51;
+		SYS_SAFE_ACCESS(
+			R8_FLASH_CFG = 0x51;
+		);
 	}
 	else if(sc & 0x40) // PLL div
 	{
@@ -1702,7 +1708,9 @@ void SystemInit( void )
 			R32_CLK_SYS_CFG = (1 << 6) | (sc & 0x1f) | RB_TX_32M_PWR_EN | RB_PLL_PWR_EN;
 		);
 		ADD_N_NOPS(4);
-		R8_FLASH_CFG = 0x52;
+		SYS_SAFE_ACCESS(
+			R8_FLASH_CFG = 0x52;
+		);
 	}
 	else
 	{
