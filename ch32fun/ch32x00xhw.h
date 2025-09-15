@@ -4282,7 +4282,7 @@ typedef struct{
 #define RCC_AHBPeriph_SRAM               ((uint32_t)0x00000004)
 
 /* APB2_peripheral */
-#define RCC_APB2Periph_AFIO              ((uint32_t)0x00000000)
+#define RCC_APB2Periph_AFIO              ((uint32_t)0x00000001)
 #define RCC_APB2Periph_GPIOA             ((uint32_t)0x00000004)
 #define RCC_APB2Periph_GPIOB             ((uint32_t)0x00000008)
 #define RCC_APB2Periph_GPIOC             ((uint32_t)0x00000010)
