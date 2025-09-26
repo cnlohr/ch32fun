@@ -19,7 +19,7 @@ jobs:
       - name: Build all examples (max 10 in parallel)
         run: |
           set -e
-          find examples* -maxdepth 2 -name Makefile \
+          find examples* -maxdepth 3 -name Makefile \
             | parallel -j 10 '
                 dir=$(dirname {});
                 echo "============================"
