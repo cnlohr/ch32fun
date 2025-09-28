@@ -1,9 +1,3 @@
-// Example using Timer 1 capture to look for down-going events
-// on PD2.  Then using DMA to capture that event and write it
-// to a circular queue that can be read out later.
-//
-// For it to produce interesting output, you can wire PD2 to PD3.
-
 #include "ch32fun.h"
 #include <stdio.h>
 
