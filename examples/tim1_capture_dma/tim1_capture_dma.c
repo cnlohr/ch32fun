@@ -50,29 +50,29 @@ int main()
 		DMA_CFGR1_EN;                        // Enable
 	DMA_IN->CNTR = samples_in_buffer;
 
-	TIM1->PSC = 0x01ff;		// set TIM1 clock prescaler divider (Massive prescaler)
+	TIM1->PSC = 0x0fff;		// set TIM1 clock prescaler divider (Massive prescaler)
 	TIM1->ATRLR = 65535;	// set PWM total cycle width
 
 	// Tim 1 input / capture (CC1S = 01)
 	TIM1->CHCTLR1 = TIM_CC1S_0;
 
 	// Add here CC1P to switch from UP->GOING to DOWN->GOING log times.
-	TIM1->CCER = TIM_CC1E | TIM_CC1P;
+	TIM1->CCER = TIM_CC1E;// | TIM_CC1P;
 	
 	// initialize counter
 	TIM1->SWEVGR = TIM_UG;
 
-	printf("samples_in_buffer %d\n", samples_in_buffer);
-	
+
 	int tail = 0;
-	while(1) {
+	while(1)
+	{
 		// Must perform modulus here, in case DMA_IN->CNTR == 0.
 		int head = (samples_in_buffer - DMA_IN->CNTR) & (samples_in_buffer-1);
 
-		while( head != tail ) {
-			u32 time_of_event = reply_buffer[tail];
-			u16 time_dif = time_of_event - reply_buffer[(u8)(tail - 1)];
-			printf("%ld %ld\n", time_of_event, time_dif);
+		while( head != tail )
+		{
+			uint32_t time_of_event = reply_buffer[tail];
+			printf( "%d/%d %d\n", tail, head, (int)time_of_event );
 
 			// Performs modulus to loop back.
 			tail = (tail+1)&(samples_in_buffer-1);
