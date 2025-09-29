@@ -124,3 +124,88 @@ void fun_irReceiver_task(void(*handler)(u16, u16)) {
 	}
 }
 
+
+
+
+#define IR_USE_TIM1_PWM
+
+// carrier frequency = 38kHz
+// period = 1/38000 = 26.5µs
+// half period = 26.5µs / 2 = ~13µs
+#define IR_HALF_PERIOD_US 13
+
+u8 irSender_pin;
+
+void fun_irSender_init(u8 pin) {
+	irSender_pin = pin;
+	funPinMode(irSender_pin, GPIO_CFGLR_OUT_50Mhz_PP);
+
+	// Reset TIM1 to init all regs
+	RCC->APB2PRSTR |= RCC_APB2Periph_TIM1;
+	RCC->APB2PRSTR &= ~RCC_APB2Periph_TIM1;
+
+	// Prescaler 1+1=2
+	TIM1->PSC = 1;
+	
+	// timer_period = system_clock/carrier_frequency = 48Mhz/38kHz = ~1263.1579
+	TIM1->ATRLR = 631;		// 50% duty cycle = 1263/2 = 631.5
+	TIM2->CH2CVR = 316;     // width 50% duty cycle
+
+	// Reload immediately
+	TIM1->SWEVGR |= TIM_UG;
+
+	// CH1 Mode is output, PWM1 (CC1S = 00, OC1M = 110)
+	TIM1->CHCTLR1 |= TIM_OC1M_2 | TIM_OC1M_1;
+
+	// Enable TIM1 outputs
+	TIM1->BDTR |= TIM_MOE;
+	
+	// Enable TIM1
+	TIM1->CTLR1 |= TIM_CEN;
+}
+
+void IR_send_carrier_pulse(u32 duration_us, u32 space_us) {
+	#ifdef IR_USE_TIM1_PWM
+		u32 cycles = duration_us / (IR_HALF_PERIOD_US * 2);
+		
+		for(u32 i = 0; i < cycles; i++) {
+			funDigitalWrite(irSender_pin, 1);  	// Set high
+			Delay_Us(IR_HALF_PERIOD_US);
+			funDigitalWrite(irSender_pin, 0);   // Set low
+			Delay_Us(IR_HALF_PERIOD_US);
+		}
+
+		// Ensure pin is low during space
+		funDigitalWrite(irSender_pin, 0);
+	#else
+		// Start CH1N output, positive pol
+		TIM1->CCER |= TIM_CC1NE | TIM_CC1NP;
+		Delay_Us(duration_us);
+
+		// Stop CH1N output
+		TIM1->CCER &= ~(TIM_CC1NE | TIM_CC1NP);
+	#endif
+	
+    Delay_Us(space_us);
+}
+
+void fun_irSend_NECData(u16 data) {
+	for (int i = 15; i >= 0; i--) {
+		u8 bit = (data >> i) & 1;		// MSB first
+		u32 space = bit ? 1600 : 510;
+		IR_send_carrier_pulse(510, space);
+	}
+}
+
+u16 address = 0x00FF;
+u16 command = 0xA56D;
+
+void fun_irSender_send() {
+	IR_send_carrier_pulse(9000, 4500);
+
+	fun_irSend_NECData(address);
+	fun_irSend_NECData(command);
+
+    // Stop bit
+    IR_send_carrier_pulse(510, 1000);
+}
