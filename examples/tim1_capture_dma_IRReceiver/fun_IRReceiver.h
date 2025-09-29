@@ -85,20 +85,21 @@ void fun_irReceiver_task(void(*handler)(u16, u16)) {
 		if (ir_started) {
 			//# filter 2nd start frame (> 1000 ticks)
 			if (time_dif > 1000) continue;
-			int word_idx = ir_bits_processed / 16;
+            int bit_pos = 15 - (ir_bits_processed & 0x0F);  // ir_bits_processed % 16
+            int word_idx = ir_bits_processed >> 4;          // ir_bits_processed / 16
 
 			//# filter for Logical HIGH
 			// logical HIGH (~200 ticks), logical LOW (~100 ticks)
 			if (time_dif > 150) {
 				// MSB first (reversed)
-				ir_data[word_idx] |= (1 << (15 - ir_bits_processed % 16));
+				ir_data[word_idx] |= (1 << bit_pos);
 			}
 
 			ir_bits_processed++;	
 		}
 
 		//# 1st start frame. Expect > 1200 ticks
-		if (time_dif > 500) {
+		else if (time_dif > 500) {
 			ir_started = 1;
 			ir_timeout = now;
 		}
