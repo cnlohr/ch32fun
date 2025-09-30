@@ -16,10 +16,15 @@ int main() {
 
 	u8 mode = fun_irSender_init(IR_SENDER_PIN);
 	printf("Mode: %s\r\n", mode ? "PWM" : "Manual GPIO");
-	
+
+	u32 time_ref = millis();
+	fun_irSender_send(0x00FF, 0xA56D);
+
 	while(1) {
-		fun_irSender_send();
-		Delay_Ms(3000);
-		printf(".");
+		if ((millis() - time_ref) > 3000) {
+			fun_irSender_send(0x00FF, 0xA56D);
+			time_ref = millis();
+			printf(".");
+		}
 	}
 }

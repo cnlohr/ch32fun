@@ -10,6 +10,11 @@
 #define TIM1_BUFFER_SIZE 64
 #define TIM1_BUFFER_LAST_IDX (TIM1_BUFFER_SIZE - 1)
 
+
+//! ####################################
+//! SETUP FUNCTION
+//! ####################################
+
 // For generating the mask/modulus, this must be a power of 2 size.
 uint16_t ir_ticks_buff[TIM1_BUFFER_SIZE];
 
@@ -54,6 +59,10 @@ void fun_irReceiver_init(u8 irPin) {
 	TIM1->DMAINTENR = TIM_CC1DE | TIM_UDE; // Enable DMA for T1CC1
 }
 
+
+//! ####################################
+//! RECEIVE FUNCTION
+//! ####################################
 
 u16 ir_data[4] = {0};
 u32 ir_timeout;
