@@ -4,6 +4,8 @@
 #include "systick_irq.h"
 #include "fun_irSender.h"
 
+#include "fun_IRDa.h"
+
 #define IR_SENDER_PIN PD0
 
 int main() {
@@ -16,15 +18,17 @@ int main() {
 
 	u8 mode = fun_irSender_init(IR_SENDER_PIN);
 	printf("Mode: %s\r\n", mode ? "PWM" : "Manual GPIO");
-
+	
 	u32 time_ref = millis();
-	fun_irSender_send(0x00FF, 0xA56D);
+	// fun_irSender_send(0x00FF, 0xA56D);
 
 	while(1) {
 		if ((millis() - time_ref) > 3000) {
-			fun_irSender_send(0x00FF, 0xA56D);
+			// fun_irSender_sendAsync(0x00FF, 0xA56D);
+			fun_irSender_send(0x00F1, 0xA56D, 0x1111);
 			time_ref = millis();
-			printf(".");
 		}
+
+		// fun_irSender_task();
 	}
 }

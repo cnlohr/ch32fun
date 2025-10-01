@@ -8,6 +8,7 @@
 
 void on_handle_irReceiver(u16 address, u16 command) {
 	printf("NEC: 0x%04X 0x%04X\r\n", address, command);
+	printf("------------------------\r\n");
 }
 
 int main() {

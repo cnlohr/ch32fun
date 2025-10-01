@@ -1,7 +1,8 @@
 #include "ch32fun.h"
 #include <stdio.h>
+#include "fun_crc.h"
 
-// #define IR_USE_TIM1_PWM
+#define IR_USE_TIM1_PWM
 
 #define NEC_PULSE_WIDTH_US 560
 #define NEC_LOGIC_1_WIDTH_US 1680
@@ -34,6 +35,9 @@
 		CH4 PD4?
 */
 
+// Enable/disable PWM carrier
+static inline void PWM_ON(void)  { TIM1->CCER |=  TIM_CC1NE; }
+static inline void PWM_OFF(void) { TIM1->CCER &= ~TIM_CC1NE; }
 
 //! ####################################
 //! SETUP FUNCTION
@@ -66,6 +70,7 @@ u8 fun_irSender_init(u8 pin) {
 		TIM1->BDTR |= TIM_MOE;		// Enable TIM1 outputs
 		TIM1->CTLR1 |= TIM_CEN;		// Enable TIM1
 
+		TIM1->CCER |= TIM_CC1NP;
 		return 1;
 	#else
 		funPinMode(irSender_pin, GPIO_CFGLR_OUT_10Mhz_PP);
@@ -84,14 +89,14 @@ u8 fun_irSender_init(u8 pin) {
 #define IR_CARRIER_HALF_PERIOD_US 13
 #define IR_CARRIER_CYCLES(duration_us) duration_us / (IR_CARRIER_HALF_PERIOD_US * 2)
 
-void IR_send_carrier_pulse(u32 duration_us, u32 space_us) {
+void _IR_carrier_pulse(u32 duration_us, u32 space_us) {
 	#ifdef IR_USE_TIM1_PWM
 		//# Start CH1N output
-		TIM1->CCER |= TIM_CC1NE | TIM_CC1NP;
+		PWM_ON();
 		Delay_Us(duration_us);
 
 		//# Stop CH1N output
-		TIM1->CCER &= ~(TIM_CC1NE | TIM_CC1NP);
+		PWM_OFF();
 	#else
 		for(u32 i = 0; i < IR_CARRIER_CYCLES(duration_us); i++) {
 			funDigitalWrite(irSender_pin, 1);  	// Set high
@@ -111,20 +116,23 @@ void fun_irSend_NECData(u16 data) {
 	for (int i = 15; i >= 0; i--) {
 		u8 bit = (data >> i) & 1;		// MSB first
 		u32 space = bit ? NEC_LOGIC_1_WIDTH_US : NEC_LOGIC_0_WIDTH_US;
-		IR_send_carrier_pulse(NEC_PULSE_WIDTH_US, space);
+		_IR_carrier_pulse(NEC_PULSE_WIDTH_US, space);
 	}
 }
 
-u32 sending_data = 0x00FFA56D;
-
-void fun_irSender_send(u16 address, u16 command) {
-	IR_send_carrier_pulse(9000, 4500);
+void fun_irSender_send(u16 address, u16 command, u16 extra) {
+	_IR_carrier_pulse(9000, 4500);
 
 	fun_irSend_NECData(address);
 	fun_irSend_NECData(command);
+	fun_irSend_NECData(extra);
+
+	u64 combined = combine_64(address, command, extra, 0x00);
+	u16 crc = crc16_ccitt_compute(combined);
+	fun_irSend_NECData(crc);
 
 	// Stop bit
-	IR_send_carrier_pulse(NEC_PULSE_WIDTH_US, 1000);
+	_IR_carrier_pulse(NEC_PULSE_WIDTH_US, 1000);
 }
 
 
@@ -132,11 +140,13 @@ void fun_irSender_send(u16 address, u16 command) {
 //! ASYNC TRANSMIT FUNCTIONS
 //! ####################################
 
+
 typedef enum {
-	IRSender_Start_Pulse,
-	IRSender_Start_Pulse_Space,
-	IRSender_Data_Pulse,
-	IRSender_Idle
+	IR_Start_Pulse,
+	IR_Start_Pulse_Burst,
+	IR_Start_Pulse_Space,
+	IR_Data_Pulse,
+	IR_Idle
 } IRSender_State_t;
 
 typedef struct {
@@ -144,83 +154,89 @@ typedef struct {
 	int state;
 	int duty_state;						// toggle to simulate PWM
 	u32 timeRef;
-	int remaining_carrier_cycles;
 	int remaining_data_bits;
-	int transmitting_bit;				// MSB first
 	u16 logical_spacing;
 } IRSender_Model_t;
 
 IRSender_Model_t irSenderM;
 
-//# cycle pulse: send the pulse and toggle it for the next cycle
-void irSender_cycle_pulse(u32 time_us, u8 value) {
-	// prepare for next cycle
-	funDigitalWrite(irSender_pin, value);
-	irSenderM.duty_state = !value;			// toggle
-	irSenderM.remaining_carrier_cycles--;	// update cycle
-	irSenderM.timeRef = time_us;			// update time	
-}
+u32 sending_data = 0x00FFA56D;
 
 void fun_irSender_sendAsync(u16 address, u16 command) {
 	//! start the pulses
-	irSenderM.state = IRSender_Start_Pulse;
-	irSenderM.remaining_carrier_cycles = 9000 / IR_CARRIER_HALF_PERIOD_US;
-	irSender_cycle_pulse(micros(), 1);
+	irSenderM.state = IR_Start_Pulse;
+	funDigitalWrite(irSender_pin, 0);
+	irSenderM.timeRef = micros();
+	printf("\nSending Data\r\n");
 }
 
 void fun_irSender_task() {
-	if (irSenderM.state == IRSender_Idle) return;
-	u32 time_us = micros();
-	u32 time_changed = time_us - irSenderM.timeRef;
+	if (irSenderM.state == IR_Idle) return;
+	u32 now = micros();
+	u32 elapsed = now - irSenderM.timeRef;
 
-	//# send the Start_Pulses - 9000us
-	if ((irSenderM.state == IRSender_Start_Pulse) && (time_changed > IR_CARRIER_HALF_PERIOD_US)) {
-		// calculated cycles count for 9000us
-		if (irSenderM.remaining_carrier_cycles == 0) {
-			//! end the Start_Pulses - make sure OFF for next stage
-			irSenderM.state = IRSender_Start_Pulse_Space;
-			funDigitalWrite(irSender_pin, 0);
-		} else {
-			irSender_cycle_pulse(time_us, irSenderM.duty_state);
-		}
-	}
+	switch (irSenderM.state) {
+		case IR_Data_Pulse:
+			// Handle spacing first
+			// if (irSenderM.logical_spacing > 0) {
+			// 	if (elapsed > irSenderM.logical_spacing) {
+			// 		irSenderM.logical_spacing = 0;
+			// 		irSenderM.timeRef = now;
+			// 	}
+			// 	break;
+			// }
 
-	//# wait for Start_Pulses space - 4500us
-	else if ((irSenderM.state == IRSender_Start_Pulse_Space) && (time_changed > 4500)) {
-		//! start the pulses for next stage
-		irSenderM.state = IRSender_Data_Pulse;
-		irSender_cycle_pulse(time_us, 1);
+			// If no spacing, send next pulse
+			if (irSenderM.remaining_data_bits > 0) {
+				PWM_ON();
+				Delay_Us(NEC_PULSE_WIDTH_US);
+				PWM_OFF();
 
-		irSenderM.remaining_carrier_cycles = NEC_PULSE_WIDTH_US / IR_CARRIER_HALF_PERIOD_US;
-		irSenderM.remaining_data_bits = 31;		// update remaining data bits
-		irSenderM.logical_spacing = 0;
-	}
-
-	//# handle the Data_Pulses
-	else if (irSenderM.state == IRSender_Data_Pulse) {
-		// wait for spacing if any
-		if ((irSenderM.logical_spacing > 0) && (time_changed > irSenderM.logical_spacing)) {
-			if (irSenderM.remaining_carrier_cycles == 0) {
-				//! end the Data_Pulses - make sure OFF
-				irSenderM.state = IRSender_Idle;
+				u8 bit = (sending_data >> (irSenderM.remaining_data_bits-1)) & 1;
+				
+				//! This makes no sense whatsoever: logic 0 suppose to have spacing of
+				//! NEC_LOGIC_0_WIDTH_US which is 560us but the code would just ignore
+				//! the timeout of 560us. it works for ~1000 :|
+				u16 nec_logic_0_spacing = 1100;
+				irSenderM.logical_spacing = bit ? NEC_LOGIC_1_WIDTH_US : NEC_LOGIC_0_WIDTH_US;
+				irSenderM.remaining_data_bits--;
+				irSenderM.timeRef = now;
+				Delay_Us(irSenderM.logical_spacing);
+			}
+			// Only end when both conditions are met
+			else {
+				printf("\nEnd the Data_Pulses\r\n");
+				irSenderM.state = IR_Idle;
 				funDigitalWrite(irSender_pin, 0);
-			} else {
-				irSender_cycle_pulse(time_us, 1);
-				irSenderM.remaining_carrier_cycles = NEC_PULSE_WIDTH_US / IR_CARRIER_HALF_PERIOD_US;
-				irSenderM.remaining_data_bits--;	// update remaining data bits
+			}
+			break;
+
+		case IR_Start_Pulse:
+			//# Start CH1N output
+			PWM_ON();
+			irSenderM.state = IR_Start_Pulse_Burst;
+			irSenderM.timeRef = now;
+			break;
+		
+		case IR_Start_Pulse_Burst:
+			//# send the Start_Pulses - 9000us
+			if (elapsed > 9000) {
+				//# Stop CH1N output
+				PWM_OFF();
+				irSenderM.state = IR_Start_Pulse_Space;
+				irSenderM.timeRef = now;
+			}
+			break;
+
+		case IR_Start_Pulse_Space:
+			//# wait for Start_Pulses space - 4500us
+			if (elapsed > 4500) {
+				irSenderM.state = IR_Data_Pulse;
+				irSenderM.timeRef = now;
+				irSenderM.remaining_data_bits = 32;		// update remaining data bits
 				irSenderM.logical_spacing = 0;
 			}
-		}
-		else if (time_changed > IR_CARRIER_HALF_PERIOD_US) {
-			irSender_cycle_pulse(time_us, irSenderM.duty_state);
+			break;
 
-			if (irSenderM.remaining_carrier_cycles == 0) {
-				// determine the data bit and the spacing for it. MSB first
-				u8 bit = (sending_data >> irSenderM.remaining_data_bits) & 1;
-				irSenderM.logical_spacing = bit ? NEC_LOGIC_1_WIDTH_US : NEC_LOGIC_0_WIDTH_US;
-				//! make sure off for spacing
-				funDigitalWrite(irSender_pin, 0);
-			}
-		}
 	}
 }
