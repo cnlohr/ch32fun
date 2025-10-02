@@ -51,6 +51,9 @@ int crch16_ccitt_check64(uint64_t packed_data, uint64_t *extracted_data) {
     uint16_t received_crc = packed_data & 0xFFFF;
     uint16_t calculated_crc = crc16_ccitt_compute(packed_data);
     
+    printf("received_crc: 0x%04X\r\n", received_crc);
+    printf("calculated_crc: 0x%04X\r\n", calculated_crc);
+
     if (received_crc == calculated_crc) {
         // Return the original data (with last 2 bytes cleared)
         *extracted_data = packed_data & 0xFFFFFFFFFFFF0000;

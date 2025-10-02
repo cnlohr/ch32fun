@@ -25,7 +25,7 @@ int main() {
 	while(1) {
 		if ((millis() - time_ref) > 3000) {
 			// fun_irSender_sendAsync(0x00FF, 0xA56D);
-			fun_irSender_send(0x00F1, 0xA56D, 0x1111);
+			fun_irSender_send(0x00F1, 0xA56D, 0x2222);
 			time_ref = millis();
 		}
 

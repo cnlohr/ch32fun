@@ -121,14 +121,23 @@ void fun_irSend_NECData(u16 data) {
 }
 
 void fun_irSender_send(u16 address, u16 command, u16 extra) {
+	u64 combined = combine_64(address, command, extra, 0x00);
+	u16 crc = crc16_ccitt_compute(combined);
+
+	u64 dataout = 0;
+	u64 combined2 = combine_64(address, command, extra, crc);
+	u8 check = crc16_ccitt_check64(combined2, &dataout);
+
+	printf("check crc 0x%04X: %d\r\n", crc, check);
+	printf("Data: 0x%08X%08X\n", 
+		(uint32_t)(combined2 >> 32), 
+		(uint32_t)(combined2 & 0xFFFFFFFF));
+
 	_IR_carrier_pulse(9000, 4500);
 
 	fun_irSend_NECData(address);
 	fun_irSend_NECData(command);
 	fun_irSend_NECData(extra);
-
-	u64 combined = combine_64(address, command, extra, 0x00);
-	u16 crc = crc16_ccitt_compute(combined);
 	fun_irSend_NECData(crc);
 
 	// Stop bit

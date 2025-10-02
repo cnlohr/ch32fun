@@ -100,13 +100,13 @@ void fun_irReceiver_task(void(*handler)(u16, u16)) {
 				ir_data[word_idx] |= (1 << bit_pos);		// MSB first (reversed)
 			}
 
-			// #ifdef IR_RECEIVER_DEBUGLOG_ENABLE
-			// 	printf("%d (%d) - 0x%04X \t [%d]%ld, [%d]%ld D%d\n",
-			// 		time_dif, time_dif > IR_LOGICAL_HIGH_THRESHOLD,
-			// 		ir_data[word_idx],
-			// 		ir_tail, time_of_event, prev_event_idx, prev_time_of_event, bit_pos);
-			// 	if (bit_pos % 8 == 0) printf("\n");
-			// #endif
+			#ifdef IR_RECEIVER_DEBUGLOG_ENABLE
+				printf("%d (%d) - 0x%04X \t [%d]%ld, [%d]%ld D%d\n",
+					time_dif, time_dif > IR_LOGICAL_HIGH_THRESHOLD,
+					ir_data[word_idx],
+					ir_tail, time_of_event, prev_event_idx, prev_time_of_event, bit_pos);
+				if (bit_pos % 8 == 0) printf("\n");
+			#endif
 
 			ir_bits_processed++;	
 		}
