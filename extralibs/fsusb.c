@@ -972,12 +972,12 @@ static inline int USBFS_SendNAK( int endp, int tx )
 }
 
 #if defined( FUNCONF_USE_USBPRINTF ) && FUNCONF_USE_USBPRINTF
-WEAK int HandleInRequest( struct _USBState *ctx, int endp, uint8_t *data, int len )
+int HandleInRequest( struct _USBState *ctx, int endp, uint8_t *data, int len )
 {
 	return 0;
 }
 
-WEAK void HandleDataOut( struct _USBState *ctx, int endp, uint8_t *data, int len )
+void HandleDataOut( struct _USBState *ctx, int endp, uint8_t *data, int len )
 {
 	if ( endp == 0 )
 	{
@@ -985,7 +985,7 @@ WEAK void HandleDataOut( struct _USBState *ctx, int endp, uint8_t *data, int len
 	}
 }
 
-WEAK int HandleSetupCustom( struct _USBState *ctx, int setup_code )
+int HandleSetupCustom( struct _USBState *ctx, int setup_code )
 {
 	int ret = -1;
 	if ( ctx->USBFS_SetupReqType & USB_REQ_TYP_CLASS )
