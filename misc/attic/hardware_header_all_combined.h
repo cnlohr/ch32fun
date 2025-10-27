@@ -20,7 +20,7 @@ typedef enum IRQn
 	Ecall_U_Mode_IRQn = 8,   /* 8 Ecall U Mode Interrupt                             */
 	Break_Point_IRQn = 9,    /* 9 Break Point Interrupt                              */
 #endif
-    SysTicK_IRQn = 12,       /* 12 System timer Interrupt                            */
+    SysTick_IRQn = 12,       /* 12 System timer Interrupt                            */
     Software_IRQn = 14,      /* 14 software Interrupt                                */
 
 #if defined(CH32V003) || defined(CH32X03x)

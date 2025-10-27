@@ -6,9 +6,8 @@
 #include "usb_defines.h"
 #include "usb_config.h"
 
-#if defined(CH57x) || defined(CH58x) || defined(CH59x) || defined(CH32X03x) || defined(CH32V10x)
+#if defined(CH5xx) || defined(CH32X03x) || defined(CH32V10x)
 #if !defined (CH32X03x) && !defined(CH32V10x)
-#define CH5xx
 #define USBFS_BASE USB_BASE_ADDR
 typedef struct
 {
@@ -149,10 +148,10 @@ typedef struct
 	__IO uint8_t Reserved18;
 } USBFS_TypeDef;
 
-#define UEP_CTRL_LEN(n) (((uint16_t*)&USBFS->UEP0_TX_LEN)[n*2])
-#define UEP_CTRL_TX(n)  (((uint8_t*)&USBFS->UEP0_TX_CTRL)[n*4])
-#define UEP_CTRL_RX(n)  (((uint8_t*)&USBFS->UEP0_TX_CTRL)[n*4])
-#define UEP_DMA(n)      (((uint16_t*)&USBFS->UEP0_DMA)[n*2])
+#define UEP_CTRL_LEN(n) (((volatile uint16_t*)&USBFS->UEP0_TX_LEN)[n*2])
+#define UEP_CTRL_TX(n)  (((volatile uint8_t*)&USBFS->UEP0_TX_CTRL)[n*4])
+#define UEP_CTRL_RX(n)  (((volatile uint8_t*)&USBFS->UEP0_TX_CTRL)[n*4])
+#define UEP_DMA(n)      (((volatile uint16_t*)&USBFS->UEP0_DMA)[n*2])
 #endif
 
 #if !defined (CH32X03x)
@@ -222,10 +221,10 @@ typedef struct
 #define USBFS           ((USBFS_TypeDef *)USBFS_BASE)
 
 #ifdef CH32X03x
-#define UEP_CTRL_LEN(n) (((uint16_t*)&USBFS->UEP0_TX_LEN)[n*2])
-#define UEP_CTRL_TX(n)  (((uint16_t*)&USBFS->UEP0_CTRL_H)[n*2])
-#define UEP_CTRL_RX(n)  (((uint16_t*)&USBFS->UEP0_CTRL_H)[n*2])
-#define UEP_DMA(n)      (((uint32_t*)&USBFS->UEP0_DMA)[n])
+#define UEP_CTRL_LEN(n) (((volatile uint16_t*)&USBFS->UEP0_TX_LEN)[n*2])
+#define UEP_CTRL_TX(n)  (((volatile uint16_t*)&USBFS->UEP0_CTRL_H)[n*2])
+#define UEP_CTRL_RX(n)  (((volatile uint16_t*)&USBFS->UEP0_CTRL_H)[n*2])
+#define UEP_DMA(n)      (((volatile uint32_t*)&USBFS->UEP0_DMA)[n])
 #define DEBUG_PIN PB12
 #define USB_IRQn USBFS_IRQn
 #endif
@@ -236,10 +235,10 @@ typedef struct
 
 #define USBFS           ((USBOTG_FS_TypeDef *)USBFS_BASE)
 
-#define UEP_CTRL_LEN(n) (((uint16_t*)&USBFS->UEP0_TX_LEN)[n*2])
-#define UEP_CTRL_TX(n)  (((uint8_t*)&USBFS->UEP0_TX_CTRL)[n*4])
-#define UEP_CTRL_RX(n)  (((uint8_t*)&USBFS->UEP0_RX_CTRL)[n*4])
-#define UEP_DMA(n)      (((uint32_t*)&USBFS->UEP0_DMA)[n])
+#define UEP_CTRL_LEN(n) (((volatile uint16_t*)&USBFS->UEP0_TX_LEN)[n*2])
+#define UEP_CTRL_TX(n)  (((volatile uint8_t*)&USBFS->UEP0_TX_CTRL)[n*4])
+#define UEP_CTRL_RX(n)  (((volatile uint8_t*)&USBFS->UEP0_RX_CTRL)[n*4])
+#define UEP_DMA(n)      (((volatile uint32_t*)&USBFS->UEP0_DMA)[n])
 
 #define CHECK_USBFS_UEP_T_AUTO_TOG USBOTG_UEP_T_AUTO_TOG
 #define CHECK_USBFS_UEP_R_AUTO_TOG USBOTG_UEP_R_AUTO_TOG
@@ -316,7 +315,7 @@ extern uint32_t USBDEBUG0, USBDEBUG1, USBDEBUG2;
 struct _USBState;
 
 // Provided functions:
-int USBOTGSetup();
+int USBFSSetup();
 uint8_t USBFS_Endp_DataUp(uint8_t endp, const uint8_t *pbuf, uint16_t len, uint8_t mod);
 static inline uint8_t * USBFS_GetEPBufferIfAvailable( int endp );
 static inline int USBFS_SendEndpoint( int endp, int len );
@@ -349,26 +348,26 @@ typedef enum
 	USBFS_EP_OUT = 1,
 } USBFS_EP_mode;
 
-#ifndef USBFS_EP1_MODE
-#define USBFS_EP1_MODE  0
+#ifndef FUSB_EP1_MODE
+#define FUSB_EP1_MODE  0
 #endif
-#ifndef USBFS_EP2_MODE
-#define USBFS_EP2_MODE  0
+#ifndef FUSB_EP2_MODE
+#define FUSB_EP2_MODE  0
 #endif
-#ifndef USBFS_EP3_MODE
-#define USBFS_EP3_MODE  0
+#ifndef FUSB_EP3_MODE
+#define FUSB_EP3_MODE  0
 #endif
-#ifndef USBFS_EP4_MODE
-#define USBFS_EP4_MODE  0
+#ifndef FUSB_EP4_MODE
+#define FUSB_EP4_MODE  0
 #endif
-#ifndef USBFS_EP5_MODE
-#define USBFS_EP5_MODE  0
+#ifndef FUSB_EP5_MODE
+#define FUSB_EP5_MODE  0
 #endif
-#ifndef USBFS_EP6_MODE
-#define USBFS_EP6_MODE  0
+#ifndef FUSB_EP6_MODE
+#define FUSB_EP6_MODE  0
 #endif
-#ifndef USBFS_EP7_MODE
-#define USBFS_EP7_MODE  0
+#ifndef FUSB_EP7_MODE
+#define FUSB_EP7_MODE  0
 #endif
 
 struct _USBState

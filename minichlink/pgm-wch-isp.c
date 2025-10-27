@@ -253,7 +253,7 @@ int ISPPrintChipInfo( void * d )
 	switch (iss->target_chip_type)
 	{
 		case CHIP_CH32X03x:
-		case CHIP_CH32L10x:
+		case CHIP_CH32L103:
 		case CHIP_CH32V10x:
 		case CHIP_CH32V20x:
 		case CHIP_CH32V30x:
@@ -353,7 +353,9 @@ int ISPWriteBinaryBlob( void * d, uint32_t address_to_write, uint32_t blob_size,
 	stream[1] = 56 + 5; // packet length, 56 byte chunk + 5 byte header
 	stream[2] = '\x00';
 
-	for(int i = 0; i < ((blob_size / 56) +1); i++) {
+	uint32_t write_size = (blob_size%256)?(((blob_size/256) + 1) * 256):blob_size;
+
+	for(int i = 0; i < ((write_size / 56) +1); i++) {
 		for(int j = 0; j < 7; j++) { // xor key length means 7 blocks per 56 byte chunk
 			for(int k = 0; k < WCH_XOR_KEY_LEN_8; k++) { // i,j,k for loop I feel like I'm back in Java 101
 				uint32_t blob_idx = (i*56) + (j*8) + k;
@@ -578,19 +580,19 @@ int ISPCH5xxEnableDebug( void * d, uint8_t disable )
 	wch_isp_command( dev, "\xa7\x02\x00\x1f\x00", 5, (int*)&transferred, rbuff, 1024 );
 	printf("Current config: %02x%02x%02x%02x%02x%02x%02x%02x %02x%02x%02x%02x\n", rbuff[6], rbuff[7], rbuff[8], rbuff[9], rbuff[10], rbuff[11], rbuff[12], rbuff[13], rbuff[14], rbuff[15], rbuff[16], rbuff[17]);
 
-	if( (rbuff[14] & 0x10) && disable == 0 )
+	if( ((rbuff[14] & 0x10) && (rbuff[14] & 0x80))  && disable == 0 )
 	{
 		printf( "Debug module is already enabled!\n" );
 		return 0;
 	}
-	else if( !(rbuff[14] & 0x10) && disable > 0 )
+	else if( (!(rbuff[14] & 0x10) && !(rbuff[14] & 0x80)) && disable > 0 )
 	{
 		printf( "Debug module is already disabled!\n" );
 		return 0;	
 	}
 	else
 	{
-		if( disable ) rbuff[14] &= ~(0x10);
+		if( disable ) rbuff[14] &= ~(0x90);
 		else rbuff[14] |= 0x90;
 
 		// Set valid signature

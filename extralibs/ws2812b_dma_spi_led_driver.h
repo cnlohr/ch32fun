@@ -62,21 +62,19 @@ static uint16_t WS2812dmabuff[DMA_BUFFER_LEN];
 static volatile int WS2812LEDs;
 static volatile int WS2812LEDPlace;
 static volatile int WS2812BLEDInUse;
-#if defined(CH58x) || defined(CH59x)
-#define R8_SPI_CTRL_CFG R8_SPI0_CTRL_CFG
-#define R16_SPI_DMA_BEG R16_SPI0_DMA_BEG
-#define R16_SPI_DMA_END R16_SPI0_DMA_END
-#define R8_SPI_CTRL_MOD R8_SPI0_CTRL_MOD
-#define R8_SPI_CLOCK_DIV R8_SPI0_CLOCK_DIV
-#define R8_SPI_INTER_EN R8_SPI0_INTER_EN
-#define R16_SPI_TOTAL_CNT R16_SPI0_TOTAL_CNT
-#define R8_SPI_INT_FLAG R8_SPI0_INT_FLAG
+
+#ifdef CH5xx
+#ifdef CH570_CH572
+#define bMOSI PA7
+#else
+#define bMOSI PA14
+#endif
 #endif
 // This is the code that updates a portion of the WS2812dmabuff with new data.
 // This effectively creates the bitstream that outputs to the LEDs.
 static void WS2812FillBuffSec( uint16_t * ptr, int numhalfwords, int tce )
 {
-#if defined(CH57x) || defined(CH58x) || defined(CH59x)
+#ifdef CH5xx
 	// Reversing bit order because CH5xx SPI FIFO is only half of what CH32 have
 	const static uint16_t bitquartets[16] = {
 		0b0001000100010001, 0b0111000100010001, 0b0001011100010001, 0b0111011100010001,
@@ -135,8 +133,8 @@ static void WS2812FillBuffSec( uint16_t * ptr, int numhalfwords, int tce )
 				if( place == ledcount )
 				{
 					// Take the DMA out of circular mode and let it expire.
-#if defined(CH57x) || defined(CH58x) || defined(CH59x)
-					R8_SPI_INTER_EN &= ~RB_SPI_IE_DMA_END;  // Disable DMA end interrupt
+#ifdef CH5xx
+					R8_SPI0_INTER_EN &= ~RB_SPI_IE_DMA_END;  // Disable DMA end interrupt
 #else
 					DMA1_Channel3->CFGR &= ~DMA_Mode_Circular;
 #endif
@@ -197,15 +195,15 @@ static void WS2812FillBuffSec( uint16_t * ptr, int numhalfwords, int tce )
 	WS2812LEDPlace = place;
 }
 
-#if defined(CH57x) || defined(CH58x) || defined(CH59x)
+#ifdef CH5xx
 void SPI0_IRQHandler( void ) __attribute__((interrupt));
 void SPI0_IRQHandler( void )
 {
-	uint8_t intf = R8_SPI_INT_FLAG;
+	uint8_t intf = R8_SPI0_INT_FLAG;
 	if( (intf & RB_SPI_IF_DMA_END) )
 	{
 		WS2812FillBuffSec( WS2812dmabuff, DMA_BUFFER_LEN, 1 );
-		R16_SPI_TOTAL_CNT = DMA_BUFFER_LEN * 2;
+		R16_SPI0_TOTAL_CNT = DMA_BUFFER_LEN * 2;
 	}
 }
 #else
@@ -247,10 +245,10 @@ void WS2812BDMAStart( int leds )
 	// Enter critical section.
 	__disable_irq();
 	WS2812BLEDInUse = 1;
-#if defined(CH57x) || defined(CH58x) || defined(CH59x)
-	R8_SPI_INTER_EN &= ~RB_SPI_IE_DMA_END;
-	R8_SPI_CTRL_CFG &= ~RB_SPI_DMA_ENABLE;
-	R16_SPI_TOTAL_CNT = 0;
+#ifdef CH5xx
+	R8_SPI0_INTER_EN &= ~RB_SPI_IE_DMA_END;
+	R8_SPI0_CTRL_CFG &= ~RB_SPI_DMA_ENABLE;
+	R16_SPI0_TOTAL_CNT = 0;
 #else
 	DMA1_Channel3->CFGR &= ~DMA_Mode_Circular;
 	DMA1_Channel3->CNTR  = 0;
@@ -261,13 +259,13 @@ void WS2812BDMAStart( int leds )
 	WS2812LEDPlace = -WS2812B_RESET_PERIOD;
 	
 
-#if defined(CH57x) || defined(CH58x) || defined(CH59x)
+#ifdef CH5xx
 	WS2812FillBuffSec( WS2812dmabuff, DMA_BUFFER_LEN, 0 );
-	R16_SPI_TOTAL_CNT = DMA_BUFFER_LEN * 2;
-	R16_SPI_DMA_BEG = (uint32_t)WS2812dmabuff;
-	R8_SPI_INT_FLAG = RB_SPI_IF_CNT_END | RB_SPI_IF_DMA_END;
-	R8_SPI_INTER_EN = RB_SPI_IE_DMA_END;
-	R8_SPI_CTRL_CFG |= RB_SPI_DMA_ENABLE;
+	R16_SPI0_TOTAL_CNT = DMA_BUFFER_LEN * 2;
+	R16_SPI0_DMA_BEG = (uint32_t)WS2812dmabuff;
+	R8_SPI0_INT_FLAG = RB_SPI_IF_CNT_END | RB_SPI_IF_DMA_END;
+	R8_SPI0_INTER_EN = RB_SPI_IE_DMA_END;
+	R8_SPI0_CTRL_CFG |= RB_SPI_DMA_ENABLE;
 #else
 	WS2812FillBuffSec( WS2812dmabuff, DMA_BUFFER_LEN, 0 );
 	DMA1_Channel3->CNTR = DMA_BUFFER_LEN; // Number of unique uint16_t entries.
@@ -278,13 +276,13 @@ void WS2812BDMAStart( int leds )
 void WS2812BDMAInit( )
 {
 	// Enable DMA + Peripherals
-#if defined(CH57x) || defined(CH58x) || defined(CH59x)
+#ifdef CH5xx
 	funPinMode( bMOSI, GPIO_CFGLR_OUT_2Mhz_PP );
-	R8_SPI_CLOCK_DIV = FUNCONF_SYSTEM_CORE_CLOCK / 3000000; // div = Fsys/3MHz
-	R8_SPI_CTRL_MOD = RB_SPI_ALL_CLEAR;
-	R8_SPI_CTRL_MOD = RB_SPI_MOSI_OE | RB_SPI_2WIRE_MOD;
-	R16_SPI_DMA_END = ( (uint32_t)WS2812dmabuff + (DMA_BUFFER_LEN * 2) );
-	R8_SPI_CTRL_CFG |= RB_SPI_BIT_ORDER;
+	R8_SPI0_CLOCK_DIV = FUNCONF_SYSTEM_CORE_CLOCK / 3000000; // div = Fsys/3MHz
+	R8_SPI0_CTRL_MOD = RB_SPI_ALL_CLEAR;
+	R8_SPI0_CTRL_MOD = RB_SPI_MOSI_OE | RB_SPI_2WIRE_MOD;
+	R16_SPI0_DMA_END = ( (uint32_t)WS2812dmabuff + (DMA_BUFFER_LEN * 2) );
+	R8_SPI0_CTRL_CFG |= RB_SPI_BIT_ORDER;
 
 	NVIC_EnableIRQ( SPI0_IRQn );
 #else

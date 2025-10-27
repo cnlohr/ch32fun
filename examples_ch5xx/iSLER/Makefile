@@ -2,7 +2,7 @@ all : flash
 
 TARGET:=iSLER
 TARGET_MCU:=CH570
-TARGET_MCU_PACKAGE:=CH32570D
+TARGET_MCU_PACKAGE:=CH570D
 
 include ../../ch32fun/ch32fun.mk
 

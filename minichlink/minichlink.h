@@ -127,7 +127,7 @@ enum RiscVChip {
 	CHIP_CH59x = 0x0b,
 	CHIP_CH643 = 0x0c,
 	CHIP_CH32X03x = 0x0d,
-	CHIP_CH32L10x = 0x0e,
+	CHIP_CH32L103 = 0x0e,
 	CHIP_CH564 = 0x0f,
 
 	CHIP_CH32V00x = 0x4e,

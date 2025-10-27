@@ -206,7 +206,7 @@ static void SysTick_Init( void )
 	SysTick->CTLR = 0;
 
 	// Enable the SysTick IRQ
-	NVIC_EnableIRQ( SysTicK_IRQn );
+	NVIC_EnableIRQ( SysTick_IRQn );
 
 	uint64_t CNT = SysTick->CNTL | ( (uint64_t)SysTick->CNTH << 32 );
 	CNT += ( FUNCONF_SYSTEM_CORE_CLOCK / 1000 ) - 1; // 1ms tick

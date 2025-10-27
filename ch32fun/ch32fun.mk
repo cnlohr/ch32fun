@@ -1,15 +1,17 @@
 ifeq ($(OS),Windows_NT)
 	WHICH:=where
+	NULLDEV:=nul
 else
 	WHICH:=which
+	NULLDEV:=/dev/null
 endif
 
 # Default/fallback prefix
 PREFIX_DEFAULT:=riscv64-elf
 
-ifneq ($(shell $(WHICH) riscv64-unknown-elf-gcc),)
+ifneq ($(shell $(WHICH) riscv64-unknown-elf-gcc 2>$(NULLDEV)),)
 	PREFIX_DEFAULT:=riscv64-unknown-elf
-else ifneq ($(shell $(WHICH) riscv-none-elf-gcc),)
+else ifneq ($(shell $(WHICH) riscv-none-elf-gcc 2>$(NULLDEV)),)
 	PREFIX_DEFAULT:=riscv-none-elf
 endif
 
@@ -42,7 +44,11 @@ endif
 CFLAGS?=-g -Os -flto -ffunction-sections -fdata-sections -fmessage-length=0 -msmall-data-limit=8
 LDFLAGS+=-Wl,--print-memory-usage -Wl,-Map=$(TARGET).map
 
-GCCVERSION13 := $(shell expr `$(PREFIX)-gcc -dumpversion | cut -f1 -d.` \>= 13)
+# Get GCC major version in a shell-agnostic way
+GCCVERSION := $(shell $(PREFIX)-gcc -dumpversion)
+GCCMAJOR := $(firstword $(subst ., ,$(GCCVERSION)))
+# every major version below 13 maps to 0, anything 13 or above maps to 1
+GCCVERSION13 := $(if $(filter 1 2 3 4 5 6 7 8 9 10 11 12,$(GCCMAJOR)),0,1)
 
 ifeq ($(findstring CH32V00,$(TARGET_MCU)),CH32V00) # CH32V002, 3, 4, 5, 6, 7
 	MCU_PACKAGE?=1
@@ -115,6 +121,24 @@ else ifeq ($(findstring CH32X03,$(TARGET_MCU)),CH32X03) # CH32X033, X035
 	endif
 
 	TARGET_MCU_LD:=4		
+else ifeq ($(findstring CH32L103,$(TARGET_MCU)),CH32L103) # CH32L103
+	TARGET_MCU_PACKAGE?=CH32L103C8T6
+	CFLAGS_ARCH+=-march=rv32imac \
+		-mabi=ilp32 \
+		-DCH32L103=1
+
+	# MCU Flash/RAM split
+	ifeq ($(findstring F8, $(TARGET_MCU_PACKAGE)), F8)
+		MCU_PACKAGE:=1
+	else ifeq ($(findstring K8, $(TARGET_MCU_PACKAGE)), K8)
+		MCU_PACKAGE:=1
+	else ifeq ($(findstring C8, $(TARGET_MCU_PACKAGE)), C8)
+		MCU_PACKAGE:=1
+	else ifeq ($(findstring G8, $(TARGET_MCU_PACKAGE)), G8)
+		MCU_PACKAGE:=1
+	endif
+
+	TARGET_MCU_LD:=4
 else ifeq ($(findstring CH32V20,$(TARGET_MCU)),CH32V20) # CH32V203
 	TARGET_MCU_PACKAGE?=CH32V203F6P6
 	CFLAGS_ARCH+=	-march=rv32imac \
@@ -122,7 +146,6 @@ else ifeq ($(findstring CH32V20,$(TARGET_MCU)),CH32V20) # CH32V203
 		-DCH32V20x=1
 
 	# MCU Flash/RAM split
-
 
 	# Package
 	ifeq ($(findstring 203RB, $(TARGET_MCU_PACKAGE)), 203RB)
@@ -156,6 +179,15 @@ else ifeq ($(findstring CH32V20,$(TARGET_MCU)),CH32V20) # CH32V203
 		MCU_PACKAGE:=3
 	else
 		CFLAGS+=-DCH32V20x_D6
+	endif
+
+	# MCU EXT Flash
+	ifeq ($MCU_PACKAGE,1)
+		EXT_ORIGIN:=0x08010000
+	else ifeq ($MCU_PACKAGE,2)
+		EXT_ORIGIN:=0x08008000
+	else ifeq ($MCU_PACKAGE,3)
+		EXT_ORIGIN:=0x08020000
 	endif
 
 	TARGET_MCU_LD:=2
@@ -299,7 +331,8 @@ FILES_TO_COMPILE:=$(SYSTEM_C) $(TARGET).$(TARGET_EXT) $(ADDITIONAL_C_FILES)
 
 $(TARGET).bin : $(TARGET).elf
 	$(PREFIX)-objdump -S $^ > $(TARGET).lst
-	$(PREFIX)-objcopy $(OBJCOPY_FLAGS) -O binary $< $(TARGET).bin
+	$(PREFIX)-objcopy -R .storage  -O binary $< $(TARGET).bin
+	$(PREFIX)-objcopy -j .storage -O binary $< $(TARGET)_ext.bin
 	$(PREFIX)-objcopy -O ihex $< $(TARGET).hex
 
 ifeq ($(OS),Windows_NT)
@@ -333,6 +366,7 @@ clangd_clean :
 	rm -rf .cache
 
 FLASH_COMMAND?=$(MINICHLINK)/minichlink -w $< $(WRITE_SECTION) -b
+FLASH_EXT_COMMAND?=$(MINICHLINK)/minichlink -w $< $(EXT_ORIGIN) -b
 
 .PHONY : $(GENERATED_LD_FILE)
 $(GENERATED_LD_FILE) :
@@ -354,7 +388,11 @@ cv_flash : $(TARGET).bin
 	make -C $(MINICHLINK) all
 	$(FLASH_COMMAND)
 
+cv_flash_ext : $(TARGET)_ext.bin
+	make -C $(MINICHLINK) all
+	$(FLASH_EXT_COMMAND)
+
 cv_clean :
-	rm -rf $(TARGET).elf $(TARGET).bin $(TARGET).hex $(TARGET).lst $(TARGET).map $(TARGET).hex $(GENERATED_LD_FILE) || true
+	rm -rf $(TARGET).elf $(TARGET).bin $(TARGET)_ext.bin $(TARGET).hex $(TARGET).lst $(TARGET).map $(TARGET).hex $(GENERATED_LD_FILE) || true
 
 build : $(TARGET).bin

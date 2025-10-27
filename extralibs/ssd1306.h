@@ -156,7 +156,11 @@ const uint8_t ssd1306_init_array[] =
     SSD1306_SEGREMAP | 0x1,                // 0xA0 | bit
     SSD1306_COMSCANDEC,
     SSD1306_SETCOMPINS,                    // 0xDA
+#if defined(SSD1306_FULLUSE)
 	0x12,                                  //
+#else
+	0x22,                                  //
+#endif
     SSD1306_SETCONTRAST,                   // 0x81
 #ifdef SSD1306_72X40
 	0xAF,
@@ -188,19 +192,6 @@ void ssd1306_setbuf(uint8_t color)
 	memset(ssd1306_buffer, color ? 0xFF : 0x00, sizeof(ssd1306_buffer));
 }
 
-#ifndef SSD1306_FULLUSE
-/*
- * expansion array for OLED with every other row unused
- */
-const uint8_t expand[16] =
-{
-	0x00,0x02,0x08,0x0a,
-	0x20,0x22,0x28,0x2a,
-	0x80,0x82,0x88,0x8a,
-	0xa0,0xa2,0xa8,0xaa,
-};
-#endif
-
 /*
  * Send the frame buffer
  */
@@ -231,39 +222,11 @@ void ssd1306_refresh(void)
 	ssd1306_cmd(0); // Page start address (0 = reset)
 	ssd1306_cmd(7); // Page end address
 
-#ifdef SSD1306_FULLUSE
-	/* for fully used rows just plow thru everything */
     for(i=0;i<sizeof(ssd1306_buffer);i+=SSD1306_PSZ)
 	{
 		/* send PSZ block of data */
 		ssd1306_data(&ssd1306_buffer[i], SSD1306_PSZ);
 	}
-#else
-	/* for displays with odd rows unused expand bytes */
-	uint8_t tbuf[SSD1306_PSZ], j, k;
-    for(i=0;i<sizeof(ssd1306_buffer);i+=128)
-	{
-		/* low nybble */
-		for(j=0;j<128;j+=SSD1306_PSZ)
-		{
-			for(k=0;k<SSD1306_PSZ;k++)
-				tbuf[k] = expand[ssd1306_buffer[i+j+k]&0xf];
-			
-			/* send PSZ block of data */
-			ssd1306_data(tbuf, SSD1306_PSZ);
-		}
-		
-		/* high nybble */
-		for(j=0;j<128;j+=SSD1306_PSZ)
-		{
-			for(k=0;k<SSD1306_PSZ;k++)
-				tbuf[k] = expand[(ssd1306_buffer[i+j+k]>>4)&0xf];
-			
-			/* send PSZ block of data */
-			ssd1306_data(tbuf, SSD1306_PSZ);
-		}
-	}
-#endif
 #endif
 
 }

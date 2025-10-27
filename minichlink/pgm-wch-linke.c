@@ -19,7 +19,7 @@ struct LinkEProgrammerStruct
 	libusb_device_handle * devh;
 	int lasthaltmode; // For non-003 chips
 };
-
+#if !FORCE_EXTERNAL_CHIP_DETECTION
 static int checkChip(enum RiscVChip chip) {
 	switch(chip) {
 		case CHIP_UNKNOWN:
@@ -28,7 +28,7 @@ static int checkChip(enum RiscVChip chip) {
 		case CHIP_CH32V00x:
 		case CHIP_CH641:
 		case CHIP_CH643:
-		case CHIP_CH32L10x:
+		case CHIP_CH32L103:
 		case CHIP_CH570:
 		case CHIP_CH57x:
 		case CHIP_CH58x:
@@ -44,11 +44,14 @@ static int checkChip(enum RiscVChip chip) {
 			return -1; // Not supported yet
 	}
 }
+#endif // !FORCE_EXTERNAL_CHIP_DETECTION
 
 // For non-ch32v003 chips.
+#if !FORCE_EXTERNAL_CHIP_DETECTION
 //static int LEReadBinaryBlob( void * d, uint32_t offset, uint32_t amount, uint8_t * readbuff );
 static int InternalLinkEHaltMode( void * d, int mode );
 static int LEWriteBinaryBlob( void * d, uint32_t address_to_write, uint32_t len, const uint8_t * blob );
+#endif // !FORCE_EXTERNAL_CHIP_DETECTION
 
 #define WCHTIMEOUT 5000
 #define WCHCHECK(x) if( (status = x) ) { fprintf( stderr, "Bad USB Operation on " __FILE__ ":%d (%d)\n", __LINE__, status ); exit( status ); }
@@ -308,6 +311,19 @@ static int LESetupInterface( void * d )
 	uint32_t transferred = 0;
 	int r = 0;
 
+	if( iss->target_chip != NULL )
+	{
+		wch_link_command( dev, "\x81\x0d\x01\x02", 4, (int*)&transferred, rbuff, 1024 ); // Reply: Ignored, 820d050900300500
+		if (transferred == 4 || (rbuff[0] == 0x81 && rbuff[1] == 0x55 && rbuff[2] == 0x01) ) // && rbuff[3] == 0x01 )
+		{
+			MCF.DelayUS( iss, 5000 );
+			wch_link_command( dev, "\x81\x0d\x01\x02", 4, (int*)&transferred, rbuff, 1024 ); // Reply: Ignored, 820d050900300500
+		}
+		char cmd_buf[5] = { 0x81, 0x0c, 0x02, iss->target_chip_type, iss->target_chip->interface_speed };
+		wch_link_command( dev, cmd_buf, 5, 0, 0, 0 ); // Set interface clock to suitable speed
+		return 0;
+	}
+
 	//Stop programmer to avoid anything being unresponsive
 	wch_link_command( dev, "\x81\x0d\x01\xff", 4, 0, 0, 0);
 	// Clears programmer state and returns firmware version
@@ -418,7 +434,6 @@ static int LESetupInterface( void * d )
 	iss->sector_size = chip->sector_size;
 
 #else
-
 	r = MCF.DetermineChipType( d );
 	if( r ) return r;
 	// if( iss->target_chip_type == CHIP_CH32V10x )
@@ -437,7 +452,7 @@ static int LESetupInterface( void * d )
 	MCF.WriteReg32( d, DMCONTROL, 0x80000001 );
 	MCF.DelayUS( iss, 10000 ); // Delay to let some chips fully reboot
 	char cmd_buf[5] = { 0x81, 0x0c, 0x02, iss->target_chip_type, iss->target_chip->interface_speed};
-	if( iss->target_chip_type == CHIP_CH32V10x ) cmd_buf[3] = 0x05;
+	// if( iss->target_chip_type == CHIP_CH32V10x ) cmd_buf[3] = 0x05; // Why have I added this?!
 	wch_link_command( dev, cmd_buf, 5, 0, 0, 0 ); // Set interface clock to suitable speed
 
 	#if !FORCE_EXTERNAL_CHIP_DETECTION
@@ -942,6 +957,7 @@ struct BootloaderBlob * GetFlashLoader( enum RiscVChip chip )
 	}
 }
 
+#if !FORCE_EXTERNAL_CHIP_DETECTION
 static int InternalLinkEHaltMode( void * d, int mode )
 {
 	libusb_device_handle * dev = ((struct LinkEProgrammerStruct*)d)->devh;
@@ -1049,3 +1065,4 @@ static int LEWriteBinaryBlob( void * d, uint32_t address_to_write, uint32_t len,
 
 	return 0;
 }
+#endif // !FORCE_EXTERNAL_CHIP_DETECTION

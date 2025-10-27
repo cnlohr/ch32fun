@@ -284,6 +284,7 @@ retry:
 	// fprintf( stderr, "replysize = %d\n", eps->replysize );
 	if( eps->replysize < 7 ) eps->replysize = 7;
 	eps->replybuffer[0] = descriptor; // Key report ID
+	if( eps->replysize > buffer_size ) buffer_size = eps->replysize + 1;
 	// r = hid_get_feature_report( eps->hd, eps->replybuffer, eps->replysize + 1 ); // This is small optimization, but it doesn't gain us much. Will try it with bigger read/write amounts and remove it if it proves insignificant.
 	r = hid_get_feature_report( eps->hd, eps->replybuffer, buffer_size );
 	#if DETAILED_DEBUG
@@ -534,15 +535,14 @@ int ESPPollTerminal( void * dev, uint8_t * buffer, int maxlen, uint32_t leavefla
 	int rlen = eps->replybuffer[0];
 	if( rlen < 1 ) return -8;
 
-
 #if 0
 	int i;
 
-	printf( "RESP (ML %d): %d\n", maxlen,eps->reply[0] );
+	printf( "RESP (ML %d): %d\n", maxlen,eps->replybuffer[0] );
 
-	for( i = 0; i < eps->reply[0]; i++ )
+	for( i = 0; i < eps->replybuffer[0]; i++ )
 	{
-		printf( "%02x ", eps->reply[i+1] );
+		printf( "%02x ", eps->replybuffer[i+1] );
 		if( (i % 16) == 15 ) printf( "\n" );
 	}
 	printf( "\n" );
@@ -1144,7 +1144,6 @@ int ESPDetermineChipType( void * dev )
 		{
 			return -9;
 		}
-		// fprintf( stderr, "%02x %02x %02x %02x %02x %02x %02x %02x\n", eps->reply[0], eps->reply[1], eps->reply[2], eps->reply[3], eps->reply[4], eps->reply[5], eps->reply[6], eps->reply[7]);
 
 		uint16_t reply = *((uint16_t*)&eps->replybuffer[6]);
 		uint32_t sevenf_id = *((uint32_t*)&eps->replybuffer[2]);
@@ -1363,6 +1362,15 @@ int ESPDetermineChipType( void * dev )
 	return 0;
 }
 
+static int ESPResetInterface( void * dev )
+{
+	Write2LE( dev, 0x0efe ); // Trigger Init.
+	ESPFlushLLCommands( dev );
+	Write2LE( dev, 0x0afe ); // Reset programmer internals
+	ESPFlushLLCommands( dev );
+	return 0;
+}
+
 void * TryInit_ESP32S2CHFUN()
 {
 	hid_init();
@@ -1401,6 +1409,7 @@ void * TryInit_ESP32S2CHFUN()
 	MCF.Exit = ESPExit;
 	MCF.VoidHighLevelState = ESPVoidHighLevelState;
 	MCF.VendorCommand = ESPVendorCommand;
+	MCF.ResetInterface = ESPResetInterface;
 
 #if 1
 	// These are optional. Disabling these is a good mechanismto make sure the core functions still work.

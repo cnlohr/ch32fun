@@ -39,6 +39,17 @@ def get_ld_defines(chip_name: str):
             elif "f7" in chip_name:
                 mcu_package = 1
             target_mcu_ld = 4
+        elif chip_name.startswith("ch32l103"):
+            target_mcu = chip_name.upper()[0:len("ch32l103")]
+            if "f8" in chip_name:
+                mcu_package = 1
+            elif "k8" in chip_name:
+                mcu_package = 1
+            elif "c8" in chip_name:
+                mcu_package = 1
+            elif "g8" in chip_name:
+                mcu_package = 1
+            target_mcu_ld = 4
         elif chip_name.startswith("ch32v20"):
             target_mcu = chip_name.upper()[0:len("ch32v20x")]
             if "f8" in chip_name:

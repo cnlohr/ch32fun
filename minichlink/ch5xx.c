@@ -49,14 +49,14 @@ int CH5xxSetClock(void * dev, uint32_t clock) {
 	if (clock == 0) {
 		uint32_t rr = 0;
 		MCF.ReadWord(dev, 0x40001008, &rr);
+		fprintf(stderr, "Setting clock, current = %08x\n", rr);
 		switch (iss->target_chip_type)
 		{
 		case CHIP_CH585:
 			iss->clock_set = 24000;
-			if ((rr&0x1f) == 3) {
+			if ((rr&0xfff) != 0x14d) {
 				ch5xx_write_safe(dev, 0x4000100A, 0x16, 0);
 				ch5xx_write_safe(dev, 0x40001008, 0x14d, 1);
-				// ch5xx_write_safe(dev, 0x40001008, 0x14d, 0);
 			} else {
 				return 0;
 			}
@@ -64,7 +64,7 @@ int CH5xxSetClock(void * dev, uint32_t clock) {
 
 		case CHIP_CH570:
 			iss->clock_set = 75000;
-			if ((rr&0x1f) == 5) {
+			if ((rr&0xff) != 0x48) {
 				ch5xx_write_safe(dev, 0x4000100A, 0x14, 0); // Enable PLL
 				// Set flash clock (undocumented)
 				ch5xx_write_safe(dev, 0x40001805, 8, 0); // Flash SCK
@@ -83,7 +83,7 @@ int CH5xxSetClock(void * dev, uint32_t clock) {
 		case CHIP_CH58x:
 		case CHIP_CH59x:
 			iss->clock_set = 16000;
-			if ((rr&0x1f) == 5) {
+			if ((rr&0xff) != 0x82) {
 				ch5xx_write_safe(dev, 0x40001008, 0x82, 0);
 			} else {
 				return 0;
@@ -1034,11 +1034,21 @@ int CH5xxWriteBinaryBlob(void * dev, uint32_t address_to_write, uint32_t blob_si
 		}
 	}
 
-	if (iss->current_area == PROGRAM_AREA) {
-		if (blob_size > 4096) write_function = &ch5xx_write_flash_using_microblob2;
-		else write_function = &ch5xx_write_flash;
-		// write_function = &ch5xx_write_flash_using_microblob2;
-		// write_function = &ch5xx_write_flash;
+	if (iss->current_area == PROGRAM_AREA || iss->current_area == BOOTLOADER_AREA) {
+		if (iss->current_area == BOOTLOADER_AREA) {
+			uint8_t info_reg = 0;
+			MCF.ReadByte(dev, R8_GLOB_CFG_INFO, &info_reg);
+			if (!(info_reg & (1<<5))) {
+				fprintf(stderr, "You need to be in bootloader mode to flash to BOOTLOADER partition.\n R8_GLOB_CFG_INFO = %02x\n", info_reg);
+				ret = -2;
+				goto end;
+			} else {
+				write_function = &ch5xx_write_flash;
+			}
+		} else {
+			if (blob_size > 4096) write_function = &ch5xx_write_flash_using_microblob2;
+			else write_function = &ch5xx_write_flash;
+		}
 		if (spad) {
 			if (spad + blob_size <= sector_size) {
 				MCF.ReadBinaryBlob(dev, (address_to_write - spad), sector_size, start_pad);
@@ -1070,10 +1080,6 @@ int CH5xxWriteBinaryBlob(void * dev, uint32_t address_to_write, uint32_t blob_si
 		if (epad) write_function(dev, (address_to_write + blob_size) - epad, end_pad, sector_size);
 		
 		// ch5xx_verify_data(dev, address_to_write, blob, blob_size);
-	} else if (iss->current_area == BOOTLOADER_AREA) {
-		fprintf(stderr, "Can't write to Bootloader area on these chips (yet?)\n");
-		ret = -2;
-		goto end;
 	} else if (iss->current_area == OPTIONS_AREA) {
 		write_function = &ch5xx_write_flash;
 		
@@ -1183,6 +1189,7 @@ end:
 
 // The only strangeness is that empty memory will be masked and will show as some magic word (For example 0xa9bdf9f3 for CH570/2).
 // Other memory areas, like EEPROM or options require special procedure.
+extern int DefaultReadBinaryBlob( void * dev, uint32_t address_to_read_from, uint32_t read_size, uint8_t * blob );
 int CH5xxReadBinaryBlob(void* dev, uint32_t address_to_read_from, uint32_t read_size, uint8_t* blob) {
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
 
@@ -1196,21 +1203,20 @@ int CH5xxReadBinaryBlob(void* dev, uint32_t address_to_read_from, uint32_t read_
 	}
 
 	if (iss->current_area == OPTIONS_AREA) {
-		ch5xx_read_options_bulk(dev, address_to_read_from, blob, read_size);
+		ret = ch5xx_read_options_bulk(dev, address_to_read_from, blob, read_size);
 	} else if (iss->current_area == EEPROM_AREA) {
-		ch5xx_read_eeprom(dev, address_to_read_from, blob, read_size);
+		ret = ch5xx_read_eeprom(dev, address_to_read_from, blob, read_size);
 	} else if (iss->current_area == BOOTLOADER_AREA) {
-		ch5xx_read_eeprom(dev, address_to_read_from, blob, read_size);
-		// MCF.ReadBinaryBlob(dev, address_to_read_from, read_size, blob);
+		ret = DefaultReadBinaryBlob(dev, address_to_read_from, read_size, blob);
 	} else if (iss->current_area == PROGRAM_AREA || iss->current_area == RAM_AREA) {
-		MCF.ReadBinaryBlob(dev, address_to_read_from, read_size, blob);
+		ret = DefaultReadBinaryBlob(dev, address_to_read_from, read_size, blob);
 	} else {
 		fprintf(stderr, "Unknown memory region. Not reading.\n");
 		ret = -2;
 		goto end;
 	}
 
-	fprintf(stderr, "Done reading\n");
+	if (!ret) fprintf(stderr, "Done reading\n");
 end:
 	return ret;
 }
@@ -1379,7 +1385,7 @@ int CH5xxPrintInfo(void* dev) {
 	MCF.SetClock(dev, 0);
 
 	if (MCF.GetUUID(dev, info)) return -1;
-	// printf("UUID: %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n", info[0], info[1], info[2], info[3], info[4], info[5], info[6], info[7]);
+	printf("UUID: %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n", info[0], info[1], info[2], info[3], info[4], info[5], info[6], info[7]);
 	printf("BLE MAC: %02x-%02x-%02x-%02x-%02x-%02x\n", info[0], info[1], info[2], info[3], info[4], info[5]);
 	if (ch5xx_read_secret_uuid(dev, info)) return -1;
 	printf("Secret UUID: %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n", info[0], info[1], info[2], info[3], info[4], info[5], info[6], info[7]);
@@ -1450,8 +1456,8 @@ void ch5xx_special_reset_validate_options(void * dev) {
 	// Write 1 to R8_RST_WDOG_CTRL to reboot
 	MCF.WriteReg32(dev, DMPROGBUF3, 0x04b68323); // sb  a1,0x46(a3)
 	MCF.WriteReg32(dev, DMPROGBUF4, 0x04068023); // sb zero, 64(a3)
-  // Endless loop, target should reset
-	MCF.WriteReg32(dev, DMPROGBUF5, 0x9002a001); // c.j 0; c.ebreak	
+	// Endless loop, target should reset
+	MCF.WriteReg32(dev, DMPROGBUF5, 0x9002a001); // c.j 0; c.ebreak
 	
 	iss->statetag = STTAG( "XXXX" );
 
@@ -1460,15 +1466,15 @@ void ch5xx_special_reset_validate_options(void * dev) {
 }
 
 void ch5xx_flash_powerup(void * dev) {
-  ch5xx_flash_open(dev, 0xe0);
-  ch5xx_flash_begin(dev, 0xab);
-  ch5xx_flash_close(dev);
+	ch5xx_flash_open(dev, 0xe0);
+	ch5xx_flash_begin(dev, 0xab);
+	ch5xx_flash_close(dev);
 }
 
 void ch5xx_flash_powerdown(void * dev) {
-  ch5xx_flash_open(dev, 0xe0);
-  ch5xx_flash_begin(dev, 0xb9);
-  ch5xx_flash_close(dev);
+	ch5xx_flash_open(dev, 0xe0);
+	ch5xx_flash_begin(dev, 0xb9);
+	ch5xx_flash_close(dev);
 }
 
 void ch5xx_flash_sw_reset(void * dev) {
@@ -1480,30 +1486,30 @@ void ch5xx_flash_sw_reset(void * dev) {
 }
 
 void ch5xx_flash_unlock(void * dev, uint8_t cmd) {
-  // cmd: 0 - unlock all, 0x44 - lock boot code, 0x50 - lock all code and flash, 0x3c - lock something, unclear what exactly
-  fprintf(stderr, "CH5xx flash unlock\n");
-  ch5xx_flash_open(dev, 0xe0);
-  ch5xx_flash_wait(dev);
-  ch5xx_flash_begin(dev, 6);
-  ch5xx_flash_end(dev);
-  ch5xx_flash_begin(dev, 1);
-  ch5xx_flash_out(dev, cmd);
-  ch5xx_flash_out(dev, 2);
-  ch5xx_flash_wait(dev);
-  ch5xx_flash_close(dev);
+	// cmd: 0 - unlock all, 0x44 - lock boot code, 0x50 - lock all code and flash, 0x3c - lock something, unclear what exactly
+	fprintf(stderr, "CH5xx flash unlock\n");
+	ch5xx_flash_open(dev, 0xe0);
+	ch5xx_flash_wait(dev);
+	ch5xx_flash_begin(dev, 6);
+	ch5xx_flash_end(dev);
+	ch5xx_flash_begin(dev, 1);
+	ch5xx_flash_out(dev, cmd);
+	ch5xx_flash_out(dev, 2);
+	ch5xx_flash_wait(dev);
+	ch5xx_flash_close(dev);
 }
 
 int CH5xxConfigureNRSTAsGPIO(void * dev, int one_if_yes_gpio) {
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
 	uint32_t options;
 
-  MCF.SetClock(dev, 0);
+	MCF.SetClock(dev, 0);
 	
 	uint32_t options_address = 0x7EFFC;
 	if (iss->target_chip_type == CHIP_CH570) options_address = 0x3EFFC;
 
 	ch5xx_read_options_bulk(dev, options_address, (uint8_t*)&options, 4);
-  printf("Current option bytes - %08x\n", options);
+	printf("Current option bytes - %08x\n", options);
 
 	if ((options&0x8) && one_if_yes_gpio == 0) {
 		printf("Reset is already set as reset\n");
@@ -1514,18 +1520,18 @@ int CH5xxConfigureNRSTAsGPIO(void * dev, int one_if_yes_gpio) {
 	} else {
 		if (one_if_yes_gpio) options &= ~(0x08);
 		else options |= 0x08;
+		uint32_t options_array[3] = {0xffffffff, 0xffffffff, options};
 		printf("New option bytes - %08x\n", options);
 		if (iss->target_chip_type == CHIP_CH570) {
-			CH5xxWriteBinaryBlob(dev, options_address, 4, (uint8_t*)&options);
+			CH5xxWriteBinaryBlob(dev, options_address - 8, 12, (uint8_t*)options_array);
 		} else {
-      if (iss->target_chip_type == CHIP_CH58x) {
-        fprintf(stderr, "\nOn CH582 this only works if you have empty flash. And even then you may need to retry couple times.\n");
-      } else {
-        fprintf(stderr, "\nThis won't work, even though it should. Currently it only works via ISP\n");
-      }
-      // From what I could deduce this only works if you're in BOOTLOADER mode
-      // Which can be checked by reading R8_GLOB_CFG_INFO - 0x40001045pgm-wch-isp.c
-      // I don't know any way to force this mode. If you find a way, please tell us!
+			uint8_t info_reg = 0;
+			MCF.ReadByte(dev, R8_GLOB_CFG_INFO, &info_reg);
+			if (!(info_reg & (1<<5))) {
+				fprintf(stderr, "You need to be in bootloader mode to edit OPTIONS.\n R8_GLOB_CFG_INFO = %02x\n", info_reg);
+				fprintf(stderr, "You can enter bootloader mode by prefexing -B before the command.\n");
+				return -2;
+			}
 			CH5xxErase(dev, 0x7e000, 4096, 0);
 			ch5xx_write_flash(dev, 0x7effc, (uint8_t*)&options, 4);
 			ch5xx_special_reset_validate_options(dev);

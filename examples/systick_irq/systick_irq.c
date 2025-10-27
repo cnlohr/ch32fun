@@ -48,7 +48,7 @@ void systick_init(void)
 	                 SYSTICK_CTLR_STCLK ;  // Set Clock Source to HCLK/1
 	
 	// Enable the SysTick IRQ
-	NVIC_EnableIRQ(SysTicK_IRQn);
+	NVIC_EnableIRQ(SysTick_IRQn);
 }
 
 /*

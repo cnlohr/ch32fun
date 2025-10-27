@@ -10,60 +10,163 @@ on: [push, pull_request]
 jobs:
   build-minichlink:
     strategy:
-        fail-fast: false
-        matrix:
-            os: [ubuntu-latest, macos-14] # macos-12 is deprecated
-    runs-on: ${{matrix.os}}
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Dependencies (Linux)
-      if: ${{ matrix.os == 'ubuntu-latest' }}
-      run: sudo apt-get update && sudo apt-get install -y build-essential make libusb-1.0-0-dev libudev-dev mingw-w64-x86-64-dev gcc-mingw-w64-x86-64
-    # we don't need to brew install libusb on Mac, actually preinstalled on the runner! :)
-    - name: Build (Linux, Mac)
-      run: |
-       cd minichlink
-       make clean
-       make V=1 -j3
-    # we cross-compile the Windows binaries from Linux 
-    - name: Build (for Windows)
-      if: ${{ matrix.os == 'ubuntu-latest' }}
-      run: |
-        cd minichlink
-        OS=Windows_NT make clean
-        OS=Windows_NT make V=1 -j3 minichlink.exe
+      - uses: actions/checkout@v4
 
-    - name: "Pack (Linux)"
-      if: ${{ matrix.os == 'ubuntu-latest' }}
-      run: tar czf minichlink.tar.gz -C minichlink minichlink minichlink.so 99-minichlink.rules
-    - name: "Pack (Mac)"
-      if: ${{ matrix.os == 'macos-12' || matrix.os == 'macos-14' }}
-      run: tar czf minichlink.tar.gz -C minichlink minichlink
-    # no packing needed for Windows as it's .exe only
+      # ----------------------
+      # Linux + Windows build
+      # ----------------------
+      - name: Install dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          # remove man-db to avoid slow trigger step
+          sudo apt-get -yqq purge man-db || true
+          sudo apt-get install -y --no-install-recommends \
+            build-essential make libusb-1.0-0-dev libudev-dev \
+            mingw-w64-x86-64-dev gcc-mingw-w64-x86-64
 
-    - name: "Upload minichlink (Linux)"
-      if: ${{ matrix.os == 'ubuntu-latest' }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: minichlink (Linux)
-        path: minichlink.tar.gz
-    - name: "Upload minichlink (MacOs 12)"
-      if: ${{ matrix.os == 'macos-12' }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: minichlink (MacOS 12)
-        path: minichlink.tar.gz  
-    - name: "Upload minichlink (MacOs 14)"
-      if: ${{ matrix.os == 'macos-14' }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: minichlink (MacOS 14 ARM64)
-        path: minichlink.tar.gz    
-    - name: "Upload minichlink (Windows)"
-      if: ${{ matrix.os == 'ubuntu-latest' }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: minichlink (Windows)
-        path: | 
-          minichlink/minichlink.exe
-          minichlink/libusb-1.0.dll
+      - name: Build minichlink (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cd minichlink
+          make clean
+          make -j$(nproc)
+
+      - name: Build minichlink.exe (Windows cross-compile)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cd minichlink
+          OS=Windows_NT make clean
+          OS=Windows_NT make -j$(nproc) minichlink.exe
+
+      - name: Package Linux binaries
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cd minichlink
+          tar czf minichlink-linux.tar.gz minichlink minichlink.so 99-minichlink.rules
+
+      - uses: actions/upload-artifact@v4
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: minichlink (Linux)
+          path: minichlink/minichlink-linux.tar.gz
+
+      - uses: actions/upload-artifact@v4
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: minichlink (Windows)
+          path: minichlink/minichlink.exe
+
+      # ----------------------
+      # macOS build
+      # ----------------------
+      - name: Install macOS dependencies
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew update
+          # pkgconfig already installed.
+          brew install automake autoconf libtool
+
+      - name: Build libusb for macOS (ARM and x86_64)
+        if: matrix.os == 'macos-latest'
+        run: |
+          git clone --branch v1.0.29 --depth 1 https://github.com/libusb/libusb.git
+          cd libusb
+
+          # ARM64 build
+          mkdir build-arm64 && cd build-arm64
+          ../autogen.sh CFLAGS="-arch arm64" LDFLAGS="-arch arm64" --disable-shared --enable-static
+          make -C libusb -j$(sysctl -n hw.logicalcpu)
+          cd ..
+
+          # x86_64 build
+          mkdir build-x86_64 && cd build-x86_64
+          ../autogen.sh CFLAGS="-arch x86_64" LDFLAGS="-arch x86_64" --disable-shared --enable-static
+          make -C libusb -j$(sysctl -n hw.logicalcpu)
+          cd ..
+
+      - name: Merge into universal libusb
+        if: matrix.os == 'macos-latest'
+        run: |
+          mkdir -p universal/lib
+          lipo -create \
+            libusb/build-arm64/libusb/.libs/libusb-1.0.a \
+            libusb/build-x86_64/libusb/.libs/libusb-1.0.a \
+            -output universal/lib/libusb-1.0.a
+          mkdir -p universal/include/libusb-1.0
+          cp libusb/libusb/libusb.h universal/include/libusb-1.0/
+
+      - name: Build minichlink for macOS ARM64
+        if: matrix.os == 'macos-latest'
+        run: |
+          cd minichlink
+          make clean
+          make ARCH=arm64 \
+              LIBUSB_INCS="-I$(pwd)/../universal/include/libusb-1.0" \
+              LIBUSB_LIBS="$(pwd)/../universal/lib/libusb-1.0.a"
+          mkdir -p ../dist/arm64
+          cp minichlink minichlink.so ../dist/arm64/
+
+      - name: Build minichlink for macOS x86_64
+        if: matrix.os == 'macos-latest'
+        run: |
+          cd minichlink
+          make clean
+          make ARCH=x86_64 \
+              LIBUSB_INCS="-I$(pwd)/../universal/include/libusb-1.0" \
+              LIBUSB_LIBS="$(pwd)/../universal/lib/libusb-1.0.a"
+          mkdir -p ../dist/x86_64
+          cp minichlink minichlink.so ../dist/x86_64/
+
+      - name: Package macOS binaries (per arch)
+        if: matrix.os == 'macos-latest'
+        run: |
+          mkdir -p tmp/arm64 tmp/x86_64
+
+          # ARM64
+          cp dist/arm64/minichlink tmp/arm64/
+          cp dist/arm64/minichlink.so tmp/arm64/
+          cd tmp/arm64
+          tar czf ../../minichlink-macos-arm64.tar.gz *
+          cd ../..
+
+          # x86_64
+          cp dist/x86_64/minichlink tmp/x86_64/
+          cp dist/x86_64/minichlink.so tmp/x86_64/
+          cd tmp/x86_64
+          tar czf ../../minichlink-macos-x86_64.tar.gz *
+          cd ../..
+
+      - uses: actions/upload-artifact@v4
+        if: matrix.os == 'macos-latest'
+        with:
+          name: minichlink (MacOS ARM64)
+          path: minichlink-macos-arm64.tar.gz
+
+      - uses: actions/upload-artifact@v4
+        if: matrix.os == 'macos-latest'
+        with:
+          name: minichlink (MacOS x86_64)
+          path: minichlink-macos-x86_64.tar.gz
+
+      - name: Build universal minichlink
+        if: matrix.os == 'macos-latest'
+        run: |
+          mkdir -p tmp/universal
+          lipo -create dist/arm64/minichlink dist/x86_64/minichlink -output tmp/universal/minichlink
+          lipo -create dist/arm64/minichlink.so dist/x86_64/minichlink.so -output tmp/universal/minichlink.so
+          cd tmp/universal
+          tar czf ../../minichlink-macos-universal.tar.gz *
+          cd ../..
+
+      - uses: actions/upload-artifact@v4
+        if: matrix.os == 'macos-latest'
+        with:
+          name: minichlink (MacOS Universal)
+          path: minichlink-macos-universal.tar.gz

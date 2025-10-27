@@ -210,7 +210,7 @@ void systick_init(void)
 	cdc.usb_timeout = 0;
 	millis_cnt = 0;
 
-	NVIC_EnableIRQ(SysTicK_IRQn);
+	NVIC_EnableIRQ(SysTick_IRQn);
 }
 
 void SysTick_Handler(void) __attribute__((interrupt));

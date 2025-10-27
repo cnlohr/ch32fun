@@ -6,16 +6,16 @@ The following table details which demo is working on which chip, since some func
 
 |                     | ch570/2 | ch571/3 | ch582/3 | ch584/5 | ch59x |
 |---------------------|---------|---------|---------|---------|-------|
-| blink               |    √    |    √    |    √    |    ×    |   √   |
-| ble_beacon          |    √    |    ×    |    √    |    ×    |   √   |
-| boot_button         |    √    |    ×    |    √    |    ×    |   √   |
+| blink               |    √    |    √    |    √    |    √    |   √   |
+| ble_beacon          |    √    |    ×    |    √    |    √    |   √   |
+| boot_button         |    √    |    ×    |    √    |    √    |   √   |
 | comparator_adc_demo |    √    |    ×    |    ×    |    ×    |   ×   |
-| debugprintfdemo     |    √    |    √    |    √    |    ×    |   √   |
-| iSLER               |    √    |    √    |    √    |    ×    |   √   |
-| lowpower            |    √    |    ×    |    √    |    ×    |   √   |
-| RTC_irq             |    √    |    √    |    √    |    ×    |   √   |
-| systick_irq         |    √    |    ×    |    √    |    ×    |   √   |
-| uartdemo            |    √    |    √    |    √    |    ×    |   √   |
-| ws2812bdemo         |    √    |    √    |    √    |    ×    |   √   |
+| debugprintfdemo     |    √    |    √    |    √    |    √    |   √   |
+| iSLER               |    √    |    ×    |    √    |    √    |   √   |
+| lowpower            |    √    |    ×    |    √    |    √    |   √   |
+| RTC_irq             |    √    |    √    |    √    |    √    |   √   |
+| systick_irq         |    √    |    ×    |    √    |    √    |   √   |
+| uartdemo            |    √    |    √    |    √    |    √    |   √   |
+| ws2812bdemo         |    √    |    √    |    √    |    √    |   √   |
 
 The Makefiles default to ch570, if you want to compile for another chip only the `TARGET_MCU` and `TARGET_MCU_PACKAGE` need to be changed.

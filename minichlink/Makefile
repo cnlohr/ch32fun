@@ -18,11 +18,22 @@ else
 		LDFLAGS:=-lpthread -lusb-1.0 -ludev
 	endif
 	ifeq ($(OS_NAME),darwin)
-		LDFLAGS:=-lpthread -lusb-1.0 -framework CoreFoundation -framework IOKit
-		CFLAGS:=-O0 -Wall -Wno-asm-operand-widths -Wno-deprecated-declarations -Wno-deprecated-non-prototype -D__MACOSX__ -DMINICHLINK -DCH32V003 -I.
-		INCLUDES:=$(shell pkg-config --cflags-only-I libusb-1.0)
-		LIBINCLUDES:=$(shell pkg-config --libs-only-L libusb-1.0)
-		INCS:=$(INCLUDES) $(LIBINCLUDES)
+		# Use ARCH flag (e.g. x86_64 or arm64) if given externally, otherwise empty
+		ifdef ARCH
+			ARCHFLAG := -arch $(ARCH)
+		else
+			ARCHFLAG :=
+		endif
+		# Use custom libusb includes/libs if provided, otherwise pkg-config will find it
+		ifeq ($(strip $(LIBUSB_INCS)),)
+			LIBUSB_INCS := $(shell pkg-config --cflags libusb-1.0)
+		endif
+		ifeq ($(strip $(LIBUSB_LIBS)),)
+			LIBUSB_LIBS := $(shell pkg-config --libs libusb-1.0)
+		endif
+
+		LDFLAGS := -lpthread -framework CoreFoundation -framework IOKit -framework Security $(LIBUSB_LIBS)
+		CFLAGS := $(ARCHFLAG) -O0 -Wall -Wno-asm-operand-widths -Wno-deprecated-declarations -Wno-deprecated-non-prototype -D__MACOSX__ -DMINICHLINK -DCH32V003 -I. $(LIBUSB_INCS)
 	endif
 endif
 

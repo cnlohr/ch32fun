@@ -471,7 +471,7 @@ static int B003FunSetupInterface( void * dev )
 	
 	uint32_t one;
 	int two;
-	uint8_t read_protection;
+	uint8_t read_protection = 0;
 	MCF.ReadWord( dev, 0x4002201c, &one );
 	MCF.ReadWord( dev, 0x40022020, (uint32_t*)&two );
 	

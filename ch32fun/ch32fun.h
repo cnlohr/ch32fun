@@ -86,7 +86,7 @@
 */
 
 // Sanity check for when porting old code.
-#if defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x) || defined(CH32X03x)
+#if defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x) || defined(CH32X03x) || defined(CH32L103)
 	#if defined(CH32V003)
 		#error Cannot define CH32V003 and another arch.
 	#endif
@@ -157,7 +157,7 @@
 		#define HSE_VALUE                 (24000000) // Value of the External oscillator in Hz, default
 	#elif defined(CH32V10x)
 		#define HSE_VALUE				  (8000000)
-	#elif defined(CH32V20x)
+	#elif defined(CH32V20x) || defined(CH32L103)
 		#if defined(CH32V20x_D8) || defined(CH32V20x_D8W)
 		#define HSE_VALUE    			  (32000000)
 		#else
@@ -173,12 +173,12 @@
 // Value of the Internal oscillator in Hz, default.
 #ifndef HSI_VALUE
 	#if defined(CH32V003) || defined(CH32V00x)
-		#define HSI_VALUE					(24000000) 
+		#define HSI_VALUE					(24000000)
 	#elif defined(CH32X03x)
 		#define HSI_VALUE					(48000000)
 	#elif defined(CH32V10x)
 		#define HSI_VALUE					(8000000)
-	#elif defined(CH32V20x)
+	#elif defined(CH32V20x) || defined(CH32L103)
 		#define HSI_VALUE					(8000000)
 	#elif defined(CH32V30x)
 		#define HSI_VALUE					(8000000)
@@ -197,6 +197,9 @@
 	#if defined(FUNCONF_USE_PLL) && FUNCONF_USE_PLL
 		#if defined(CH32V10x)
 			#define FUNCONF_PLL_MULTIPLIER 10	// Default: 8 * 10 = 80 MHz
+		#elif defined(CH32L103)
+			#define FUNCONF_PLL_MULTIPLIER 12   // Default: 8 * 12 = 96 MHz
+												// Note: Can be overclocked to 144 MHz
 		#elif defined(CH32V20x)
 			#define FUNCONF_PLL_MULTIPLIER 18	// Default: 8 * 18 = 144 MHz
 		#elif defined(CH32V30x)
@@ -299,6 +302,9 @@
 
 #endif
 
+#ifndef WEAK
+#define WEAK __attribute__((weak))
+#endif
 
 #ifdef __cplusplus
  extern "C" {
@@ -377,16 +383,14 @@ typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
 	#include "ch32x03xhw.h"
 #elif defined( CH32V10x )
 	#include "ch32v10xhw.h"
+#elif defined( CH32L103 )
+	#include "ch32l103hw.h"
 #elif defined( CH32V20x )
 	#include "ch32v20xhw.h"
 #elif defined( CH32V30x )
 	#include "ch32v30xhw.h"
-#elif defined( CH57x )
-	#include "ch57xhw.h"
-#elif defined( CH58x )
-	#include "ch58xhw.h"
-#elif defined( CH59x )
-	#include "ch59xhw.h"
+#elif defined( CH57x ) || defined( CH58x ) || defined( CH59x )
+	#include "ch5xxhw.h"
 #endif
 
 #if defined(__riscv) || defined(__riscv__) || defined( CH32V003FUN_BASE )
@@ -916,7 +920,7 @@ RV_STATIC_INLINE void funPinMode(u32 pin, GPIOModeTypeDef mode)
 #if defined(CH32X03x)
 #define funGpioInitAll() { RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC ); }
 #define funPinMode( pin, mode ) { *((&GpioOf(pin)->CFGLR)+((pin&0x8)>>3)) = ( (*((&GpioOf(pin)->CFGLR)+((pin&0x8)>>3))) & (~(0xf<<(4*((pin)&0x7))))) | ((mode)<<(4*((pin)&0x7))); }
-#elif defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x)
+#elif defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x) || defined(CH32L103)
 #define funGpioInitAll() { RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOD ); }
 #define funPinMode( pin, mode ) { *((&GpioOf(pin)->CFGLR)+((pin&0x8)>>3)) = ( (*((&GpioOf(pin)->CFGLR)+((pin&0x8)>>3))) & (~(0xf<<(4*((pin)&0x7))))) | ((mode)<<(4*((pin)&0x7))); }
 #define funGpioInitB() { RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOB ); }

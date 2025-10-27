@@ -92,8 +92,6 @@ void __libc_init_array(void)
 #include <stdint.h>
 #include <ch32fun.h>
 
-#define WEAK __attribute__((weak))
-
 WEAK int errno;
 
 static int __puts_uart( char *s, int len, void *buf )
@@ -986,6 +984,10 @@ void TMR3_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) 
 void UART2_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void UART3_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void WDOG_BAT_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void NFC_IRQHandler( void )				__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void USB2_DEVICE_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void USB2_HOST_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void LED_IRQHandler( void )				__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 
 void handle_reset( void ) __attribute__((section(".text.handle_reset")));
 
@@ -1109,7 +1111,7 @@ asm volatile(
 "	mret\n" : : [main]"r"(main) );
 }
 
-#elif defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x) ||  defined(CH57x) || defined(CH58x) || defined(CH59x)
+#elif defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x) || defined(CH32L103) ||  defined(CH5xx)
 
 void handle_reset( void )
 {
@@ -1134,7 +1136,7 @@ void handle_reset( void )
 	addi a0, a0, 4\n\
 	bltu a0, a1, 1b\n\
 2:\n"
-#if defined(CH59x)
+#if (defined(CH571_CH573) || defined(CH582_CH583) || defined(CH584_CH585) || defined(CH591_CH592))
 	/* Load highcode code section from FLASH to HIGHRAM */
 "	la a0, _highcode_lma\n\
 	la a1, _highcode_vma_start\n\
@@ -1320,9 +1322,9 @@ void SetupUART( int uartBRR )
 	// Push-Pull, 10MHz Output, GPIO A9, with AutoFunction
 	GPIOB->CFGHR &= ~(0xf<<(4*2));
 	GPIOB->CFGHR |= (GPIO_Speed_10MHz | GPIO_CNF_OUT_PP_AF)<<(4*2);
-#elif defined(CH57x) || defined(CH58x) || defined(CH59x)
+#elif defined(CH5xx)
 	// rx,tx:PA8,PA9 on uart1
-#if defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2) // ch570 ch572
+#ifdef CH570_CH572
 	funPinMode( PA2, GPIO_CFGLR_IN_PU );
 	funPinMode( PA3, GPIO_CFGLR_OUT_2Mhz_PP );
 #else
@@ -1342,7 +1344,7 @@ void SetupUART( int uartBRR )
 	GPIOA->CFGHR |= (GPIO_Speed_10MHz | GPIO_CNF_OUT_PP_AF)<<(4*1);
 #endif
 
-#if !defined(CH57x) && !defined(CH58x) && !defined(CH59x)
+#ifndef CH5xx
 	// 115200, 8n1.  Note if you don't specify a mode, UART remains off even when UE_Set.
 	USART1->CTLR1 = USART_WordLength_8b | USART_Parity_No | USART_Mode_Tx;
 	USART1->CTLR2 = USART_StopBits_1;
@@ -1357,7 +1359,7 @@ void SetupUART( int uartBRR )
 WEAK int _write(int fd, const char *buf, int size)
 {
 	for(int i = 0; i < size; i++){
-#if defined(CH57x) || defined(CH58x) || defined(CH59x)
+#ifdef CH5xx
 		while(!(R8_UART1_LSR & RB_LSR_TX_ALL_EMP));
 		R8_UART1_THR = buf[i];
 #else
@@ -1371,7 +1373,7 @@ WEAK int _write(int fd, const char *buf, int size)
 // single char to UART
 WEAK int putchar(int c)
 {
-#if defined(CH57x) || defined(CH58x) || defined(CH59x)
+#ifdef CH5xx
 	while(!(R8_UART1_LSR & RB_LSR_TX_ALL_EMP));
 	R8_UART1_THR = c;
 #else
@@ -1525,10 +1527,10 @@ void SetupDebugPrintf( void )
 int WaitForDebuggerToAttach( int timeout_ms )
 {
 
-#if defined(CH32V20x) || defined(CH32V30x) || defined(CH32X03x) || (defined(CH57x) && MCU_PACKAGE == 3) || defined(CH58x) || defined(CH59x) // ch573
+#if defined(CH32V20x) || defined(CH32V30x) || defined(CH32X03x) || defined(CH32L103) || defined(CH571_CH573) || defined(CH582_CH583) || defined(CH591_CH592)
 	#define systickcnt_t uint64_t
 	#define SYSTICKCNT SysTick->CNT
-#elif defined(CH32V10x) || defined(CH57x) // ch570 ch572
+#elif defined(CH32V10x) || defined(CH570_CH572) || defined(CH584_CH585)
 	#define systickcnt_t uint32_t
 	#define SYSTICKCNT SysTick->CNTL
 #else
@@ -1575,13 +1577,13 @@ void DelaySysTick( uint32_t n )
 #if defined(CH32V003) || defined(CH32V00x)
 	uint32_t targend = SysTick->CNT + n;
 	while( ((int32_t)( SysTick->CNT - targend )) < 0 );
-#elif defined(CH32V20x) || defined(CH32V30x) || defined(CH32X03x) ||defined(CH58x) || defined(CH59x)
+#elif defined(CH32V20x) || defined(CH32V30x) || defined(CH32X03x) || defined(CH32L103) || defined(CH582_CH583) || defined(CH591_CH592)
 	uint64_t targend = SysTick->CNT + n;
 	while( ((int64_t)( SysTick->CNT - targend )) < 0 );
-#elif defined(CH32V10x) || (defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2)) // ch570 ch572
+#elif defined(CH32V10x) || defined(CH570_CH572) || defined(CH584_CH585)
 	uint32_t targend = SysTick->CNTL + n;
 	while( ((int32_t)( SysTick->CNTL - targend )) < 0 );
-#elif defined(CH57x) && MCU_PACKAGE == 3
+#elif defined(CH571_CH573)
 	// ch573 insisted on being special, it's counting down
 	uint64_t targend = SysTick->CNT - n;
 	while( ((int64_t)( SysTick->CNT - targend )) > 0 );
@@ -1629,7 +1631,13 @@ void SystemInit( void )
 //#define BASE_CTLR	(((FUNCONF_HSITRIM) << 3) | HSEBYP | RCC_CSS)	// disable HSI in HSE modes
 
 	// Flash latency settings.
-#if defined(CH32V00x)
+#if defined(CH32V003)
+	#if FUNCONF_SYSTEM_CORE_CLOCK > 25000000
+		FLASH->ACTLR = FLASH_ACTLR_LATENCY_1;               // +1 Cycle Latency
+	#else
+		FLASH->ACTLR = FLASH_ACTLR_LATENCY_0;               // +0 Cycle Latency
+	#endif
+#elif defined(CH32V00x)
 	// Per TRM
 	#if FUNCONF_SYSTEM_CORE_CLOCK > 25000000
 		FLASH->ACTLR = FLASH_ACTLR_LATENCY_2;
@@ -1640,19 +1648,13 @@ void SystemInit( void )
 	#endif
 #elif defined(CH32X03x)
 	FLASH->ACTLR = FLASH_ACTLR_LATENCY_2;                   // +2 Cycle Latency (Recommended per TRM)
-#elif defined(CH32V003)
-	#if FUNCONF_SYSTEM_CORE_CLOCK > 25000000
-		FLASH->ACTLR = FLASH_ACTLR_LATENCY_1;               // +1 Cycle Latency
-	#else
-		FLASH->ACTLR = FLASH_ACTLR_LATENCY_0;               // +0 Cycle Latency
-	#endif
 #endif
 
-#if defined(CH57x) || defined(CH58x) || defined(CH59x) // has no HSI
+#ifdef CH5xx // has no HSI except ch584/5
 #ifndef CLK_SOURCE_CH5XX
 	#define CLK_SOURCE_CH5XX CLK_SOURCE_PLL_60MHz
 #endif
-#if (defined(CH57x) && (MCU_PACKAGE == 0 || MCU_PACKAGE == 2)) || (defined(CH58x) && (MCU_PACKAGE == 4 || MCU_PACKAGE == 5)) // ch570/2 ch584/5
+#if (defined(CH570_CH572) || defined(CH584_CH585))
 	SYS_CLKTypeDef sc = CLK_SOURCE_CH5XX;
 	
 	if(sc == RB_CLK_SYS_MOD)  // LSI
@@ -1668,20 +1670,24 @@ void SystemInit( void )
 			SYS_SAFE_ACCESS(
 				R8_HFCK_PWR_CTRL |= RB_CLK_PLL_PON;
 				R8_FLASH_CFG = 0x01;
-				R8_FLASH_SCK |= 1<<4; //50M
+				R8_FLASH_SCK |= 1<<4;
 			);
 		}
-		else    // 32M div
+		else
 		{
 			SYS_SAFE_ACCESS(
 				R8_FLASH_CFG = (sc & 0x1F) ? 0x02 : 0x07;
 			);
 		}
 		SYS_SAFE_ACCESS(
+#ifdef CH570_CH572
 			R8_CLK_SYS_CFG = sc;
+#else // CH584_585
+			R16_CLK_SYS_CFG = sc;
+#endif
 		);
 	}
-#else // ch5xx EXCEPT ch570 ch572
+#else // ch5xx EXCEPT ch570/2 ch584/5
 	SYS_CLKTypeDef sc = CLK_SOURCE_CH5XX;
 	SYS_SAFE_ACCESS(
 		R8_PLL_CONFIG &= ~(1 << 5);
@@ -1692,7 +1698,9 @@ void SystemInit( void )
 			R32_CLK_SYS_CFG = (0 << 6) | (sc & 0x1f) | RB_TX_32M_PWR_EN | RB_PLL_PWR_EN;
 		);
 		ADD_N_NOPS(4);
-		R8_FLASH_CFG = 0X51;
+		SYS_SAFE_ACCESS(
+			R8_FLASH_CFG = 0x51;
+		);
 	}
 	else if(sc & 0x40) // PLL div
 	{
@@ -1700,7 +1708,9 @@ void SystemInit( void )
 			R32_CLK_SYS_CFG = (1 << 6) | (sc & 0x1f) | RB_TX_32M_PWR_EN | RB_PLL_PWR_EN;
 		);
 		ADD_N_NOPS(4);
-		R8_FLASH_CFG = 0x52;
+		SYS_SAFE_ACCESS(
+			R8_FLASH_CFG = 0x52;
+		);
 	}
 	else
 	{
@@ -1714,7 +1724,7 @@ void SystemInit( void )
 	);
 #endif // switch between ch570/2 and other ch5xx
 #elif defined(FUNCONF_USE_HSI) && FUNCONF_USE_HSI
-	#if defined(CH32V30x) || defined(CH32V20x) || defined(CH32V10x)
+	#if defined(CH32V30x) || defined(CH32V20x) || defined(CH32L103) || defined(CH32V10x)
 		EXTEN->EXTEN_CTR |= EXTEN_PLL_HSI_PRE;
 	#endif
 	#if defined(FUNCONF_USE_PLL) && FUNCONF_USE_PLL
@@ -1772,11 +1782,22 @@ void SystemInit( void )
 	#endif
 #endif
 
-#if !defined(CH57x) && !defined(CH58x) && !defined(CH59x)
+#if defined(CH32L103)
+	// Per TRM
+	#if FUNCONF_SYSTEM_CORE_CLOCK > 72000000
+		FLASH->ACTLR = FLASH_ACTLR_LATENCY_2;
+	#elif FUNCONF_SYSTEM_CORE_CLOCK > 40000000
+		FLASH->ACTLR = FLASH_ACTLR_LATENCY_1;
+	#else
+		FLASH->ACTLR = FLASH_ACTLR_LATENCY_0;
+	#endif
+#endif
+
+#ifndef CH5xx
 	RCC->INTR  = 0x009F0000;                               // Clear PLL, CSSC, HSE, HSI and LSI ready flags.
 #endif
 
-#if defined(FUNCONF_USE_PLL) && FUNCONF_USE_PLL && !defined(CH57x) && !defined(CH58x) && !defined(CH59x)
+#if defined(FUNCONF_USE_PLL) && FUNCONF_USE_PLL && !defined(CH5xx)
 	while((RCC->CTLR & RCC_PLLRDY) == 0);                       	// Wait till PLL is ready
 	uint32_t tmp32 = RCC->CFGR0 & ~(0x03);							// clr the SW
 	RCC->CFGR0 = tmp32 | RCC_SW_PLL;                       			// Select PLL as system clock source
@@ -1794,7 +1815,10 @@ void SystemInit( void )
 #if defined(FUNCONF_INIT_ANALOG) && FUNCONF_INIT_ANALOG
 void funAnalogInit( void )
 {
-	//RCC->CFGR0 &= ~(0x1F<<11); // Assume ADCPRE = 0
+	// Please remember that ADC clock should not exceed 14Mhz!
+	// To ensure that, you may need to adjust RCC depending on your clock speed in the following way:
+	// RCC->CFGR0 |= RCC_ADCPRE_DIV6 // ADC prediv
+	// RCC->CFGR0 |= RCC_PPRE2_DIV2; // Divide HCLK by 2 in PPRE2 because ADCPRE is not enough at high speeds 
 	RCC->APB2PCENR |= RCC_APB2Periph_ADC1;
 
 	// Reset ADC.
@@ -1805,7 +1829,12 @@ void funAnalogInit( void )
 	ADC1->SAMPTR2 = (ADC_SMP0_1<<(3*0)) | (ADC_SMP0_1<<(3*1)) | (ADC_SMP0_1<<(3*2)) | (ADC_SMP0_1<<(3*3)) | (ADC_SMP0_1<<(3*4)) | (ADC_SMP0_1<<(3*5)) | (ADC_SMP0_1<<(3*6)) | (ADC_SMP0_1<<(3*7)) | (ADC_SMP0_1<<(3*8)) | (ADC_SMP0_1<<(3*9));
 	ADC1->SAMPTR1 = (ADC_SMP0_1<<(3*0)) | (ADC_SMP0_1<<(3*1)) | (ADC_SMP0_1<<(3*2)) | (ADC_SMP0_1<<(3*3)) | (ADC_SMP0_1<<(3*4)) | (ADC_SMP0_1<<(3*5));
 
-	ADC1->CTLR2 |= ADC_ADON | ADC_EXTSEL;	// turn on ADC and set rule group to sw trig
+	// turn on ADC and set rule group to sw trig
+	#if defined(CH32V20x)
+		ADC1->CTLR2 |= ADC_ADON | ADC_EXTSEL | ADC_EXTTRIG;
+	#else
+		ADC1->CTLR2 |= ADC_ADON | ADC_EXTSEL;
+	#endif
 
 	// Reset calibration
 	ADC1->CTLR2 |= CTLR2_RSTCAL_Set;

@@ -2,10 +2,10 @@ ENTRY( InterruptVector )
 
 MEMORY
 {
-#if TARGET_MCU_LD == 0
+#if TARGET_MCU_LD == 0 /* v00x */
 	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 16K
 	RAM (xrw)  : ORIGIN = 0x20000000, LENGTH = 2K
-#elif TARGET_MCU_LD == 1
+#elif TARGET_MCU_LD == 1 /* v10x */
 	#if MCU_PACKAGE == 1
 		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 64K
 		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 20K
@@ -15,20 +15,23 @@ MEMORY
 	#else
 		#error "Unknown MCU package"
 	#endif
-#elif TARGET_MCU_LD == 2
+#elif TARGET_MCU_LD == 2 /* v20x */
 	#if MCU_PACKAGE == 1
 		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 64K
+		EXT (rx) : ORIGIN = 0x08010000, LENGTH = 160K
 		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 20K
 	#elif MCU_PACKAGE == 2
 		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 32K
+		EXT (rx) : ORIGIN = 0x08008000, LENGTH = 192K
 		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 10K
 	#elif MCU_PACKAGE == 3
 		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 128K
+		EXT (rx) : ORIGIN = 0x08020000, LENGTH = 352K
 		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 64K
 	#else
 		#error "Unknown MCU package"
 	#endif
-#elif TARGET_MCU_LD == 3
+#elif TARGET_MCU_LD == 3 /* v30x */
 	#if MCU_PACKAGE == 1
 		#if TARGET_MCU_MEMORY_SPLIT == 1
 			FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 224K
@@ -49,7 +52,7 @@ MEMORY
 	#else
 		#error "Unknown MCU package"
 	#endif
-#elif TARGET_MCU_LD == 4
+#elif TARGET_MCU_LD == 4 /* x03x */
 	#if MCU_PACKAGE == 1
 		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 62K
 		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 20K
@@ -72,10 +75,12 @@ MEMORY
 	/* CH582/3/4/5 */
 	#if MCU_PACKAGE == 2 || MCU_PACKAGE == 3
 		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 448K
-		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 32K
+		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 30K
+		HIGHRAM (xrw) : ORIGIN = 0x20007800, LENGTH = 2K
 	#elif MCU_PACKAGE == 4 || MCU_PACKAGE == 5
 		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 448K
-		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 128K
+		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 96K
+		HIGHRAM (xrw) : ORIGIN = 0x20018000, LENGTH = 32K
 	#else
 		#error "Unknown MCU package"
 	#endif
@@ -120,7 +125,7 @@ SECTIONS
 			_einit = .;
 		} >FLASH AT>FLASH
 
-#if TARGET_MCU_LD == 9 || (TARGET_MCU_LD == 10 && MCU_PACKAGE == 3)
+#if TARGET_MCU_LD == 8 || TARGET_MCU_LD == 9 || (TARGET_MCU_LD == 10 && MCU_PACKAGE == 3)
 		.highcodelalign : 
 		{       
 			. = ALIGN(4);
@@ -260,11 +265,24 @@ SECTIONS
 		PROVIDE( _end = _ebss);
 		PROVIDE( end = . );
 
-#if TARGET_MCU_LD == 9
+#if TARGET_MCU_LD == 8 || TARGET_MCU_LD == 9
 		PROVIDE( _eusrstack = ORIGIN(HIGHRAM) + LENGTH(HIGHRAM));
 #else
 		PROVIDE( _eusrstack = ORIGIN(RAM) + LENGTH(RAM));
 #endif
+
+#if TARGET_MCU_LD == 2 /* v20x */
+		.storage :
+		{
+			. = ALIGN(4);
+			*(.storage)
+			*(.storage.*)
+			*(.external)
+			*(.external.*)
+			. = ALIGN(4);
+		} >EXT AT>EXT
+#endif
+
 
 		/DISCARD/ : {
 			*(.note .note.*)

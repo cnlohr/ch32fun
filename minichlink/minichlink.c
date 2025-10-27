@@ -34,6 +34,7 @@ void PostSetupConfigureInterface( void * dev );
 int DefaultConfigureReadProtection( void * dev, int one_if_yes_protect );
 void TestFunction(void * v );
 static void readCSR( void * dev, uint32_t csr );
+static int DefaultRebootIntoBootloader( void * dev );
 struct MiniChlinkFunctions MCF;
 
 void * MiniCHLinkInitAsDLL( struct MiniChlinkFunctions ** MCFO, const init_hints_t* init_hints )
@@ -293,7 +294,12 @@ keep_going:
 					goto unimplemented;
 				break;
 			case 'B':  //reBoot into Bootloader
-				if( !MCF.HaltMode || MCF.HaltMode( dev, HALT_MODE_GO_TO_BOOTLOADER ) )
+				if( iss->target_chip_type != CHIP_CH32V003
+				  && iss->target_chip_type != CHIP_CH32V00x
+				  && iss->target_chip_type != CHIP_CH641
+				  && iss->target_chip_type != CHIP_CH643
+				  && iss->target_chip_type != CHIP_CH32X03x ) DefaultRebootIntoBootloader( dev );
+				else if( !MCF.HaltMode || MCF.HaltMode( dev, HALT_MODE_GO_TO_BOOTLOADER ) )
 					goto unimplemented;
 				break;
 			case 'e':  //rEsume
@@ -406,7 +412,8 @@ keep_going:
 				else if( argchar[1] == 'T' )
 				{
 					// In case we aren't running already.
-					MCF.HaltMode( dev, 1 );
+					if( iss->target_chip_type == CHIP_CH58x || iss->target_chip_type == CHIP_CH32V10x ) MCF.HaltMode( dev, HALT_MODE_RESUME );
+					else MCF.HaltMode( dev, HALT_MODE_REBOOT );
 				}
 
 				CaptureKeyboardInput();
@@ -968,8 +975,6 @@ keep_going:
 				
 			case 'y':
 			{
-				// MCF.HaltMode( dev, HALT_MODE_HALT_BUT_NO_RESET );
-				// readCSR( dev, 0x7b0 );
 				readCSR( dev, 0x300 );
 				break;
 			}
@@ -1192,6 +1197,7 @@ int DefaultSetupInterface( void * dev )
 	MCF.WriteReg32( dev, DMCFGR, 0x5aa50000 | (1<<10) ); // And this is about as fast as checking, so why not.  
 	MCF.WriteReg32( dev, DMCONTROL, 0x80000001 ); // Make the debug module work properly.
 	MCF.WriteReg32( dev, DMCONTROL, 0x80000001 );
+	MCF.WriteReg32( dev, DMCONTROL, 0x80000001 );
 	// Why do we repeat this commands? Because in some cases they can be lost, if debug module is still starting
 	// and it's better to be send these crucial commands twice fot better chance for success.
 
@@ -1229,15 +1235,18 @@ static int DefaultGetUUID( void * dev, uint8_t * buffer )
 	uint8_t local_buffer[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 	enum RiscVChip chip = iss->target_chip_type;
 
-	if( chip == CHIP_CH32M030 )
+	if( iss->target_chip->protocol == PROTOCOL_DEFAULT )
 	{
+		MCF.WriteReg32( dev, DMABSTRACTAUTO, 0 );
 		MCF.WriteReg32( dev, DMPROGBUF0, 0x90024000 ); // c.ebreak <<== c.lw x8, 0(x8)
-		MCF.WriteReg32( dev, DMDATA0, 0x1ffff3a8 );			
+		if( chip == CHIP_CH32M030 ) MCF.WriteReg32( dev, DMDATA0, 0x1ffff3a8 );
+		else MCF.WriteReg32( dev, DMDATA0, 0x1ffff7e8 );
 		MCF.WriteReg32( dev, DMCOMMAND, 0x00271008 ); // Copy data to x8, and execute.
 		MCF.WaitForDoneOp( dev, 0 );
 		MCF.WriteReg32( dev, DMCOMMAND, 0x00221008 ); // Copy data from x8.
 		MCF.ReadReg32( dev, DMDATA0, (uint32_t*)local_buffer );
-		MCF.WriteReg32( dev, DMDATA0, 0x1ffff3ac );			
+		if( chip == CHIP_CH32M030 ) MCF.WriteReg32( dev, DMDATA0, 0x1ffff3ac );
+		else MCF.WriteReg32( dev, DMDATA0, 0x1ffff7ec );
 		MCF.WriteReg32( dev, DMCOMMAND, 0x00271008 ); // Copy data to x8, and execute.
 		MCF.WaitForDoneOp( dev, 0 );
 		MCF.WriteReg32( dev, DMCOMMAND, 0x00221008 ); // Copy data from x8.
@@ -1245,39 +1254,7 @@ static int DefaultGetUUID( void * dev, uint8_t * buffer )
 		*((uint32_t*)buffer) = local_buffer[0]<<24|local_buffer[1]<<16|local_buffer[2]<<8|local_buffer[3];
 		*(((uint32_t*)buffer)+1) = local_buffer[4]<<24|local_buffer[5]<<16|local_buffer[6]<<8|local_buffer[7];
 	}
-	else if( chip == CHIP_CH32V003 ||
-	         chip == CHIP_CH32V00x ||
-	         chip == CHIP_CH32L10x ||
-	         chip == CHIP_CH32V10x ||
-	         chip == CHIP_CH32V20x ||
-	         chip == CHIP_CH32V30x ||
-	         chip == CHIP_CH32V317 ||
-	         chip == CHIP_CH32X03x ||
-	         chip == CHIP_CH564 ||
-	         chip == CHIP_CH641 ||
-	         chip == CHIP_CH643 ||
-	         chip == CHIP_CH645 )
-	{
-		MCF.WriteReg32( dev, DMPROGBUF0, 0x90024000 ); // c.ebreak <<== c.lw x8, 0(x8)
-		MCF.WriteReg32( dev, DMDATA0, 0x1ffff7e8 );			
-		MCF.WriteReg32( dev, DMCOMMAND, 0x00271008 ); // Copy data to x8, and execute.
-		MCF.WaitForDoneOp( dev, 0 );
-		MCF.WriteReg32( dev, DMCOMMAND, 0x00221008 ); // Copy data from x8.
-		MCF.ReadReg32( dev, DMDATA0, (uint32_t*)local_buffer );
-		MCF.WriteReg32( dev, DMDATA0, 0x1ffff7ec );
-		MCF.WriteReg32( dev, DMCOMMAND, 0x00271008 ); // Copy data to x8, and execute.
-		MCF.WaitForDoneOp( dev, 0 );
-		MCF.WriteReg32( dev, DMCOMMAND, 0x00221008 ); // Copy data from x8.
-		MCF.ReadReg32( dev, DMDATA0, (uint32_t*)(local_buffer + 4) );
-		*((uint32_t*)buffer) = local_buffer[0]<<24|local_buffer[1]<<16|local_buffer[2]<<8|local_buffer[3];
-		*(((uint32_t*)buffer)+1) = local_buffer[4]<<24|local_buffer[5]<<16|local_buffer[6]<<8|local_buffer[7];
-	}
-	else if( chip == CHIP_CH56x ||
- 	         chip == CHIP_CH570 ||
- 	         chip == CHIP_CH57x ||
- 	         chip == CHIP_CH58x ||
- 	         chip == CHIP_CH585 ||
- 	         chip == CHIP_CH59x )
+	else if( iss->target_chip->protocol == PROTOCOL_CH5xx )
 	{
 		ret = CH5xxReadUUID( dev, local_buffer );
 		memcpy(buffer, local_buffer, 8);
@@ -1386,7 +1363,6 @@ static int DefaultDetermineChipType( void * dev )
 					{
 						iss->target_chip = &ch32v103;
 						read_protection = 1;
-						// fprintf( stderr, "Found CH32V103, but it's read protected, just so you know.\n");
 					}
 				}
 				else
@@ -1657,6 +1633,7 @@ chip_identified:
 			}
 			if( iss->target_chip->protocol == PROTOCOL_CH5xx )
 			{
+				MCF.ReadBinaryBlob = CH5xxReadBinaryBlob;
 				MCF.WriteBinaryBlob = CH5xxWriteBinaryBlob;
 				MCF.Erase = CH5xxErase;
 				MCF.SetClock = CH5xxSetClock;
@@ -1932,7 +1909,7 @@ static int DefaultWriteWord( void * dev, uint32_t address_to_write, uint32_t dat
 			MCF.WriteReg32( dev, DMPROGBUF2, 0x0001c184 );
 			MCF.WriteReg32( dev, DMPROGBUF3, 
 				(iss->target_chip_type == CHIP_CH32V003 || iss->target_chip_type == CHIP_CH32V00x
-				 || iss->target_chip_type == CHIP_CH32X03x || iss->target_chip_type == CHIP_CH32L10x
+				 || iss->target_chip_type == CHIP_CH32X03x || iss->target_chip_type == CHIP_CH32L103
 				 || iss->target_chip_type == CHIP_CH641 || iss->target_chip_type == CHIP_CH643) ?
 				0x4200c254 : 0x42000001  );
 
@@ -2754,11 +2731,6 @@ int DefaultReadBinaryBlob( void * dev, uint32_t address_to_read_from, uint32_t r
 		if( ret ) return ret;
 	}
 	if( iss->current_area == 0 ) DetectMemoryArea( dev, address_to_read_from );
-	if( iss->target_chip->protocol == PROTOCOL_CH5xx &&
-		(iss->current_area != PROGRAM_AREA && iss->current_area != RAM_AREA))
-	{
-		CH5xxReadBinaryBlob( dev,  address_to_read_from, read_size, blob );
-	}
 
 	uint32_t rpos = address_to_read_from;
 	uint32_t rend = address_to_read_from + read_size;
@@ -2814,7 +2786,7 @@ int DefaultReadBinaryBlob( void * dev, uint32_t address_to_read_from, uint32_t r
 	}
 
 	int r = MCF.WaitForDoneOp( dev, 0 );
-	if( r ) fprintf( stderr, "Fault on DefaultReadBinaryBlob\n" );
+	if( r ) fprintf( stderr, "Fault on DefaultReadBinaryBlob, on byte %08x\n", rpos );
 	return r;
 }
 
@@ -2968,7 +2940,6 @@ static int DefaultHaltMode( void * dev, int mode )
 	iss->processor_in_mode = mode;
 
 	// In case processor halt process needs to complete, i.e. if it was in the middle of a flash op.
-	// MCF.DelayUS( dev, 3000 );
   DefaultDelayUS( dev, 10000 );
 
 	return 0;
@@ -3025,7 +2996,6 @@ int DefaultPollTerminal( void * dev, uint8_t * buffer, int maxlen, uint32_t leav
 
 int DefaultUnbrick( void * dev )
 {
-	if( MCF.ResetInterface) MCF.ResetInterface( dev );
 	printf( "Entering Unbrick Mode\n" );
 	if( MCF.Control5v ) MCF.Control5v( dev, 0 );
 	MCF.Control3v3( dev, 0 );
@@ -3034,13 +3004,15 @@ int DefaultUnbrick( void * dev )
 	MCF.DelayUS( dev, 60000 );
 	MCF.DelayUS( dev, 60000 );
 	MCF.DelayUS( dev, 60000 );
+	MCF.DelayUS( dev, 60000 );
+	MCF.FlushLLCommands( dev );
+	if( MCF.ResetInterface ) MCF.ResetInterface( dev );
 	if( MCF.Control5v ) MCF.Control5v( dev, 1 );
 	MCF.Control3v3( dev, 1 );
 	printf( "Connection starting\n" );
-	MCF.FlushLLCommands( dev );
 
 	int timeout = 0;
-	int max_timeout = 500; // An absurdly long time.
+	int max_timeout = 50000; // An absurdly long time.
 	uint32_t ds = 0;
 	for( timeout = 0; timeout < max_timeout; timeout++ )
 	{
@@ -3102,7 +3074,7 @@ int DefaultUnbrick( void * dev )
 
 		const uint8_t * option_data = 
 			(iss->target_chip_type == CHIP_CH32V003 || iss->target_chip_type == CHIP_CH32V00x
-			|| iss->target_chip_type == CHIP_CH32X03x || iss->target_chip_type == CHIP_CH32L10x
+			|| iss->target_chip_type == CHIP_CH32X03x || iss->target_chip_type == CHIP_CH32L103
 			|| iss->target_chip_type == CHIP_CH641 || iss->target_chip_type == CHIP_CH643) ?
 			option_data_003_x03x : option_data_20x_30x;
 
@@ -3466,7 +3438,7 @@ int CheckMemoryLocation( void * dev, enum MemoryArea area, uint32_t address, uin
 
 static void readCSR( void * dev, uint32_t csr )
 {
-  MCF.HaltMode( dev, HALT_MODE_HALT_BUT_NO_RESET );
+	MCF.HaltMode( dev, HALT_MODE_HALT_BUT_NO_RESET );
 
 	// MCF.WriteReg32(dev, DMABSTRACTAUTO, 0x00000000); // Disable Autoexec.
 	// MCF.WriteReg32(dev, DMPROGBUF0, 0x305022f3); // csrrs t0, mtvec, zero
@@ -3480,4 +3452,86 @@ static void readCSR( void * dev, uint32_t csr )
 
 	MCF.WriteReg32( dev, DMCONTROL, 0x40000001 );
 	MCF.WriteReg32( dev, DMCONTROL, 0x40000001 );
+}
+
+static int DefaultRebootIntoBootloader( void * dev )
+{
+	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
+	int r;
+	int max_timeout = 0;
+
+	if( !MCF.Control3v3 && !MCF.Control5v )
+	{
+		fprintf( stderr, "This programming method doesn't have power controls.\n" );
+		return -100;
+	}
+
+	if( iss->target_chip_type == CHIP_CH570 || iss->target_chip_type == CHIP_CH59x )
+	{
+		max_timeout = 500;
+	}
+
+	if( iss->target_chip_type != CHIP_CH570
+		&& iss->target_chip_type != CHIP_CH585
+		&& iss->target_chip_type != CHIP_CH59x )
+	{
+		printf( "Press and hold bootloader button. Then press enter to proceed\n");
+		while( !IsKBHit() );
+		ReadKBByte();
+	}
+
+	fprintf( stderr, "Entering Bootloader\n" );
+	if( MCF.Control5v ) MCF.Control5v( dev, 0 );
+	if( MCF.Control3v3 ) MCF.Control3v3( dev, 0 );
+
+	MCF.DelayUS( dev, 60000 );
+	MCF.DelayUS( dev, 60000 );
+	MCF.DelayUS( dev, 60000 );
+	MCF.DelayUS( dev, 60000 );
+	MCF.DelayUS( dev, 60000 );
+	MCF.FlushLLCommands( dev );
+	if( MCF.ResetInterface && max_timeout == 0 ) MCF.ResetInterface( dev );
+	if( MCF.Control5v ) MCF.Control5v( dev, 1 );
+	if( MCF.Control3v3 ) MCF.Control3v3( dev, 1 );
+	fprintf(stderr, "Connecting to the DM\n" );
+
+	int timeout = 0;
+	uint32_t ds = 0;
+	for( timeout = 0; timeout < max_timeout; timeout++ )
+	{
+		MCF.DelayUS( dev, 10 );
+		MCF.WriteReg32( dev, DMSHDWCFGR, 0x5aa50000 | (1<<10) ); // Shadow Config Reg
+		MCF.WriteReg32( dev, DMCFGR, 0x5aa50000 | (1<<10) ); // CFGR (1<<10 == Allow output from slave)
+		MCF.WriteReg32( dev, DMCONTROL, 0x80000001 ); // Make the debug module work properly.
+		MCF.WriteReg32( dev, DMCONTROL, 0x80000001 ); // Initiate a halt request.
+		MCF.WriteReg32( dev, DMCONTROL, 0x80000001 ); // No, really make sure.
+		MCF.FlushLLCommands( dev );
+		r = MCF.ReadReg32( dev, DMSTATUS, &ds );
+		if( r )
+		{
+			fprintf( stderr, "\nError: Could not read DMSTATUS from programmers (%d)\n", r );
+			continue;
+		}
+		MCF.FlushLLCommands( dev );
+		if( ds != 0xffffffff && ds != 0x00000000 ) break;
+		else fprintf( stderr, "." );
+	}
+	fprintf(stderr, "\n" );
+	MCF.SetupInterface(dev);
+	fprintf(stderr, "Connected\n" );
+	if( iss->target_chip->protocol == PROTOCOL_CH5xx )
+	{
+		uint8_t info_reg = 0;
+		r = MCF.ReadByte( dev, 0x40001045, &info_reg );
+		// printf("R8_GLOB_CFG_INFO = %02x, BOOTLOADER_BIT = %d\n", info_reg, (info_reg & (1<<5)));
+		if( !(info_reg & (1<<5)) || r ) {
+			fprintf(stderr, "Failed to switch to bootloader\n");
+			return -1;
+		}
+	}
+	MCF.HaltMode = 0;
+	printf( "Chip is halted in bootloader mode. Press enter to proceed\n");
+	while(!IsKBHit());
+	ReadKBByte();
+  return 0;
 }

@@ -236,7 +236,7 @@ void SysTick_Handler(void)
 static void systick_init()
 {
 	// enable the SysTick IRQ
-	NVIC_EnableIRQ(SysTicK_IRQn);
+	NVIC_EnableIRQ(SysTick_IRQn);
 	
 	// Enable SysTick counter, IRQ, HCLK/1
 	SysTick->CTLR = SYSTICK_CTLR_STE | SYSTICK_CTLR_STIE |
