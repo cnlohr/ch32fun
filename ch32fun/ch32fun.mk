@@ -380,6 +380,10 @@ $(TARGET).elf : $(FILES_TO_COMPILE) $(LINKER_SCRIPT) $(EXTRA_ELF_DEPENDENCIES)
 ch32fun.o : $(SYSTEM_C)
 	$(PREFIX)-gcc -c -o $@ $(SYSTEM_C) $(CFLAGS)
 
+cv_reflash : $(TARGET).bin
+	make -C $(MINICHLINK) all
+	$(MINICHLINK)/minichlink -E -w $< $(WRITE_SECTION) -b
+
 cv_flash : $(TARGET).bin
 	make -C $(MINICHLINK) all
 	$(FLASH_COMMAND)
