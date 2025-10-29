@@ -15,6 +15,9 @@
 #include "chips.h"
 #include "ch5xx.h"
 
+#define FLAG_IMPLEMENTATION
+#include "flag.h"
+
 #if defined(WINDOWS) || defined(WIN32) || defined(_WIN32)
 extern int isatty(int);
 #if !defined(_SYNCHAPI_H_) && !defined(__TINYC__)
@@ -117,37 +120,105 @@ void * MiniCHLinkInitAsDLL( struct MiniChlinkFunctions ** MCFO, const init_hints
 #if !defined( MINICHLINK_AS_LIBRARY ) && !defined( MINICHLINK_IMPORT )
 int main( int argc, char ** argv )
 {
-	int i;
+	bool help = false;
+	bool enable_3v3 = false;
+	bool enable_5v = false;
+	bool disable_3v3 = false;
+	bool disable_5v = false;
+	bool skip_init = false;
+	char *serial_port = NULL;
+	char *specific_programmer = NULL;
+	bool unbrick = false;
+	bool erase_chip = false;
+	bool reboot_from_halt = false;
+	bool reboot_into_bootloader = false;
+	bool resume_from_halt = false;
+	bool reboot_into_halt = false;
+	bool halt_without_reboot = false;
+	bool nrst_as_gpio = false;
+	bool nrst_as_nrst = false;
+	bool chip_info = false;
+	bool terminal = false;
+	bool gdbserver = false;
+	bool cmdserver = false;
+	bool enable_read_protect = false;
+	bool disable_read_protect = false;
+	bool enable_debug_module = false;
+	bool disable_debug_module = false;
+	bool unlock_bootloader = false;
 
-	if( argc > 1 && argv[1][0] == '-' && argv[1][1] == 'h' )
+	flag_bool_var( &help, "h", help, "Print this help message" );
+	flag_bool_var( &help, "help", help, "Print this help message" );
+	flag_bool_var( &enable_3v3, "3", enable_3v3, "Enable 3.3V power" );
+	flag_bool_var( &enable_5v, "5", enable_5v, "Enable 5V power" );
+	flag_bool_var( &disable_3v3, "t", disable_3v3, "Disable 3.3V power" );
+	flag_bool_var( &disable_5v, "f", disable_5v, "Disable 5V power" );
+	flag_bool_var( &skip_init, "k", skip_init, "Skip programmer initialization" );
+	flag_str_var( &serial_port, "c", serial_port,
+		"[serial port for Ardulink, try /dev/ttyACM0 or COM11 etc] or [VID+PID of USB for b003boot, try 0x1209b003]" );
+	flag_str_var( &specific_programmer, "C", specific_programmer,
+		"Specify specific programmer to use (e.g., linke, isp, esp32s2chfun, nchlink, b003boot, ardulink)" );
+	flag_bool_var( &unbrick, "u", unbrick, "Clear all code flash - by power off (also can unbrick)" );
+	flag_bool_var( &erase_chip, "E", erase_chip, "Erase whole chip" );
+	flag_bool_var( &reboot_from_halt, "b", reboot_from_halt, "Reboot from halt" );
+	flag_bool_var( &reboot_into_bootloader, "B", reboot_into_bootloader, "Reboot into bootloader" );
+	flag_bool_var( &resume_from_halt, "e", resume_from_halt, "Resume from halt" );
+	flag_bool_var( &reboot_into_halt, "a", reboot_into_halt, "Reboot into halt" );
+	flag_bool_var( &halt_without_reboot, "A", halt_without_reboot, "Halt without reboot" );
+	flag_bool_var( &nrst_as_gpio, "D", nrst_as_gpio, "Configure NRST as GPIO" );
+	flag_bool_var( &nrst_as_nrst, "d", nrst_as_nrst, "Configure NRST as NRST" );
+	flag_bool_var( &chip_info, "i", chip_info, "Print chip info" );
+	flag_bool_var( &enable_read_protect, "P", enable_read_protect, "Enable read protection" );
+	flag_bool_var( &disable_read_protect, "p", disable_read_protect, "Disable read protection" );
+	flag_bool_var( &enable_debug_module, "N", enable_debug_module, "Enable debug module" );
+	flag_bool_var( &disable_debug_module, "n", disable_debug_module, "Disable debug module" );
+	flag_bool_var( &unlock_bootloader, "U", unlock_bootloader, "Unlock bootloader (if supported)" );
+	flag_bool_var( &terminal, "T", terminal, "Terminal Only" );
+	flag_bool_var( &gdbserver, "G", gdbserver, "Terminal + GDB Server" );
+	flag_bool_var( &cmdserver, "cmd", cmdserver, "Command Server" );
+	// TODO: -r -w -m -s -X -S
+
+	if ( !flag_parse( argc, argv ) )
+	{
+		// Hack
+		if ( flag_global_context.flag_error != FLAG_ERROR_UNKNOWN )
+		{
+			flag_print_error( stderr );
+			goto help;
+		}
+	}
+
+	// pass unparsed to old parser
+	argc = flag_rest_argc();
+	argv = flag_rest_argv();
+
+
+#if 0
+	printf( "Left args: %d\n", argc );
+	for ( int i = 0; i < argc; i++ )
+	{
+		printf( "  Arg %d: '%s'\n", i, argv[i] );
+	}
+#endif
+
+	if ( serial_port && strncmp( serial_port, "0x", 2 ) == 0 )
+	{
+		specific_programmer = "b003boot";
+	}
+
+	const init_hints_t hints = {
+		.serial_port = serial_port,
+		.specific_programmer = specific_programmer,
+	};
+
+	if ( gdbserver )
+	{
+		terminal = true;
+	}
+
+	if ( help )
 	{
 		goto help;
-	}
-	init_hints_t hints;
-	memset(&hints, 0, sizeof(hints));
-
-	// Scan for possible hints.
-	for( i = 0; i < argc; i++ )
-	{
-		char * v = argv[i];
-		if( strncmp( v, "-c", 2 ) == 0 )
-		{
-			i++;
-			if( i < argc )
-			{
-				hints.serial_port = argv[i];
-				if( strncmp( hints.serial_port, "0x", 2 ) == 0 )
-				{
-					hints.specific_programmer = "b003boot";
-				}
-			}
-		}
-		else if( strncmp( v, "-C", 2 ) == 0 )
-		{
-			i++;
-			if( i < argc )
-				hints.specific_programmer = argv[i];
-		}
 	}
 
 #if !defined(WINDOWS) && !defined(WIN32) && !defined(_WIN32) && !defined(__APPLE__)
@@ -181,10 +252,8 @@ int main( int argc, char ** argv )
 		return -32;
 	}
 
-	int status;
-	int must_be_end = 0;
-
-	int skip_startup = 
+#if 0
+	const int skip_startup = 
 		(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'k' ) |
 		(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'e' ) |
 		(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'A' ) |
@@ -193,6 +262,15 @@ int main( int argc, char ** argv )
 		(argc > 1 && argv[1][0] == '-' && argv[1][1] == 't' ) |
 		(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'f' ) |
 		(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'X' );
+#else
+	skip_init |= resume_from_halt;
+	skip_init |= halt_without_reboot;
+	skip_init |= unbrick;
+	skip_init |= disable_3v3;
+	skip_init |= disable_5v;
+	// skip_init |= -X // TODO: implement
+	const int skip_startup = skip_init;
+#endif
 
 	if( !skip_startup && MCF.SetupInterface )
 	{
@@ -214,7 +292,416 @@ int main( int argc, char ** argv )
 
 	// PostSetupConfigureInterface( dev );
 
-	int iarg = 1;
+	// TODO: this now breaks combined operations. Fix it.
+	// TODO: this now break ordering of operations. But maybe that's acceptable? I'm sure some commands can only be done
+	// before others.
+	if ( enable_3v3 )
+	{
+		if ( MCF.Control3v3 )
+			MCF.Control3v3( dev, 1 );
+		else
+			goto unimplemented;
+	}
+	if ( enable_5v )
+	{
+		if ( MCF.Control5v )
+			MCF.Control5v( dev, 1 );
+		else
+			goto unimplemented;
+	}
+	if ( disable_3v3 )
+	{
+		if ( MCF.Control3v3 )
+			MCF.Control3v3( dev, 0 );
+		else
+			goto unimplemented;
+	}
+	if ( disable_5v )
+	{
+		if ( MCF.Control5v )
+			MCF.Control5v( dev, 0 );
+		else
+			goto unimplemented;
+	}
+	if ( unbrick )
+	{
+		if ( MCF.Unbrick )
+			MCF.Unbrick( dev );
+		else
+			goto unimplemented;
+	}
+	if ( chip_info )
+	{
+		if ( MCF.PrintChipInfo )
+			MCF.PrintChipInfo( dev );
+		else
+			goto unimplemented;
+	}
+	if ( erase_chip )
+	{
+		if ( MCF.HaltMode ) MCF.HaltMode( dev, HALT_MODE_HALT_AND_RESET );
+		if ( !MCF.Erase || MCF.Erase( dev, 0, 0, 1 ) ) goto unimplemented;
+	}
+	if ( reboot_from_halt )
+	{
+		if ( !MCF.HaltMode || MCF.HaltMode( dev, HALT_MODE_REBOOT ) ) goto unimplemented;
+	}
+	if ( reboot_into_bootloader )
+	{
+		if ( iss->target_chip_type != CHIP_CH32V003 && iss->target_chip_type != CHIP_CH32V00x &&
+			 iss->target_chip_type != CHIP_CH641 && iss->target_chip_type != CHIP_CH643 &&
+			 iss->target_chip_type != CHIP_CH32X03x )
+			DefaultRebootIntoBootloader( dev );
+		else if ( !MCF.HaltMode || MCF.HaltMode( dev, HALT_MODE_GO_TO_BOOTLOADER ) )
+			goto unimplemented;
+	}
+	if ( resume_from_halt )
+	{
+		if ( !MCF.HaltMode || MCF.HaltMode( dev, HALT_MODE_RESUME ) ) goto unimplemented;
+	}
+	if ( reboot_into_halt )
+	{
+		if ( !MCF.HaltMode || MCF.HaltMode( dev, HALT_MODE_HALT_AND_RESET ) ) goto unimplemented;
+	}
+	if ( halt_without_reboot )
+	{
+		if ( !MCF.HaltMode || MCF.HaltMode( dev, HALT_MODE_HALT_BUT_NO_RESET ) ) goto unimplemented;
+	}
+	if ( nrst_as_gpio )
+	{
+		if ( MCF.HaltMode ) MCF.HaltMode( dev, HALT_MODE_HALT_AND_RESET );
+		if ( MCF.ConfigureNRSTAsGPIO )
+			MCF.ConfigureNRSTAsGPIO( dev, 0 );
+		else
+			goto unimplemented;
+	}
+	if ( nrst_as_nrst )
+	{
+		if ( MCF.HaltMode ) MCF.HaltMode( dev, HALT_MODE_HALT_AND_RESET );
+		if ( MCF.ConfigureNRSTAsGPIO )
+			MCF.ConfigureNRSTAsGPIO( dev, 1 );
+		else
+			goto unimplemented;
+	}
+	if ( enable_read_protect )
+	{
+		if ( MCF.HaltMode ) MCF.HaltMode( dev, HALT_MODE_HALT_AND_RESET );
+		if ( MCF.ConfigureReadProtection )
+			MCF.ConfigureReadProtection( dev, 1 );
+		else
+			goto unimplemented;
+	}
+	if ( disable_read_protect )
+	{
+		if ( MCF.HaltMode ) MCF.HaltMode( dev, HALT_MODE_HALT_AND_RESET );
+		if ( MCF.ConfigureReadProtection )
+		{
+			fprintf( stderr, "This will erase the flash entirely!\n" );
+			fprintf( stderr, "Press Enter to proceed, Ctrl+C to abort." );
+			while ( !IsKBHit() )
+				;
+			// TODO: revert after testing
+			MCF.ConfigureReadProtection( dev, 0 );
+		}
+		else
+			goto unimplemented;
+	}
+	if ( enable_debug_module )
+	{
+		if ( MCF.EnableDebug )
+		{
+			printf( "Enabling debug\n" );
+			if ( MCF.EnableDebug( dev, 0 ) )
+			{
+				return -13;
+			}
+		}
+		else
+			goto unimplemented;
+	}
+	if ( disable_debug_module )
+	{
+		if ( MCF.EnableDebug )
+		{
+			fprintf( stderr, "This will disable debug module. And you will be only able to program the chip using the "
+			                 "bootloader.\nPress Enter to continue\n" );
+			while ( !IsKBHit() )
+				;
+			ReadKBByte();
+			fprintf( stderr, "Are you absolutely sure about it?\nPress Enter to continue, or Ctrl+C to cancel\n" );
+			while ( !IsKBHit() )
+				;
+			if ( MCF.EnableDebug( dev, 1 ) )
+			{
+				return -13;
+			}
+		}
+		else
+			goto unimplemented;
+	}
+	if ( unlock_bootloader )
+	{
+		if ( InternalUnlockBootloader( dev ) ) goto unimplemented;
+	}
+	if ( terminal || gdbserver || cmdserver )
+	{
+		if ( !MCF.PollTerminal ) goto unimplemented;
+
+		if ( gdbserver && SetupGDBServer( dev ) )
+		{
+			fprintf( stderr, "Error: can't start GDB server\n" );
+			return -1;
+		}
+		if ( gdbserver )
+		{
+			fprintf( stderr, "GDBServer Running\n" );
+		}
+		else if ( terminal )
+		{
+			// In case we aren't running already.
+			if ( iss->target_chip_type == CHIP_CH58x || iss->target_chip_type == CHIP_CH32V10x )
+				MCF.HaltMode( dev, HALT_MODE_RESUME );
+			else
+				MCF.HaltMode( dev, HALT_MODE_REBOOT );
+		}
+
+		CaptureKeyboardInput();
+		printf( "Terminal started\n\n" );
+
+		if ( cmdserver )
+		{
+			CMDInit();
+		}
+
+#if TERMINAL_INPUT_BUFFER
+		char pline_buf[256]; // Buffer that contains current line that is being printed to
+		char input_buf[128]; // Buffer that contains user input until it is sent out
+		memset( pline_buf, 0, sizeof( pline_buf ) );
+		memset( input_buf, 0, sizeof( input_buf ) );
+		uint8_t input_pos = 0;
+		uint8_t to_send = 0;
+		uint8_t nice_terminal = isatty( fileno( stdout ) );
+#if defined( WINDOWS ) || defined( WIN32 ) || defined( _WIN32 )
+		unsigned long console_mode;
+		void *handle_output = GetStdHandle( STD_OUTPUT_HANDLE );
+		GetConsoleMode( handle_output, &console_mode );
+		console_mode |= ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+		uint8_t set_result = SetConsoleMode( handle_output, console_mode );
+		if ( set_result == 0 ) nice_terminal = 0;
+#else
+		if ( nice_terminal > 0 )
+		{
+			fflush( stdin );
+			fprintf( stdout, "\x1b[6n" );
+			fflush( stdout );
+			read( fileno( stdin ), input_buf, 10 );
+			if ( input_buf[0] != 27 )
+			{
+				nice_terminal = 0;
+			}
+			else
+			{
+				printf( TERMINAL_SEND_LABEL );
+				fflush( stdout );
+			}
+			memset( input_buf, 0, sizeof( input_buf ) );
+		}
+#endif
+#endif
+		uint32_t appendword = 0;
+		do
+		{
+			uint8_t buffer[256];
+#if TERMINAL_INPUT_BUFFER
+			char print_buf[TERMINAL_BUFFER_SIZE]; // Buffer that is filled with everything and will be written to stdout
+			                                      // (basically it's for formatting)
+			uint8_t update = 0;
+#endif
+			if ( !IsGDBServerInShadowHaltState( dev ) )
+			{
+				// Handle keyboard input.
+#if TERMINAL_INPUT_BUFFER
+				if ( nice_terminal > 0 )
+				{
+					if ( IsKBHit() && to_send == 0 )
+					{
+						uint8_t c = ReadKBByte();
+						if ( c == 8 || c == 127 )
+						{
+							input_buf[input_pos - 1] = 0;
+							if ( input_pos > 0 ) input_pos--;
+						}
+						else if ( c > 31 && c < 127 )
+						{
+							input_buf[input_pos] = c;
+							input_pos++;
+						}
+						else if ( c == '\n' || c == 10 )
+						{
+							to_send = input_pos;
+						}
+						update = 1;
+					}
+					// Process incomming buffer during sending
+					if ( to_send > 0 && appendword == 0 )
+					{
+						for ( int i = 0; i < 3; i++ )
+						{
+							appendword |= input_buf[input_pos - to_send] << ( i * 8 + 8 );
+							to_send--;
+							if ( to_send == 0 ) break;
+						}
+						if ( to_send == 0 )
+						{
+							snprintf( print_buf, TERMINAL_BUFFER_SIZE - 1, "%s%s%s\n%s%s", TERMINAL_CLEAR_CUR,
+								TERMIANL_INPUT_SENT, input_buf, pline_buf, TERMINAL_SEND_LABEL );
+							fwrite( print_buf, strlen( print_buf ), 1, stdout );
+							fflush( stdout );
+							input_pos = 0;
+							memset( input_buf, 0, sizeof( input_buf ) );
+						}
+						appendword |= i + 4;
+					}
+				}
+				else
+				{
+					if ( appendword == 0 )
+					{
+						int i;
+						for ( i = 0; i < 3; i++ )
+						{
+							if ( !IsKBHit() ) break;
+							appendword |= ReadKBByte() << ( i * 8 + 8 );
+						}
+						appendword |= i + 4; // Will go into DATA0.
+					}
+				}
+#else
+				if ( appendword == 0 )
+				{
+					int i;
+					for ( i = 0; i < 3; i++ )
+					{
+						if ( !IsKBHit() ) break;
+						appendword |= ReadKBByte() << ( i * 8 + 8 );
+					}
+
+
+					// So, previously, we would always use 0x04 as the code for
+					// no bytes to send/receive remaining.  But, it looks like 0x00
+					// is a valid code too.  So if there's no bytes to send, we can
+					// just let the programmer get more data.
+					//
+					// If we find out in the future there is some reason not to do
+					// this, we can undo this and push the responsibility onto the
+					// programmers to speed along.
+					if ( i ) appendword |= i + 4; // Will go into DATA0.
+				}
+#endif
+				int r = MCF.PollTerminal( dev, buffer, sizeof( buffer ), appendword, 0 );
+#if TERMINAL_INPUT_BUFFER
+				if ( ( nice_terminal > 0 ) && ( r == -1 || r == 0 ) && update > 0 )
+				{
+					strncpy( print_buf, TERMINAL_CLEAR_CUR, TERMINAL_BUFFER_SIZE - 1 );
+					if ( to_send > 0 )
+						strncat( print_buf, TERMINAL_DIM, TERMINAL_BUFFER_SIZE - 1 - strlen( print_buf ) );
+					strncat( print_buf, TERMINAL_SEND_LABEL, TERMINAL_BUFFER_SIZE - 1 - strlen( print_buf ) );
+					strncat( print_buf, input_buf, TERMINAL_BUFFER_SIZE - 1 - strlen( print_buf ) );
+					fwrite( print_buf, strlen( print_buf ), 1, stdout );
+					fflush( stdout );
+				}
+#endif
+				if ( r < -5 )
+				{
+					fprintf( stderr, "Terminal dead.  code %d\n", r );
+					return -32;
+				}
+				else if ( r < 0 )
+				{
+					// Other end ack'd without printf. (Or there is another situation)
+					appendword = 0;
+				}
+				else if ( r > 0 )
+				{
+#if TERMINAL_INPUT_BUFFER
+					if ( nice_terminal )
+					{
+						int new_line = -1;
+						for ( int i = r; i > 0; i-- )
+						{
+							if ( buffer[i - 1] == '\n' )
+							{
+								new_line = r - i;
+								break;
+							}
+						}
+						if ( new_line < 0 )
+						{
+							strncpy( print_buf, TERMINAL_CLEAR_PREV,
+								TERMINAL_BUFFER_SIZE - 1 ); //  Go one line up and erase it
+							strncat( pline_buf, (char *)buffer, r ); // Add newly received chars to line buffer
+						}
+						else
+						{
+							strncpy( print_buf, TERMINAL_CLEAR_CUR,
+								TERMINAL_BUFFER_SIZE - 1 ); // Go to the start of the line and erase it
+							strncat(
+								pline_buf, (char *)buffer, r - new_line ); // Add newly received chars to line buffer
+						}
+						strncat( print_buf, pline_buf,
+							TERMINAL_BUFFER_SIZE - 1 - strlen( print_buf ) ); // Add line to buffer
+						if ( new_line >= 0 )
+						{
+							memset( pline_buf, 0, sizeof( pline_buf ) );
+						}
+						if ( new_line > 0 )
+						{
+							strncat( pline_buf, (char *)buffer + r - new_line, new_line );
+							strncat( print_buf, pline_buf,
+								TERMINAL_BUFFER_SIZE - 1 - strlen( print_buf ) ); // Add line to buffer
+						}
+
+						if ( to_send > 0 )
+							strncat( print_buf, TERMINAL_DIM, TERMINAL_BUFFER_SIZE - 1 - strlen( print_buf ) );
+						strncat( print_buf, TERMINAL_SEND_LABEL,
+							TERMINAL_BUFFER_SIZE - 1 - strlen( print_buf ) ); // Print styled "Send" label
+						strncat( print_buf, input_buf,
+							TERMINAL_BUFFER_SIZE - 1 - strlen( print_buf ) ); // Print current input
+						fwrite( print_buf, strlen( print_buf ), 1, stdout );
+						print_buf[0] = 0;
+						// memset( print_buf, 0, sizeof( print_buf ) );
+					}
+					else
+					{
+						fwrite( buffer, r, 1, stdout );
+					}
+#else
+					fwrite( buffer, r, 1, stdout );
+#endif
+					fflush( stdout );
+					// Otherwise it's basically just an ack for appendword.
+					appendword = 0;
+				}
+			}
+
+			if ( gdbserver )
+			{
+				PollGDBServer( dev );
+			}
+
+			if ( cmdserver && ( 1 == CMDPollServer( dev ) ) )
+			{
+				// TODO: signal to GDB server that it should resume.
+			}
+
+		} while ( 1 );
+
+		// Currently unreachable - consider reachable-ing
+		if ( gdbserver ) ExitGDBServer( dev );
+	}
+
+
+	int iarg = 0;
 	const char * lastcommand = 0;
 	for( ; iarg < argc; iarg++ )
 	{
@@ -226,135 +713,14 @@ int main( int argc, char ** argv )
 			fprintf( stderr, "Error: Need prefixing - before commands\n" );
 			goto help;
 		}
-		if( must_be_end )
-		{
-			fprintf( stderr, "Error: the command '%c' cannot be followed by other commands.\n", must_be_end );
-			return -1;
-		}
+
+	int status = 0;
 		
 keep_going:
 		switch( argchar[1] )
 		{
 			default:
 				fprintf( stderr, "Error: Unknown command %c\n", argchar[1] );
-			case 'h':
-				goto help;
-			case 'k':
-				printf( "Skipping programmer initialization\n" );
-				argchar++;
-				goto keep_going;
-			case '3':
-				if( MCF.Control3v3 )
-					MCF.Control3v3( dev, 1 );
-				else
-					goto unimplemented;
-				break;
-			case '5':
-				if( MCF.Control5v )
-					MCF.Control5v( dev, 1 );
-				else
-					goto unimplemented;
-				break;
-			case 't':
-				if( MCF.Control3v3 )
-					MCF.Control3v3( dev, 0 );
-				else
-					goto unimplemented;
-				break;
-			case 'f':
-				if( MCF.Control5v )
-					MCF.Control5v( dev, 0 );
-				else
-					goto unimplemented;
-				break;
-			case 'C': // For specifying programmer
-			case 'c':
-				// COM port or programmer argument already parsed previously
-				// we still need to skip the next argument
-				iarg+=1;
-				if( iarg >= argc )
-				{
-					fprintf( stderr, "-c/C argument required 2 arguments\n" );
-					goto unimplemented;
-				}
-				break;
-			case 'u':
-				if( MCF.Unbrick )
-					MCF.Unbrick( dev );
-				else
-					goto unimplemented;
-				break;
-			case 'U':
-				// Unlock Bootloader
-				if( InternalUnlockBootloader( dev ) )
-					goto unimplemented;
-				break;
-			case 'b':  //reBoot
-				if( !MCF.HaltMode || MCF.HaltMode( dev, HALT_MODE_REBOOT ) )
-					goto unimplemented;
-				break;
-			case 'B':  //reBoot into Bootloader
-				if( iss->target_chip_type != CHIP_CH32V003
-				  && iss->target_chip_type != CHIP_CH32V00x
-				  && iss->target_chip_type != CHIP_CH641
-				  && iss->target_chip_type != CHIP_CH643
-				  && iss->target_chip_type != CHIP_CH32X03x ) DefaultRebootIntoBootloader( dev );
-				else if( !MCF.HaltMode || MCF.HaltMode( dev, HALT_MODE_GO_TO_BOOTLOADER ) )
-					goto unimplemented;
-				break;
-			case 'e':  //rEsume
-				if( !MCF.HaltMode || MCF.HaltMode( dev, HALT_MODE_RESUME ) )
-					goto unimplemented;
-				break;
-			case 'E':  //Erase whole chip.
-				if( MCF.HaltMode ) MCF.HaltMode( dev, HALT_MODE_HALT_AND_RESET );
-				if( !MCF.Erase || MCF.Erase( dev, 0, 0, 1 ) )
-					goto unimplemented;
-				break;
-			case 'a':
-				if( !MCF.HaltMode || MCF.HaltMode( dev, HALT_MODE_HALT_AND_RESET ) )
-					goto unimplemented;
-				break;
-			case 'A':  // Halt without reboot
-				if( !MCF.HaltMode || MCF.HaltMode( dev, HALT_MODE_HALT_BUT_NO_RESET ) )
-					goto unimplemented;
-				break;
-
-			// disable NRST pin (turn it into a GPIO)
-			case 'd':  // see "RSTMODE" in datasheet
-				if( MCF.HaltMode ) MCF.HaltMode( dev, HALT_MODE_HALT_AND_RESET );
-				if( MCF.ConfigureNRSTAsGPIO )
-					MCF.ConfigureNRSTAsGPIO( dev, 0 );
-				else
-					goto unimplemented;
-				break;
-			case 'D': // see "RSTMODE" in datasheet
-				if( MCF.HaltMode ) MCF.HaltMode( dev, HALT_MODE_HALT_AND_RESET );
-				if( MCF.ConfigureNRSTAsGPIO )
-					MCF.ConfigureNRSTAsGPIO( dev, 1 );
-				else
-					goto unimplemented;
-				break;
-			case 'p': 
-				if( MCF.HaltMode ) MCF.HaltMode( dev, HALT_MODE_HALT_AND_RESET );
-				if( MCF.ConfigureReadProtection )
-				{
-					fprintf(stderr, "This will erase the flash entirely!\n");
-					fprintf(stderr, "Press Enter to proceed, Ctrl+C to abort.");
-					while(!IsKBHit());
-					// TODO: revert after testing
-					MCF.ConfigureReadProtection( dev, 0 );
-				}
-				else
-					goto unimplemented;
-
-				break;
-			case 'P':
-				if( MCF.HaltMode ) MCF.HaltMode( dev, HALT_MODE_HALT_AND_RESET );
-				if( MCF.ConfigureReadProtection )
-					MCF.ConfigureReadProtection( dev, 1 );
-				else
-					goto unimplemented;
 				break;
 			case 'S':  // Set FLASH/RAM split in option bytes
 			{	
@@ -392,252 +758,6 @@ keep_going:
 				}
 
 				MCF.SetSplit(dev, split);
-				break;
-			}
-			case 'G':
-			case 'T':
-			{
-				if( !MCF.PollTerminal )
-					goto unimplemented;
-
-				if( argchar[1] == 'G' && SetupGDBServer( dev ) )
-				{
-					fprintf( stderr, "Error: can't start GDB server\n" );
-					return -1;
-				}
-				if( argchar[1] == 'G' )
-				{
-					fprintf( stderr, "GDBServer Running\n" );
-				}
-				else if( argchar[1] == 'T' )
-				{
-					// In case we aren't running already.
-					if( iss->target_chip_type == CHIP_CH58x || iss->target_chip_type == CHIP_CH32V10x ) MCF.HaltMode( dev, HALT_MODE_RESUME );
-					else MCF.HaltMode( dev, HALT_MODE_REBOOT );
-				}
-
-				CaptureKeyboardInput();
-				printf( "Terminal started\n\n" );
-
-				CMDInit();
-
-#if TERMINAL_INPUT_BUFFER
-				char pline_buf[256]; // Buffer that contains current line that is being printed to
-				char input_buf[128]; // Buffer that contains user input until it is sent out
-				memset( pline_buf, 0, sizeof(pline_buf) );
-				memset( input_buf, 0, sizeof(input_buf) );
-				uint8_t input_pos = 0;
-				uint8_t to_send = 0;
-				uint8_t nice_terminal = isatty( fileno(stdout) );
-#if defined(WINDOWS) || defined(WIN32) || defined(_WIN32)
-				unsigned long console_mode;
-				void* handle_output = GetStdHandle(STD_OUTPUT_HANDLE);
-				GetConsoleMode(handle_output, &console_mode);
-				console_mode |= ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-				uint8_t set_result = SetConsoleMode(handle_output, console_mode);
-				if ( set_result == 0 ) nice_terminal = 0;
-#else
-				if( nice_terminal > 0 )
-				{
-					fflush( stdin );
-					fprintf( stdout, "\x1b[6n" );
-					fflush( stdout );
-					read( fileno(stdin), input_buf, 10 );
-					if (input_buf[0] != 27)
-					{
-						nice_terminal = 0;
-					}
-					else
-					{
-						printf( TERMINAL_SEND_LABEL );
-						fflush( stdout );
-					}
-					memset( input_buf, 0, sizeof(input_buf) );
-				}
-#endif
-#endif
-				uint32_t appendword = 0;
-				do
-				{
-					uint8_t buffer[256];
-#if TERMINAL_INPUT_BUFFER
-					char print_buf[TERMINAL_BUFFER_SIZE]; // Buffer that is filled with everything and will be written to stdout (basically it's for formatting)
-					uint8_t update = 0;
-#endif
-					if( !IsGDBServerInShadowHaltState( dev ) )
-					{
-						// Handle keyboard input.
-#if TERMINAL_INPUT_BUFFER
-						if ( nice_terminal > 0 ) 
-						{
-							if( IsKBHit() && to_send == 0 )
-							{
-								uint8_t c = ReadKBByte();
-								if ( c == 8 || c == 127 )
-								{
-									input_buf[input_pos - 1] = 0;
-									if ( input_pos > 0 ) input_pos--;
-								}
-								else if ( c > 31 && c < 127 )
-								{
-									input_buf[input_pos] = c;
-									input_pos++;
-								}
-								else if ( c == '\n' || c == 10 )
-								{
-									to_send = input_pos;
-								}
-								update = 1;
-							}
-							// Process incomming buffer during sending
-							if( to_send > 0 && appendword == 0 )
-							{
-								for( int i = 0; i < 3; i++ )
-								{
-									appendword |= input_buf[input_pos - to_send] << ( i * 8 + 8 );
-									to_send--;
-									if ( to_send == 0 ) break;
-								}
-								if( to_send == 0 )
-								{
-									snprintf(print_buf, TERMINAL_BUFFER_SIZE - 1, "%s%s%s\n%s%s", TERMINAL_CLEAR_CUR, TERMIANL_INPUT_SENT, input_buf, pline_buf, TERMINAL_SEND_LABEL);
-									fwrite( print_buf, strlen( print_buf ), 1, stdout );
-									fflush( stdout );
-									input_pos = 0;
-									memset( input_buf, 0, sizeof( input_buf ) );
-								}
-								appendword |= i + 4;
-							}
-						}
-						else
-						{
-							if( appendword == 0 )
-							{
-								int i;
-								for( i = 0; i < 3; i++ )
-								{
-									if( !IsKBHit() ) break;
-									appendword |= ReadKBByte() << (i*8+8);
-								}
-								appendword |= i+4; // Will go into DATA0.
-							}
-						}
-#else
-						if( appendword == 0 )
-						{
-							int i;
-							for( i = 0; i < 3; i++ )
-							{
-								if( !IsKBHit() ) break;
-								appendword |= ReadKBByte() << (i*8+8);
-							}
-
-
-							// So, previously, we would always use 0x04 as the code for
-							// no bytes to send/receive remaining.  But, it looks like 0x00
-							// is a valid code too.  So if there's no bytes to send, we can
-							// just let the programmer get more data.
-							//
-							// If we find out in the future there is some reason not to do
-							// this, we can undo this and push the responsibility onto the
-							// programmers to speed along.
-							if( i )
-								appendword |= i+4; // Will go into DATA0.
-						}
-#endif
-						int r = MCF.PollTerminal( dev, buffer, sizeof( buffer ), appendword, 0 );
-#if TERMINAL_INPUT_BUFFER
-						if( (nice_terminal > 0) && ( r == -1 || r == 0 ) && update > 0 )
-						{
-							strncpy( print_buf, TERMINAL_CLEAR_CUR, TERMINAL_BUFFER_SIZE - 1 );
-							if ( to_send > 0 ) strncat( print_buf, TERMINAL_DIM, TERMINAL_BUFFER_SIZE - 1 - strlen(print_buf) );
-							strncat( print_buf, TERMINAL_SEND_LABEL, TERMINAL_BUFFER_SIZE - 1 - strlen(print_buf) );
-							strncat( print_buf, input_buf, TERMINAL_BUFFER_SIZE - 1 - strlen(print_buf) );
-							fwrite( print_buf, strlen( print_buf ), 1, stdout );
-							fflush( stdout );
-						}
-#endif
-						if( r < -5 )
-						{
-							fprintf( stderr, "Terminal dead.  code %d\n", r );
-							return -32;
-						}
-						else if( r < 0 )
-						{
-							// Other end ack'd without printf. (Or there is another situation)
-							appendword = 0;
-						}
-						else if( r > 0 )
-						{
-#if TERMINAL_INPUT_BUFFER
-							if ( nice_terminal )
-							{
-								int new_line = -1;
-								for( int i = r; i > 0; i-- )
-								{
-									if( buffer[i-1] == '\n' )
-									{
-										new_line = r - i;
-										break;
-									}
-								}
-								if( new_line < 0 )
-								{
-									strncpy( print_buf, TERMINAL_CLEAR_PREV, TERMINAL_BUFFER_SIZE - 1 ); //  Go one line up and erase it
-									strncat( pline_buf, (char *)buffer, r); // Add newly received chars to line buffer
-								}
-								else
-								{
-									strncpy( print_buf, TERMINAL_CLEAR_CUR, TERMINAL_BUFFER_SIZE - 1 ); // Go to the start of the line and erase it
-									strncat( pline_buf, (char *)buffer, r - new_line ); // Add newly received chars to line buffer
-								}
-								strncat( print_buf, pline_buf, TERMINAL_BUFFER_SIZE - 1 - strlen(print_buf) ); // Add line to buffer
-								if( new_line >= 0 )
-								{
-									memset( pline_buf, 0, sizeof( pline_buf ) );
-								}
-								if( new_line > 0)
-								{
-									strncat( pline_buf, (char *)buffer+r-new_line, new_line );
-									strncat( print_buf, pline_buf, TERMINAL_BUFFER_SIZE - 1 - strlen(print_buf) ); // Add line to buffer
-								}
-								
-								if( to_send > 0 ) strncat( print_buf, TERMINAL_DIM, TERMINAL_BUFFER_SIZE - 1 - strlen(print_buf) );
-								strncat( print_buf, TERMINAL_SEND_LABEL, TERMINAL_BUFFER_SIZE - 1 - strlen(print_buf) ); // Print styled "Send" label
-								strncat( print_buf, input_buf, TERMINAL_BUFFER_SIZE - 1 - strlen(print_buf) ); // Print current input
-								fwrite( print_buf, strlen( print_buf ), 1, stdout );
-								print_buf[0] = 0;
-								// memset( print_buf, 0, sizeof( print_buf ) );
-								
-							}
-							else
-							{
-								fwrite( buffer, r, 1, stdout );
-							}
-#else
-							fwrite( buffer, r, 1, stdout );
-#endif
-							fflush( stdout );
-							// Otherwise it's basically just an ack for appendword.
-							appendword = 0;
-						}
-					}
-
-					if( argchar[1] == 'G' )
-					{
-						PollGDBServer( dev );
-					}
-
-					if(1 == CMDPollServer( dev ))
-					{
-						// TODO: signal to GDB server that it should resume.
-					}
-
-				} while( 1 );
-
-				// Currently unreachable - consider reachable-ing
-				if( argchar[1] == 'G' )
-					ExitGDBServer( dev );
 				break;
 			}
 			case 's':
@@ -702,14 +822,6 @@ keep_going:
 					ret = MCF.DetermineChipType( dev );
 					if( ret ) return ret;
 				}
-				else
-					goto unimplemented;
-				break;
-			}
-			case 'i':
-			{
-				if( MCF.PrintChipInfo )
-					MCF.PrintChipInfo( dev ); 
 				else
 					goto unimplemented;
 				break;
@@ -935,34 +1047,6 @@ keep_going:
 				free( image );
 				break;
 			}
-			case 'N':
-			{
-				if( MCF.EnableDebug )
-				{
-					printf("Enabling debug\n");
-					if( MCF.EnableDebug( dev, 0 ) )
-					{
-						return -13;
-					}
-				}
-				break;
-			}
-			case 'n':
-			{
-				if( MCF.EnableDebug )
-				{
-					fprintf( stderr, "This will disable debug module. And you will be only able to program the chip using the bootloader.\nPress Enter to continue\n");
-					while(!IsKBHit());
-					ReadKBByte();
-					fprintf( stderr, "Are you absolutely sure about it?\nPress Enter to continue, or Ctrl+C to cancel\n");
-					while(!IsKBHit());
-					if( MCF.EnableDebug( dev, 1 ) )
-					{
-						return -13;
-					}
-				}
-				break;
-			}
 			case 'Y':
 			{
 				if( iss->target_chip_type == CHIP_CH570 ||
@@ -972,7 +1056,6 @@ keep_going:
 					  iss->target_chip_type == CHIP_CH59x) CH5xxBlink(dev, 0, 8, 0);
 				break;
 			}
-				
 			case 'y':
 			{
 				readCSR( dev, 0x300 );
@@ -995,30 +1078,31 @@ help:
 	fprintf( stderr, "Usage: minichlink [args]\n" );
 	fprintf( stderr, " single-letter args may be combined, i.e. -3r\n" );
 	fprintf( stderr, " multi-part args cannot.\n" );
-	fprintf( stderr, " -3 Enable 3.3V\n" );
-	fprintf( stderr, " -5 Enable 5V\n" );
-	fprintf( stderr, " -t Disable 3.3V\n" );
-	fprintf( stderr, " -f Disable 5V\n" );
-	fprintf( stderr, " -k Skip programmer initialization\n" );
-	fprintf( stderr, " -c [serial port for Ardulink, try /dev/ttyACM0 or COM11 etc] or [VID+PID of USB for b003boot, try 0x1209b003]\n" );
-	fprintf( stderr, " -C [specified programmer, eg. b003boot, ardulink, esp32s2chfun, isp]\n" );
-	fprintf( stderr, " -u Clear all code flash - by power off (also can unbrick)\n" );
-	fprintf( stderr, " -E Erase chip\n" );
-	fprintf( stderr, " -b Reboot out of Halt\n" );
-	fprintf( stderr, " -e Resume from halt\n" );
-	fprintf( stderr, " -a Reboot into Halt\n" );
-	fprintf( stderr, " -A Go into Halt without reboot\n" );
-	fprintf( stderr, " -D Configure NRST as GPIO\n" );
-	fprintf( stderr, " -d Configure NRST as NRST\n" );
-	fprintf( stderr, " -i Show chip info\n" );
+	flag_print_options(stderr);
+	// fprintf( stderr, " -3 Enable 3.3V\n" );
+	// fprintf( stderr, " -5 Enable 5V\n" );
+	// fprintf( stderr, " -t Disable 3.3V\n" );
+	// fprintf( stderr, " -f Disable 5V\n" );
+	// fprintf( stderr, " -k Skip programmer initialization\n" );
+	// fprintf( stderr, " -c [serial port for Ardulink, try /dev/ttyACM0 or COM11 etc] or [VID+PID of USB for b003boot, try 0x1209b003]\n" );
+	// fprintf( stderr, " -C [specified programmer, eg. b003boot, ardulink, esp32s2chfun, isp]\n" );
+	// fprintf( stderr, " -u Clear all code flash - by power off (also can unbrick)\n" );
+	// fprintf( stderr, " -E Erase chip\n" );
+	// fprintf( stderr, " -b Reboot out of Halt\n" );
+	// fprintf( stderr, " -e Resume from halt\n" );
+	// fprintf( stderr, " -a Reboot into Halt\n" );
+	// fprintf( stderr, " -A Go into Halt without reboot\n" );
+	// fprintf( stderr, " -D Configure NRST as GPIO\n" );
+	// fprintf( stderr, " -d Configure NRST as NRST\n" );
+	// fprintf( stderr, " -i Show chip info\n" );
 	fprintf( stderr, " -s [debug register] [value]\n" );
 	fprintf( stderr, " -m [debug register]\n" );
 	fprintf( stderr, " -T Terminal Only (must be last arg)\n" );
 	fprintf( stderr, " -G Terminal + GDB (must be last arg)\n" );
-	fprintf( stderr, " -P Enable Read Protection\n" );
-	fprintf( stderr, " -p Disable Read Protection\n" );
-	fprintf( stderr, " -N Enable Debug Module\n" );
-	fprintf( stderr, " -n Disable Debug Module\n" );
+	// fprintf( stderr, " -P Enable Read Protection\n" );
+	// fprintf( stderr, " -p Disable Read Protection\n" );
+	// fprintf( stderr, " -N Enable Debug Module\n" );
+	// fprintf( stderr, " -n Disable Debug Module\n" );
 	fprintf( stderr, " -S set FLASH/SRAM split [FLASH kbytes] [SRAM kbytes]\n" );
 	fprintf( stderr, " -w [binary image to write] [address, decimal or 0x, try0x08000000]\n" );
 	fprintf( stderr, " -r [output binary image] [memory address, decimal or 0x, try 0x08000000] [size, decimal or 0x, try 16384]\n" );
@@ -2940,7 +3024,7 @@ static int DefaultHaltMode( void * dev, int mode )
 	iss->processor_in_mode = mode;
 
 	// In case processor halt process needs to complete, i.e. if it was in the middle of a flash op.
-  DefaultDelayUS( dev, 10000 );
+	DefaultDelayUS( dev, 10000 );
 
 	return 0;
 }
@@ -3181,8 +3265,8 @@ int DefaultDelayUS( void * dev, int us )
 
 static int DefaultSetClock( void * dev, uint32_t clock )
 {
-  fprintf( stderr, "Will set clock here, when implemented\n" );
-  return 0;
+	fprintf( stderr, "Will set clock here, when implemented\n" );
+	return 0;
 }
 
 int SetupAutomaticHighLevelFunctions( void * dev )
@@ -3241,18 +3325,18 @@ int SetupAutomaticHighLevelFunctions( void * dev )
 		MCF.Unbrick = DefaultUnbrick;
 	if( !MCF.ConfigureNRSTAsGPIO )
 		MCF.ConfigureNRSTAsGPIO = DefaultConfigureNRSTAsGPIO;
-  if( !MCF.ConfigureReadProtection )
-    MCF.ConfigureReadProtection = DefaultConfigureReadProtection;
+	if( !MCF.ConfigureReadProtection )
+		MCF.ConfigureReadProtection = DefaultConfigureReadProtection;
 	if( !MCF.VoidHighLevelState )
 		MCF.VoidHighLevelState = DefaultVoidHighLevelState;
 	if( !MCF.DelayUS )
 		MCF.DelayUS = DefaultDelayUS;
 	if( !MCF.GetUUID )
 		MCF.GetUUID = DefaultGetUUID;
-  if( !MCF.SetClock )
-    MCF.SetClock = DefaultSetClock;
-  if( !MCF.EnableDebug )
-    MCF.EnableDebug = DefaultEnableDebug;
+	if( !MCF.SetClock )
+		MCF.SetClock = DefaultSetClock;
+	if( !MCF.EnableDebug )
+		MCF.EnableDebug = DefaultEnableDebug;
 
 	return 0;
 }
@@ -3533,5 +3617,5 @@ static int DefaultRebootIntoBootloader( void * dev )
 	printf( "Chip is halted in bootloader mode. Press enter to proceed\n");
 	while(!IsKBHit());
 	ReadKBByte();
-  return 0;
+	return 0;
 }
