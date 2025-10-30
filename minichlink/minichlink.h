@@ -194,6 +194,7 @@ struct InternalState
 	uint8_t isp_xor_key[8];
 	enum MemoryArea current_area;
 	uint32_t clock_set;
+	uint8_t init_skip;
 };
 
 

@@ -300,7 +300,10 @@ void WS2812BDMAInit( )
 		3<<3; // Divisior = 16 (48/16 = 3MHz)
 
 	SPI1->CTLR2 = SPI_CTLR2_TXDMAEN;  // Enable Tx buffer DMA
+
+#if defined(CH32V003)
 	SPI1->HSCR = 1; // Enable high-speed read mode
+#endif
 
 	SPI1->CTLR1 |= CTLR1_SPE_Set; // Enable SPI
 

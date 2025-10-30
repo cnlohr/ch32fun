@@ -1039,7 +1039,11 @@ typedef enum
 
 /* System: Flash ROM control register */
 #define R32_FLASH_DATA      (*((vu32*)0x40001800))    // RO/WO, flash ROM data
+
+// bit 24..26 flash wait states
+// bit 12 = flash very slow.
 #define R32_FLASH_CONTROL   (*((vu32*)0x40001804))    // RW, flash ROM control, byte1 and byte3 need RWA
+
 #define R8_FLASH_DATA       (*((vu8*)0x40001804))     // RO/WO, flash ROM data buffer
 #define R8_FLASH_SCK        (*((vu8*)0x40001805))     // RW, flash ROM sck time config
 #define R8_FLASH_CTRL       (*((vu8*)0x40001806))     // RW, flash ROM access control

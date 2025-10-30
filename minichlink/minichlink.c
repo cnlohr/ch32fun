@@ -241,6 +241,7 @@ keep_going:
 				goto help;
 			case 'k':
 				printf( "Skipping programmer initialization\n" );
+				iss->init_skip++;
 				argchar++;
 				goto keep_going;
 			case '3':
@@ -323,6 +324,16 @@ keep_going:
 			// disable NRST pin (turn it into a GPIO)
 			case 'd':  // see "RSTMODE" in datasheet
 				if( MCF.HaltMode ) MCF.HaltMode( dev, HALT_MODE_HALT_AND_RESET );
+				if( iss->target_chip_type == CHIP_CH32L103 ||
+						iss->target_chip_type == CHIP_CH32V10x ||
+						iss->target_chip_type == CHIP_CH32V20x ||
+						iss->target_chip_type == CHIP_CH32V205 ||
+						iss->target_chip_type == CHIP_CH32V30x ||
+						iss->target_chip_type == CHIP_CH32H41x )
+				{
+					fprintf( stderr, "Warning. This chip can't use NRST as GPIO.\n" );
+					break;
+				}
 				if( MCF.ConfigureNRSTAsGPIO )
 					MCF.ConfigureNRSTAsGPIO( dev, 0 );
 				else
@@ -330,6 +341,16 @@ keep_going:
 				break;
 			case 'D': // see "RSTMODE" in datasheet
 				if( MCF.HaltMode ) MCF.HaltMode( dev, HALT_MODE_HALT_AND_RESET );
+				if( iss->target_chip_type == CHIP_CH32L103 ||
+						iss->target_chip_type == CHIP_CH32V10x ||
+						iss->target_chip_type == CHIP_CH32V20x ||
+						iss->target_chip_type == CHIP_CH32V205 ||
+						iss->target_chip_type == CHIP_CH32V30x ||
+						iss->target_chip_type == CHIP_CH32H41x )
+				{
+					fprintf( stderr, "ERROR. This chip can't use NRST as GPIO.\n" );
+					break;
+				}
 				if( MCF.ConfigureNRSTAsGPIO )
 					MCF.ConfigureNRSTAsGPIO( dev, 1 );
 				else
@@ -412,7 +433,7 @@ keep_going:
 				else if( argchar[1] == 'T' )
 				{
 					// In case we aren't running already.
-					if( iss->target_chip_type == CHIP_CH58x || iss->target_chip_type == CHIP_CH32V10x ) MCF.HaltMode( dev, HALT_MODE_RESUME );
+					if( iss->target_chip_type == CHIP_CH57x || iss->target_chip_type == CHIP_CH58x || iss->target_chip_type == CHIP_CH32V10x || iss->init_skip ) MCF.HaltMode( dev, HALT_MODE_RESUME );
 					else MCF.HaltMode( dev, HALT_MODE_REBOOT );
 				}
 
@@ -889,12 +910,20 @@ keep_going:
 					status = fread( image, len, 1, f );
 					fclose( f );
 				}
+				if( strlen(fname) < 5 || strncmp((char*)(fname+strlen(fname)-4), ".bin", 4))
+				{
+					fprintf(stderr, "Warning: Make sure you're using a raw binary file. Minichlink can't flash elf or hex files.\n");
+				}
 
 				uint64_t offset = StringToMemoryAddress( dev, argv[iarg] );
-
+				if( offset > 0x2fffffff || (!iss->init_skip && offset < iss->target_chip->flash_offset) )
+				{
+					fprintf( stderr, "Error: Invalid memory offset (%s)\n", argv[iarg] );
+					exit( -45 );
+				}
 				if( !CheckMemoryLocation( dev, DEFAULT_AREA, offset, len ) )
 				{
-					fprintf( stderr, "Error: Invalid offset (%s)\n", argv[iarg] );
+					fprintf( stderr, "Error: binary doesn't fit into this memory area" );
 					exit( -44 );
 				}
 				if( status != 1 )
@@ -908,7 +937,10 @@ keep_going:
 				
 				if( MCF.HaltMode && is_flash )
 				{
-					if ( offset == 0x1ffff000 ) MCF.HaltMode( dev, HALT_MODE_HALT_BUT_NO_RESET ); // do not reset if writing bootloader, even if it is considered flash memory
+					if( offset == 0x1ffff000 || iss->current_area == BOOTLOADER_AREA )
+					{
+						MCF.HaltMode( dev, HALT_MODE_HALT_BUT_NO_RESET ); // do not reset if writing bootloader, even if it is considered flash memory
+					}
 					else MCF.HaltMode( dev, HALT_MODE_HALT_AND_RESET );
 				}
 				else if( MCF.HaltMode )
