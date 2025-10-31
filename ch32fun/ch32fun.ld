@@ -262,7 +262,43 @@ SECTIONS
 			PROVIDE( _ebss = .);
 		} >RAM AT>FLASH
 
+#if TARGET_MCU_LD == 10 && (MCU_PACKAGE == 1 || MCU_PACKAGE == 3)
+	/* CH571/CH573 DMA quirk
+	 	DMA peripherals on the CH571/3 only use the low 14 bits of the address
+		The high 18 bits are assumed to be 0x20004000,
+		yet RAM spans 0x20003800 - 0x20007FFF (18 kB)
+		Thus the lower 2K of RAM are not accessible to the DMA peripherals
+		Here we create a special .dma segement guaranteed to be above 0x20004000.
+		To avoid unnecessary padding, this should be the last segment.
+	*/
+
+	/* Force this to be the lower of 0x20004000 and end of previous */
+		.dmavalign :
+		{
+			. = MAX(ORIGIN(RAM) + 0x800, ALIGN(4));
+			PROVIDE(_dma_vma = .);
+		} >RAM AT>FLASH  
+
+		.dmalalign :
+		{
+			. = ALIGN(4);
+			PROVIDE(_dma_lma = .);
+		} >FLASH AT>FLASH
+
+		.dma :
+		{
+			. = ALIGN(4);
+			PROVIDE( _sdma = .);
+			*(.dma*)
+			. = ALIGN(4);
+			PROVIDE( _edma = .);
+		} >RAM AT>FLASH  
+
+		PROVIDE( _end = _edma);
+#else 
 		PROVIDE( _end = _ebss);
+#endif
+
 		PROVIDE( end = . );
 
 #if TARGET_MCU_LD == 8 || TARGET_MCU_LD == 9

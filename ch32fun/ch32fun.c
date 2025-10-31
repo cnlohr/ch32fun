@@ -1160,6 +1160,19 @@ void handle_reset( void )
 	addi a1, a1, 4\n\
 	bltu a1, a2, 1b\n\
 2:\n"
+#ifdef CH571_CH573
+	// This loads the DMA segment from FLASH to RAM.
+"	la a0, _dma_lma\n\
+	la a1, _dma_vma\n\
+	la a2, _edma\n\
+	beq a1, a2, 2f\n\
+1:	lw t0, 0(a0)\n\
+	sw t0, 0(a1)\n\
+	addi a0, a0, 4\n\
+	addi a1, a1, 4\n\
+	bltu a1, a2, 1b\n\
+2:\n"
+#endif
 #ifdef CPLUSPLUS
 	// Call __libc_init_array function
 "	call %0 \n\t"
