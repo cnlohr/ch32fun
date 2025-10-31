@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define CH32V003_SPI_SPEED_HZ		1000000
+#define CH32V003_SPI_SPEED_HZ 1000000
 
 #include "../../extralibs/ch32v003_SPI.h"
 
