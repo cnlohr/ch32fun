@@ -55,9 +55,6 @@ void ch5xx_allPinsPullUp() {
 }
 
 void ch5xx_sleep_rtc_init() {
-	DCDCEnable(); // Enable the internal DCDC
-	LSIEnable(); // Disable LSE, enable LSI
-
     //# configure RTC
     SYS_SAFE_ACCESS (
         R32_RTC_TRIG = 0;
