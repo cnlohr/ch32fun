@@ -1,3 +1,5 @@
+// Listen to messages from iSLER_sensor_lowpower_node
+
 #include "ch32fun.h"
 #include <stdio.h>
 #include "../iSLER_sensor_Lowpower_node/ch5xx_Mess.h"
