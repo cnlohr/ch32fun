@@ -133,7 +133,7 @@ void chMess_advertise(remote_command_t *cmd) {
 	// printf("\n");
 
 	for(int c = 0; c < sizeof(adv_channels); c++) {
-		Frame_TX2((uint8_t*)&frame, sizeof(frame), adv_channels[c], PHY_MODE);
+		Frame_TX((uint8_t*)&frame, sizeof(frame), adv_channels[c], PHY_MODE);
 	}
 }
 
