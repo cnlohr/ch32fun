@@ -34,10 +34,10 @@ void RTC_IRQHandler(void) {
     R8_RTC_FLAG_CTRL =  RB_RTC_TRIG_CLR;
 }
 
-void ch5xx_setClock(u8 sc) {
+void ch5xx_setClock(u8 clock_source) {
     SYS_SAFE_ACCESS (
         R8_PLL_CONFIG &= ~(1<<5);
-        R16_CLK_SYS_CFG = (0 << 6) | (sc & 0x1f);
+        R16_CLK_SYS_CFG =  (clock_source & 0x1f);
         asm volatile( "nop\nnop\nnop\nnop" );
     );
 }
