@@ -1,6 +1,6 @@
 all : flash
 
-TARGET:=isLER_sensors_gateway
+TARGET:=iSLER_sensors_gateway
 TARGET_MCU:=CH582
 TARGET_MCU_PACKAGE:=CH582F
 
