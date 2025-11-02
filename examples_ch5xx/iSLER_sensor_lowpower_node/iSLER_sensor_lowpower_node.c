@@ -1,5 +1,8 @@
 // Send message to iSLER_sensors_gateway
 
+// When the chip is sleeping, you won't be able to flash it,
+// Hold the BOOT pin while powering up the chip and flash it before it enters user mode
+
 //! WARNING: WHEN USE SHUTDOWN_MODE_ENABLED
 //! PA15 NEEDS TO BE IN PULLED UP MODE OR YOU WONT BE ABLE TO REFLASH THE CHIP
 //! if you dont have access to the BOOT pin PB22

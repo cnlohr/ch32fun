@@ -3,37 +3,37 @@
 #include <stdio.h>
 
 #define PRINT_STRUCT_BYTES(struct_ptr, format) do { \
-    const uint8_t* bytes = (const uint8_t*)(struct_ptr); \
-    for (size_t i = 0; i < sizeof(*(struct_ptr)); i++) { \
-        printf(format " ", bytes[i]); \
-    } \
-    printf("\n"); \
+	const uint8_t* bytes = (const uint8_t*)(struct_ptr); \
+	for (size_t i = 0; i < sizeof(*(struct_ptr)); i++) { \
+		printf(format " ", bytes[i]); \
+	} \
+	printf("\n"); \
 } while(0)
 
 
 #define BLE_AD_MAC(mac) \
-    (mac & 0xFF), (mac>>8) & 0xFF, \
-    (mac>>16) & 0xFF, (mac>>24) & 0xFF, \
-    (mac>>32) & 0xFF, (mac>>40) & 0xFF
+	(mac & 0xFF), (mac>>8) & 0xFF, \
+	(mac>>16) & 0xFF, (mac>>24) & 0xFF, \
+	(mac>>32) & 0xFF, (mac>>40) & 0xFF
 
 #define BLE_AD_FLAGS(flags) 0x02, 0x01, flags
 
-#define PHY_MODE                PHY_1M
-#define MAX_PAYLOAD_LEN         16
+#define PHY_MODE				PHY_1M
+#define MAX_PAYLOAD_LEN		 16
 
 #ifndef PACKED
 #define PACKED __attribute__( ( packed ) )
 #endif
 
 typedef struct PACKED {
-	uint16_t preamble;          // Sync pattern (0xAABB)
-	uint16_t control_bits;      // control bits
-	uint16_t msgCode;           // message integrity check
-	uint8_t dest[6];            // destination
+	uint16_t preamble;		  // Sync pattern (0xAABB)
+	uint16_t control_bits;	  // control bits
+	uint16_t msgCode;		   // message integrity check
+	uint8_t dest[6];			// destination
 
 	uint8_t group_id;
-	uint8_t data_len;          			 // length
-	uint8_t payload[MAX_PAYLOAD_LEN];    // max payload length
+	uint8_t data_len;		  			 // length
+	uint8_t payload[MAX_PAYLOAD_LEN];	// max payload length
 } MESS_DataFrame_t;
 
 typedef struct PACKED {
@@ -108,21 +108,21 @@ void Frame_TX2(uint8_t adv[], size_t len, uint8_t channel, uint8_t phy_mode) {
 
 
 iSLER_frame_t frame = {
-    .mac = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66},
-    .field_adv_flags = {0x02, 0x01, 0x06},
-    .name_len = 21,     // name length is only 20 + local name byte
-    .ad_type_local_name = 0x09,
-    .name = { 'b','e', 'e', '-', '5', '5', '5' },
-    .data_len = sizeof(MESS_DataFrame_t) + 3,
-    .field_sev_data = {0xFF, 0xD7, 0x07},
-    .dataFrame = {
-        .preamble = 0xA1A2,
-        .control_bits = 0xB1B2,
-        .msgCode = 0xC1C2,
-        .dest = {0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6},
-        .group_id = 0x55,
+	.mac = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66},
+	.field_adv_flags = {0x02, 0x01, 0x06},
+	.name_len = 21,	 // name length is only 20 + local name byte
+	.ad_type_local_name = 0x09,
+	.name = { 'b','e', 'e', '-', '5', '5', '5' },
+	.data_len = sizeof(MESS_DataFrame_t) + 3,
+	.field_sev_data = {0xFF, 0xD7, 0x07},
+	.dataFrame = {
+		.preamble = 0xA1A2,
+		.control_bits = 0xB1B2,
+		.msgCode = 0xC1C2,
+		.dest = {0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6},
+		.group_id = 0x55,
 		.data_len = sizeof(remote_command_t)
-    }
+	}
 };
 
 void chMess_advertise(remote_command_t *cmd) {
