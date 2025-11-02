@@ -2,7 +2,7 @@
 
 #include "ch32fun.h"
 #include <stdio.h>
-#include "../iSLER_sensor_Lowpower_node/ch5xx_Mess.h"
+#include "../iSLER_sensor_lowpower_node/ch5xx_Mess.h"
 
 #define SLEEPTIME_MS 4000
 #define LED PA8
