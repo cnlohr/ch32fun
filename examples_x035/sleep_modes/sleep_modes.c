@@ -23,27 +23,27 @@ void interupt_setup(
 	uint32_t EXTI_Line, EXTIMode_TypeDef mode, EXTITrigger_TypeDef trigger
 ) {
 	// Clear existing configuration
-    EXTI->INTENR &= ~EXTI_Line;
-    EXTI->EVENR &= ~EXTI_Line;
-    EXTI->RTENR &= ~EXTI_Line;
-    EXTI->FTENR &= ~EXTI_Line;
+	EXTI->INTENR &= ~EXTI_Line;
+	EXTI->EVENR &= ~EXTI_Line;
+	EXTI->RTENR &= ~EXTI_Line;
+	EXTI->FTENR &= ~EXTI_Line;
 
 	// Set mode (interrupt or event)
-    if(mode == EXTI_Mode_Interrupt) {
-        EXTI->INTENR |= EXTI_Line;
-    } else {
-        EXTI->EVENR |= EXTI_Line;
-    }
+	if(mode == EXTI_Mode_Interrupt) {
+		EXTI->INTENR |= EXTI_Line;
+	} else {
+		EXTI->EVENR |= EXTI_Line;
+	}
 
 	// Set trigger (rising, falling, or both)
-    if(trigger == EXTI_Trigger_Rising_Falling) {
-        EXTI->RTENR |= EXTI_Line;
-        EXTI->FTENR |= EXTI_Line;
-    } else if(trigger == EXTI_Trigger_Rising) {
-        EXTI->RTENR |= EXTI_Line;
-    } else {
-        EXTI->FTENR |= EXTI_Line;
-    }
+	if(trigger == EXTI_Trigger_Rising_Falling) {
+		EXTI->RTENR |= EXTI_Line;
+		EXTI->FTENR |= EXTI_Line;
+	} else if(trigger == EXTI_Trigger_Rising) {
+		EXTI->RTENR |= EXTI_Line;
+	} else {
+		EXTI->FTENR |= EXTI_Line;
+	}
 }
 
 void enter_sleep() {
