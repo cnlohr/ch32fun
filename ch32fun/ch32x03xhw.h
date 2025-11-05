@@ -279,6 +279,14 @@ typedef struct
 
 typedef struct
 {
+    __IO uint32_t CSR;
+    __IO uint32_t WR;
+    __IO uint32_t PSC;
+} AWU_TypeDef;
+
+
+typedef struct
+{
     union
     {   
         __I uint32_t CHIPID;
@@ -1041,6 +1049,7 @@ typedef struct{
 #define FLASH                                   ((FLASH_TypeDef *)FLASH_R_BASE)
 #define OB                                      ((OB_TypeDef *)OB_BASE)
 #define ESIG                                    ((ESG_TypeDef *)ESIG_BASE)
+#define AWU                                     ((AWU_TypeDef *)AWU_BASE)
 // Mentioned in ch32v30x_dbgmcu.c, may not work on all processors.
 #define INFO                                    ((INFO_TypeDef *)INFO_BASE) 
 #define EXTEN                                   ((EXTEN_TypeDef *)EXTEN_BASE)
