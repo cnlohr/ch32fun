@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include "debug_utilities.h"
 
+#define PIN_1 PA9
+
 // CH32X033F8P6 wirings
 // GND and VDD are the same as Ch32v003. PC19 is for DCK and PC18 is for DIO
 
