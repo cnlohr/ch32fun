@@ -4,8 +4,19 @@
 #include <stdio.h>
 #include "debug_utilities.h"
 
-// use defines to make more meaningful names for our GPIO pins
-#define PIN_1 PA9
+// CH32X033F8P6 wirings
+// GND and VDD are the same as Ch32v003. PC19 is for DCK and PC18 is for DIO
+
+// PA6				PA5
+// PA7				PA4
+// PB1				PC19 (DCK)
+// PB7				PA3
+// PC16				PA2
+// PC17				PA1
+// # GND			PA0
+// PC18 (DIO)		PC3
+// # VDD			PA10
+// PA9				PA11
 
 void funSetPullups(GPIO_TypeDef* GPIOx) {
 	// Configure all pins 0-23 as input pull-up

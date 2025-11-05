@@ -130,23 +130,23 @@ typedef enum IRQn
 /* memory mapped structure for SysTick */
 typedef struct
 {
-  __IO uint32_t CTLR;
-  __IO uint32_t SR;
-  union
-  {
-     struct
-     {
-        __IO uint32_t CNTL;
-        __IO uint32_t CNTH;
-        __IO uint32_t CMPL;
-        __IO uint32_t CMPH;
-     };
-     struct
-     {
-        __IO uint64_t CNT;
-        __IO uint64_t CMP;
-     };
-  };
+	__IO uint32_t CTLR;
+	__IO uint32_t SR;
+	union
+	{
+		struct
+		{
+			__IO uint32_t CNTL;
+			__IO uint32_t CNTH;
+			__IO uint32_t CMPL;
+			__IO uint32_t CMPH;
+		};
+		struct
+		{
+			__IO uint64_t CNT;
+			__IO uint64_t CMP;
+		};
+	};
 } SysTick_Type;
 
 
@@ -165,30 +165,30 @@ typedef struct
 /* Analog to Digital Converter */
 typedef struct
 {
-    __IO uint32_t STATR;
-    __IO uint32_t CTLR1;
-    __IO uint32_t CTLR2;
-    __IO uint32_t SAMPTR1;
-    __IO uint32_t SAMPTR2;
-    __IO uint32_t IOFR1;
-    __IO uint32_t IOFR2;
-    __IO uint32_t IOFR3;
-    __IO uint32_t IOFR4;
-    __IO uint32_t WDHTR;
-    __IO uint32_t WDLTR;
-    __IO uint32_t RSQR1;
-    __IO uint32_t RSQR2;
-    __IO uint32_t RSQR3;
-    __IO uint32_t ISQR;
-    __IO uint32_t IDATAR1;
-    __IO uint32_t IDATAR2;
-    __IO uint32_t IDATAR3;
-    __IO uint32_t IDATAR4;
-    __IO uint32_t RDATAR;
-    __IO uint32_t CTLR3;
-    __IO uint32_t WDTR1;
-    __IO uint32_t WDTR2;
-    __IO uint32_t WDTR3;
+	__IO uint32_t STATR;
+	__IO uint32_t CTLR1;
+	__IO uint32_t CTLR2;
+	__IO uint32_t SAMPTR1;
+	__IO uint32_t SAMPTR2;
+	__IO uint32_t IOFR1;
+	__IO uint32_t IOFR2;
+	__IO uint32_t IOFR3;
+	__IO uint32_t IOFR4;
+	__IO uint32_t WDHTR;
+	__IO uint32_t WDLTR;
+	__IO uint32_t RSQR1;
+	__IO uint32_t RSQR2;
+	__IO uint32_t RSQR3;
+	__IO uint32_t ISQR;
+	__IO uint32_t IDATAR1;
+	__IO uint32_t IDATAR2;
+	__IO uint32_t IDATAR3;
+	__IO uint32_t IDATAR4;
+	__IO uint32_t RDATAR;
+	__IO uint32_t CTLR3;
+	__IO uint32_t WDTR1;
+	__IO uint32_t WDTR2;
+	__IO uint32_t WDTR3;
 } ADC_TypeDef;
 
 
@@ -207,63 +207,63 @@ typedef struct
 /* Debug MCU */
 typedef struct
 {
-    __IO uint32_t CFGR0;
-    __IO uint32_t CFGR1;
+	__IO uint32_t CFGR0;
+	__IO uint32_t CFGR1;
 } DBGMCU_TypeDef;
 
 /* DMA Controller */
 typedef struct
 {
-    __IO uint32_t CFGR;
-    __IO uint32_t CNTR;
-    __IO uint32_t PADDR;
-    __IO uint32_t MADDR;
+	__IO uint32_t CFGR;
+	__IO uint32_t CNTR;
+	__IO uint32_t PADDR;
+	__IO uint32_t MADDR;
 } DMA_Channel_TypeDef;
 
 typedef struct
 {
-    __IO uint32_t INTFR;
-    __IO uint32_t INTFCR;
+	__IO uint32_t INTFR;
+	__IO uint32_t INTFCR;
 } DMA_TypeDef;
 
 /* External Interrupt/Event Controller */
 typedef struct
 {
-    __IO uint32_t INTENR;
-    __IO uint32_t EVENR;
-    __IO uint32_t RTENR;
-    __IO uint32_t FTENR;
-    __IO uint32_t SWIEVR;
-    __IO uint32_t INTFR;
+	__IO uint32_t INTENR;
+	__IO uint32_t EVENR;
+	__IO uint32_t RTENR;
+	__IO uint32_t FTENR;
+	__IO uint32_t SWIEVR;
+	__IO uint32_t INTFR;
 } EXTI_TypeDef;
 
 /* FLASH Registers */
 typedef struct
 {
-    __IO uint32_t ACTLR;
-    __IO uint32_t KEYR;
-    __IO uint32_t OBKEYR;
-    __IO uint32_t STATR;
-    __IO uint32_t CTLR;
-    __IO uint32_t ADDR;
-    __IO uint32_t RESERVED;
-    __IO uint32_t OBR;
-    __IO uint32_t WPR;
-    __IO uint32_t MODEKEYR;
-    __IO uint32_t BOOT_MODEKEYR;
+	__IO uint32_t ACTLR;
+	__IO uint32_t KEYR;
+	__IO uint32_t OBKEYR;
+	__IO uint32_t STATR;
+	__IO uint32_t CTLR;
+	__IO uint32_t ADDR;
+	__IO uint32_t RESERVED;
+	__IO uint32_t OBR;
+	__IO uint32_t WPR;
+	__IO uint32_t MODEKEYR;
+	__IO uint32_t BOOT_MODEKEYR;
 } FLASH_TypeDef;
 
 /* Option Bytes Registers */
 typedef struct
 {
-    __IO uint16_t RDPR;
-    __IO uint16_t USER;
-    __IO uint16_t Data0;
-    __IO uint16_t Data1;
-    __IO uint16_t WRPR0;
-    __IO uint16_t WRPR1;
-    __IO uint16_t WRPR2;
-    __IO uint16_t WRPR3;
+	__IO uint16_t RDPR;
+	__IO uint16_t USER;
+	__IO uint16_t Data0;
+	__IO uint16_t Data1;
+	__IO uint16_t WRPR0;
+	__IO uint16_t WRPR1;
+	__IO uint16_t WRPR2;
+	__IO uint16_t WRPR3;
 } OB_TypeDef;
 
 typedef struct
@@ -279,23 +279,23 @@ typedef struct
 
 typedef struct
 {
-    __IO uint32_t CSR;
-    __IO uint32_t WR;
-    __IO uint32_t PSC;
+	__IO uint32_t CSR;
+	__IO uint32_t WR;
+	__IO uint32_t PSC;
 } AWU_TypeDef;
 
 
 typedef struct
 {
-    union
-    {   
-        __I uint32_t CHIPID;
-        struct 
-        {
-            __I uint16_t REVID;
-	        __I uint16_t DEVID;
-        };
-    };
+	union
+	{
+		__I uint32_t CHIPID;
+		struct 
+		{
+			__I uint16_t REVID;
+			__I uint16_t DEVID;
+		};
+	};
 } INFO_TypeDef;
 
 
