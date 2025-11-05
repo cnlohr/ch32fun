@@ -2,12 +2,6 @@
 #include "ch32fun.h"
 #include <string.h>
 
-#ifdef __DMA_SAFE
-// CH573 needs all buffers that will touch DMA be allocated at specific memory location
-// Since we have EP buffers inside the context struct we put it all there.
-// If you want to use your own external buffers, be sure to use this macro before their definitions.
-__DMA_SAFE
-#endif
 struct _USBState USBFSCTX;
 volatile uint8_t usb_debug = 0;
 
@@ -50,11 +44,7 @@ static inline void copyBufferComplete() { while( DMA1_Channel7->CNTR ); }
 void USBFS_IRQHandler() __attribute__((section(".text.vector_handler")))  __attribute((interrupt));
 // void USBHD_IRQHandler() __attribute__((section(".text.vector_handler")))  __attribute((naked));
 #else
-#if defined(FUSB_FROM_RAM) && (FUSB_FROM_RAM)
-void USBFS_IRQHandler() __USBFS_FUN_ATTRIBUTE __attribute((interrupt));
-#else
-void USBFS_IRQHandler() __attribute__((section(".text.vector_handler"))) __attribute((interrupt));
-#endif
+void USBFS_IRQHandler() __attribute__((section(".text.vector_handler")))  __attribute((interrupt));
 #endif
 
 void USBFS_InternalFinishSetup();
@@ -818,12 +808,6 @@ int USBFSSetup()
 #endif
 
 #if defined (CH32V20x) || defined (CH32V30x) || defined(CH32L103)
-#if (defined (CH32V20x_D8W) || defined (CH32V20x_D8)) && (defined (FUNCONF_USE_HSE) && FUNCONF_USE_HSE)
-	RCC->CFGR0 = (RCC->CFGR0 & ~(3<<22)) | (3<<22);
-#else
-#if (FUNCONF_SYSTEM_CORE_CLOCK != 144000000) && (FUNCONF_SYSTEM_CORE_CLOCK != 96000000) && (FUNCONF_SYSTEM_CORE_CLOCK != 48000000)
-#error CH32V20x/30x need 144/96/48MHz main clock for USB to work
-#endif
 #ifdef CH32V30x_D8C
 	RCC->CFGR2 = RCC_USBHSSRC | RCC_USBHSPLL | 1<< RCC_USBHSCLK_OFFSET | RCC_USBHSPLLSRC | 1 << RCC_USBHSDIV_OFFSET;
 	RCC->AHBPCENR |= RCC_USBHSEN;
@@ -832,13 +816,14 @@ int USBFSSetup()
 	// Must be done before enabling clock to USBFS tree.
 #if FUNCONF_SYSTEM_CORE_CLOCK == 144000000
 	RCC->CFGR0 = (RCC->CFGR0 & ~(3<<22)) | (2<<22);
-#endif
-#if FUNCONF_SYSTEM_CORE_CLOCK == 96000000
+#elif FUNCONF_SYSTEM_CORE_CLOCK == 96000000
 	RCC->CFGR0 = (RCC->CFGR0 & ~(3<<22)) | (1<<22);
-#endif
-#if FUNCONF_SYSTEM_CORE_CLOCK == 48000000
+#elif FUNCONF_SYSTEM_CORE_CLOCK == 48000000
 	RCC->CFGR0 = (RCC->CFGR0 & ~(3<<22));
-#endif
+#elif FUNCONF_SYSTEM_CORE_CLOCK == 240000000
+#error CH32V20x/30x is unstable at 240MHz
+#else
+#error CH32V20x/30x need 144/96/48MHz main clock for USB to work
 #endif
 #endif
 #endif
@@ -858,10 +843,8 @@ int USBFSSetup()
 #endif
 
 #if defined (CH5xx)
-#if defined (CH570_CH572)
+#if defined (CH57x)
 	R16_PIN_ALTERNATE |= RB_PIN_USB_EN | RB_UDP_PU_EN;
-#elif defined (CH584_CH585)
-  R16_PIN_CONFIG |= RB_PIN_USB_EN | RB_UDP_PU_EN;
 #else
 	R16_PIN_ANALOG_IE |= RB_PIN_USB_IE | RB_PIN_USB_DP_PU;
 #endif
