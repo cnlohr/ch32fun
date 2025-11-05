@@ -5,8 +5,8 @@
 #include "fsusb.h"
 
 #include "uip.h"
-#include "uipopt.h"
 #include "uip_arp.h"
+#include "uipopt.h"
 
 #include "dhcpd.h"
 #include "dns.h"
@@ -395,7 +395,7 @@ static void ethdev_send( void )
 	if ( ( uip_len > offset ) && ( uip_appdata != &uip_buf[offset] ) )
 	{
 		// Need to copy appdata into contiguous buffer
-		memcpy( &uip_buf[offset], (void *)uip_appdata, uip_len - offset );
+		memcpy( &uip_buf[offset], (void *)uip_appdata, 64 - offset );
 	}
 
 	if ( debugger && 0 )
@@ -410,7 +410,12 @@ static void ethdev_send( void )
 	while ( remaining )
 	{
 		const size_t len = ( remaining > 64 ) ? 64 : remaining;
-		uint8_t *buf = &uip_buf[uip_len - remaining];
+		const size_t sent = uip_len - remaining;
+		uint8_t *buf;
+		if ( remaining == uip_len )
+			buf = uip_buf;
+		else
+			buf = (uint8_t *)&uip_appdata[ sent - offset ];
 		remaining -= len;
 
 		// TODO: do I need to copy the last packet
@@ -451,7 +456,7 @@ static void systick_init( void )
 	                 SYSTICK_CTLR_STCLK; // Set Clock Source to HCLK/1
 
 	// Enable the SysTick IRQ
-	NVIC_EnableIRQ( SysTicK_IRQn );
+	NVIC_EnableIRQ( SysTick_IRQn );
 }
 
 /*
