@@ -931,6 +931,7 @@ int USBFS_SendEndpointNEW( int endp, uint8_t* data, int len, int copy)
 	{
 		if( copy )
 		{
+			UEP_DMA( endp ) = (uintptr_t)USBFSCTX.ENDPOINTS[endp];
 			copyBuffer( USBFSCTX.ENDPOINTS[endp], data, len );
 			copyBufferComplete();
 		}

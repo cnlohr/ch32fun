@@ -88,7 +88,7 @@ u16_t uip_hostaddr[2];
 u16_t uip_arp_draddr[2], uip_arp_netmask[2];
 #endif /* UIP_FIXEDADDR */
 
-u8_t uip_buf[UIP_BUFSIZE+2];   /* The packet buffer that contains
+__attribute__( ( aligned( 4 ) ) ) u8_t uip_buf[UIP_BUFSIZE+2];   /* The packet buffer that contains
 				incoming packets. */
 volatile u8_t *uip_appdata;  /* The uip_appdata pointer points to
 				application data. */

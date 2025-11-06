@@ -415,14 +415,16 @@ static void ethdev_send( void )
 		if ( remaining == uip_len )
 			buf = uip_buf;
 		else
-			buf = (uint8_t *)&uip_appdata[ sent - offset ];
+			buf = (uint8_t *)&uip_appdata[sent - offset];
 		remaining -= len;
 
 		// TODO: do I need to copy the last packet
 		const bool last = ( remaining == 0 );
 
+		const bool aligned = ( ( (uint32_t)buf & 0x3 ) == 0 );
+
 		// Wait for endpoint to be free
-		while ( -1 == USBFS_SendEndpointNEW( EP_SEND, buf, len, 1 ) )
+		while ( -1 == USBFS_SendEndpointNEW( EP_SEND, buf, len, !aligned ) )
 			;
 
 		// Handle zero-length packet if uip_len is multiple of endpoint size
