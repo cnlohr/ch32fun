@@ -117,7 +117,6 @@ int main()
 #if DHCPD_ENABLE
 	dhcpd_init();
 #else
-	dns_init();
 	uip_ipaddr( ipaddr, 192, 168, 8, 111 );
 	uip_sethostaddr( ipaddr );
 	uip_ipaddr( ipaddr, 192, 168, 8, 1 );

@@ -564,7 +564,7 @@ struct httpd_state {
 #include "httpd.h"
 
 #if UIP_UDP
-#define DHCPD_ENABLE 1
+#define DHCPD_ENABLE 0
 #define DHCP_CAPTIVE_PORTAL_ENABLE 0
 #define DNS_ENABLE 0
 #endif
