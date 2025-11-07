@@ -4,21 +4,8 @@
 #include <stdio.h>
 #include "debug_utilities.h"
 
-#define PIN_1 PA9
-
-// CH32X033F8P6 wirings
-// GND and VDD are the same as Ch32v003. PC19 is for DCK and PC18 is for DIO
-
-// PA6				PA5
-// PA7				PA4
-// PB1				PC19 (DCK)
-// PB7				PA3
-// PC16				PA2
-// PC17				PA1
-// # GND			PA0
-// PC18 (DIO)		PC3
-// # VDD			PA10
-// PA9				PA11
+// use PIN_LED to indicate wake up
+#define PIN_LED PA9
 
 void funSetPullups(GPIO_TypeDef* GPIOx) {
 	// Configure all pins 0-23 as input pull-up
@@ -30,7 +17,6 @@ void funSetPullups(GPIO_TypeDef* GPIOx) {
 	// Set bits 0-23 to 1 for pull-up
 	GPIOx->OUTDR = 0x00FFFFFF;
 }
-
 
 void interupt_setup(
 	uint32_t EXTI_Line, EXTIMode_TypeDef mode, EXTITrigger_TypeDef trigger
@@ -62,8 +48,8 @@ void interupt_setup(
 void enter_sleep() {
 	funGpioInitAll(); // Enable GPIOs
 
-	funPinMode(PIN_1, GPIO_CFGLR_OUT_10Mhz_PP); // Set PIN_1 to output
-	funDigitalWrite( PIN_1, 1 ); // Turn on PIN_1
+	funPinMode(PIN_LED, GPIO_CFGLR_OUT_10Mhz_PP); 	// Set PIN_LED to output
+	funDigitalWrite( PIN_LED, 1 ); 					// Turn on PIN_LED
 	Delay_Ms( 50 );
 
 	funSetPullups(GPIOA);
