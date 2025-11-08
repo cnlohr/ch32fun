@@ -32,6 +32,10 @@
 #endif
 
 #if (USBHS_IMPL==1)
+#if (FUNCONF_USE_HSI) && !defined(FUSB_SOF_HSITRIM)
+#define FUSB_SOF_HSITRIM 1
+#endif
+#define TICKS_PER_HSITRIM (FUNCONF_PLL_MULTIPLIER * 20000 * 125) / 1000000 // SOF is sent every 125uS, each HSITRIM changes HSI by 20kHz
 typedef struct
 {
 	__IO uint8_t  BASE_CTRL;
@@ -401,8 +405,8 @@ typedef enum
 typedef enum
 {
 	USBHS_EP_OFF = 0,
-	USBHS_EP_IN  = -1,
-	USBHS_EP_OUT = 1,
+	USBHS_EP_RX  = -1,
+	USBHS_EP_TX = 1,
 } USBHS_EP_mode;
 
 #ifndef FUSB_EP1_MODE
@@ -456,6 +460,7 @@ struct _USBState
 #endif
 	volatile uint8_t USBHS_Endp_Busy[FUSB_CONFIG_EPS];
 	volatile uint8_t USBHS_errata_dont_send_endpoint_in_window;
+	volatile uint64_t USBHS_sof_timestamp;
 };
 
 extern struct _USBState USBHSCTX;

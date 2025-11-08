@@ -1,8 +1,8 @@
 #ifndef _FUNCONFIG_H
 #define _FUNCONFIG_H
 
-// you can put various configurations in here, you can see a full list in ch32fun.h
-// part selection is made in the Makefile
+// Place configuration items here, you can see a full list in ch32fun/ch32fun.h
+// To reconfigure to a different processor, update TARGET_MCU in the  Makefile
 
 #endif
 

@@ -5,11 +5,11 @@
 #include "ch32fun.h"
 
 #define FUSB_CONFIG_EPS       6 // Include EP0 in this count
-#define FUSB_EP1_MODE         1 // OUT
-#define FUSB_EP2_MODE         1 // OUT
-#define FUSB_EP3_MODE         1 // OUT
-#define FUSB_EP4_MODE         1 // OUT
-#define FUSB_EP5_MODE        -1 // IN
+#define FUSB_EP1_MODE         1 // TX (IN)
+#define FUSB_EP2_MODE         1 // TX (IN)
+#define FUSB_EP3_MODE         1 // TX (IN)
+#define FUSB_EP4_MODE         1 // TX (IN)
+#define FUSB_EP5_MODE        -1 // RX (IN)
 #define FUSB_SUPPORTS_SLEEP   0
 #define FUSB_HID_INTERFACES   2
 #define FUSB_HID_USER_REPORTS 1
@@ -19,6 +19,7 @@
 #define FUSB_EP5_SIZE         1024
 #define FUSB_SPEED            USB_SPEED_HIGH
 #define FUSB_USER_HANDLERS    0 // To enable HandleDataOut
+// #define FUSB_SOF_HSITRIM      1 // If using HSI on CH32V30x as clock source you probably want to enable this
 
 #include "usb_defines.h"
 
@@ -259,10 +260,6 @@ static const uint8_t config_descriptor[ ] =
     0x01,                                                   // bInterval: 1mS
 };
 
-#define STR_MANUFACTURER u"CH32FUN"
-#define STR_PRODUCT      u"USBHS Test"
-#define STR_SERIAL       u"007"
-
 struct usb_string_descriptor_struct {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
@@ -274,19 +271,19 @@ const static struct usb_string_descriptor_struct string0 __attribute__((section(
 	{0x0409}
 };
 const static struct usb_string_descriptor_struct string1 __attribute__((section(".rodata")))  = {
-	sizeof(STR_MANUFACTURER),
+	sizeof(FUSB_STR_MANUFACTURER),
 	3,
-	STR_MANUFACTURER
+	FUSB_STR_MANUFACTURER
 };
 const static struct usb_string_descriptor_struct string2 __attribute__((section(".rodata")))  = {
-	sizeof(STR_PRODUCT),
+	sizeof(FUSB_STR_PRODUCT),
 	3,
-	STR_PRODUCT
+	FUSB_STR_PRODUCT
 };
 const static struct usb_string_descriptor_struct string3 __attribute__((section(".rodata")))  = {
-	sizeof(STR_SERIAL),
+	sizeof(FUSB_STR_SERIAL),
 	3,
-	STR_SERIAL
+	FUSB_STR_SERIAL
 };
 
 // This table defines which descriptor data is sent for each specific
@@ -306,9 +303,9 @@ const static struct descriptor_list_struct {
 	{0x00002100, config_descriptor + 18, 9 }, // Not sure why, this seems to be useful for Windows + Android.
 
 	{0x00000300, (const uint8_t *)&string0, 4},
-	{0x04090301, (const uint8_t *)&string1, sizeof(STR_MANUFACTURER)},
-	{0x04090302, (const uint8_t *)&string2, sizeof(STR_PRODUCT)},	
-	{0x04090303, (const uint8_t *)&string3, sizeof(STR_SERIAL)}
+	{0x04090301, (const uint8_t *)&string1, sizeof(FUSB_STR_MANUFACTURER)},
+	{0x04090302, (const uint8_t *)&string2, sizeof(FUSB_STR_PRODUCT)},
+	{0x04090303, (const uint8_t *)&string3, sizeof(FUSB_STR_SERIAL)}
 };
 #define DESCRIPTOR_LIST_ENTRIES ((sizeof(descriptor_list))/(sizeof(struct descriptor_list_struct)) )
 

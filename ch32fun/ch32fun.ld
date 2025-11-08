@@ -75,12 +75,13 @@ MEMORY
 	/* CH582/3/4/5 */
 	#if MCU_PACKAGE == 2 || MCU_PACKAGE == 3
 		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 448K
-		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 30K
-		HIGHRAM (xrw) : ORIGIN = 0x20007800, LENGTH = 2K
-	#elif MCU_PACKAGE == 4 || MCU_PACKAGE == 5
+		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 32K
+	#elif MCU_PACKAGE == 4
 		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 448K
 		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 96K
-		HIGHRAM (xrw) : ORIGIN = 0x20018000, LENGTH = 32K
+	#elif MCU_PACKAGE == 5
+		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 448K
+		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 128K
 	#else
 		#error "Unknown MCU package"
 	#endif
@@ -88,12 +89,10 @@ MEMORY
 	/* CH591/2 */
 	#if MCU_PACKAGE == 1
 		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 192K
-		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 24K
-		HIGHRAM (xrw) : ORIGIN = 0x20006000, LENGTH = 2K
+		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 26K
 	#elif MCU_PACKAGE == 2
 		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 448K
-		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 24K
-		HIGHRAM (xrw) : ORIGIN = 0x20006000, LENGTH = 2K
+		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 26K
 	#else
 		#error "Unknown MCU package"
 	#endif
@@ -102,12 +101,14 @@ MEMORY
 	#if MCU_PACKAGE == 0 || MCU_PACKAGE == 2
 		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 240K
 		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 12K
+	#elif MCU_PACKAGE == 1
+		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 192K
+		RAM (xrw) : ORIGIN = 0x20003800, LENGTH = 18K
 	#elif MCU_PACKAGE == 3
-		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 512K
-		RAM (xrw) : ORIGIN = 0x20003800, LENGTH = 16K
-		HIGHRAM (xrw) : ORIGIN = 0x20007800, LENGTH = 2K
+		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 448K
+		RAM (xrw) : ORIGIN = 0x20003800, LENGTH = 18K
 	#else
-		#error "Unknown MCU package, only ch570, 2 and 3 are supported at the moment"
+		#error "Unknown MCU package"
 	#endif
 #else
 	#error "Unknown MCU target"
@@ -125,7 +126,7 @@ SECTIONS
 			_einit = .;
 		} >FLASH AT>FLASH
 
-#if TARGET_MCU_LD == 8 || TARGET_MCU_LD == 9 || (TARGET_MCU_LD == 10 && MCU_PACKAGE == 3)
+#if TARGET_MCU_LD == 8 || TARGET_MCU_LD == 9 || TARGET_MCU_LD == 10
 		.highcodelalign : 
 		{       
 			. = ALIGN(4);
@@ -139,7 +140,7 @@ SECTIONS
 			*(.highcode*)
 			. = ALIGN(4);
 			PROVIDE(_highcode_vma_end = .);
-		} >HIGHRAM AT>FLASH
+		} >RAM AT>FLASH
 #endif
 
 		.text :
@@ -260,16 +261,37 @@ SECTIONS
 			*(COMMON*)
 			. = ALIGN(4);
 			PROVIDE( _ebss = .);
-		} >RAM AT>FLASH
+		} >RAM
 
+#if TARGET_MCU_LD == 10 && (MCU_PACKAGE == 1 || MCU_PACKAGE == 3)
+	/* CH571/CH573 DMA quirk
+	 	DMA peripherals on the CH571/3 only use the low 14 bits of the address
+		The high 18 bits are assumed to be 0x20004000,
+		yet RAM spans 0x20003800 - 0x20007FFF (18 kB)
+		Thus the lower 2K of RAM are not accessible to the DMA peripherals
+		Here we create a special .dma_safe segement guaranteed to be above 0x20004000.
+		To avoid unnecessary padding, this should be the last segment.
+	*/
+
+	/* Force this to be the higher of 0x20004000 and end of previous */
+	/* Mark it NOLOAD so it doesn't occupy any flash space */
+		.dma_safe (NOLOAD) :
+		{
+			. = MAX(ORIGIN(RAM) + 0x800, ALIGN(4));
+			PROVIDE( _sdma_safe = .);
+			*(.dma_safe*)
+			. = ALIGN(4);
+			PROVIDE( _edma_safe = .);
+		} >RAM
+
+		PROVIDE( _end = _edma);
+#else 
 		PROVIDE( _end = _ebss);
+#endif
+
 		PROVIDE( end = . );
 
-#if TARGET_MCU_LD == 8 || TARGET_MCU_LD == 9
-		PROVIDE( _eusrstack = ORIGIN(HIGHRAM) + LENGTH(HIGHRAM));
-#else
 		PROVIDE( _eusrstack = ORIGIN(RAM) + LENGTH(RAM));
-#endif
 
 #if TARGET_MCU_LD == 2 /* v20x */
 		.storage :
