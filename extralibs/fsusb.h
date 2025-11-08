@@ -6,6 +6,16 @@
 #include "usb_defines.h"
 #include "usb_config.h"
 
+#if defined(FUSB_FROM_RAM) && (FUSB_FROM_RAM)
+#if defined(CH5xx)
+#define __USBFS_FUN_ATTRIBUTE __attribute__((section(".srodata"), used))
+#else
+#define __USBFS_FUN_ATTRIBUTE
+#endif
+#else
+#define __USBFS_FUN_ATTRIBUTE
+#endif
+
 #if defined(CH5xx) || defined(CH32X03x) || defined(CH32V10x)
 #if !defined (CH32X03x) && !defined(CH32V10x)
 #define USBFS_BASE USB_BASE_ADDR
@@ -329,23 +339,23 @@ static inline void copyBufferComplete();
 
 // Implement the following:
 #if FUSB_HID_USER_REPORTS
-int HandleHidUserGetReportSetup( struct _USBState * ctx, tusb_control_request_t * req );
-int HandleHidUserSetReportSetup( struct _USBState * ctx, tusb_control_request_t * req );
+__USBFS_FUN_ATTRIBUTE int HandleHidUserGetReportSetup( struct _USBState * ctx, tusb_control_request_t * req );
+__USBFS_FUN_ATTRIBUTE int HandleHidUserSetReportSetup( struct _USBState * ctx, tusb_control_request_t * req );
 void HandleHidUserReportDataOut( struct _USBState * ctx, uint8_t * data, int len );
 int HandleHidUserReportDataIn( struct _USBState * ctx, uint8_t * data, int len );
 void HandleHidUserReportOutComplete( struct _USBState * ctx );
 #endif
 #if FUSB_USER_HANDLERS
-int HandleInRequest( struct _USBState * ctx, int endp, uint8_t * data, int len );
-void HandleDataOut( struct _USBState * ctx, int endp, uint8_t * data, int len );
-int HandleSetupCustom( struct _USBState * ctx, int setup_code);
+__USBFS_FUN_ATTRIBUTE int HandleInRequest( struct _USBState * ctx, int endp, uint8_t * data, int len );
+__USBFS_FUN_ATTRIBUTE void HandleDataOut( struct _USBState * ctx, int endp, uint8_t * data, int len );
+__USBFS_FUN_ATTRIBUTE int HandleSetupCustom( struct _USBState * ctx, int setup_code);
 #endif
 
 typedef enum
 {
 	USBFS_EP_OFF = 0,
-	USBFS_EP_IN  = -1,
-	USBFS_EP_OUT = 1,
+	USBFS_EP_RX  = -1,
+	USBFS_EP_TX = 1,
 } USBFS_EP_mode;
 
 #ifndef FUSB_EP1_MODE
@@ -369,6 +379,7 @@ typedef enum
 #ifndef FUSB_EP7_MODE
 #define FUSB_EP7_MODE  0
 #endif
+
 
 struct _USBState
 {

@@ -56,6 +56,10 @@ void USBHS_IRQHandler()
 	funDigitalWrite( DEBUG_PIN, 1 );
 #endif
 
+#if (FUSB_SOF_HSITRIM)
+	uint64_t systick_local = SysTick->CNT;
+#endif
+
 	// Combined FG + ST flag.
 	uint16_t intfgst = *(uint16_t*)(&USBHS->INT_FG);
 	int len = 0;
@@ -626,6 +630,25 @@ replycomplete:
 
 #if (USBHS_IMPL==1)
 		case CUIS_TOKEN_SOF:
+			{
+#if (FUSB_SOF_HSITRIM)
+				int32_t diff = (int64_t)(systick_local - ctx->USBHS_sof_timestamp);
+				uint32_t trim = (RCC->CTLR & RCC_HSITRIM) >> 3;
+				if( diff > TICKS_PER_HSITRIM && (trim > 0)) {
+					uint32_t regtemp;
+					regtemp = RCC->CTLR & ~RCC_HSITRIM;
+					RCC->CTLR = regtemp | (--trim)<<3;
+				}
+				else if( diff < 0 && diff < (TICKS_PER_HSITRIM*-1) && (trim < 31))
+				{
+					uint32_t regtemp;
+					regtemp = RCC->CTLR & ~RCC_HSITRIM;
+					RCC->CTLR = regtemp | (++trim)<<3;;
+				}
+				ctx->USBHS_sof_timestamp = systick_local + Ticks_from_Us(125);
+#endif
+				USBHS->INT_FG = CRB_UIF_HST_SOF;
+			}
 			break;
 #endif
 
@@ -834,7 +857,12 @@ int USBHSSetup()
 #error "CH32V30x need 144/96/48MHz main clock for USB to work"
 #endif
 	RCC->CFGR2 &= ~((7 << 24) | (1 << 27) | (3 << 28) | (1<<31));
+#if (FUNCONF_USE_HSE)
 	RCC->CFGR2 = RCC_USBHSSRC | RCC_USBHSPLL | 1<< RCC_USBHSCLK_OFFSET | 1 << RCC_USBHSDIV_OFFSET;
+#else
+#warning "Using HSI"
+	RCC->CFGR2 = RCC_USBHSSRC | RCC_USBHSPLL | RCC_USBHSPLLSRC | 1<< RCC_USBHSCLK_OFFSET | 1 << RCC_USBHSDIV_OFFSET;
+#endif
 	RCC->AHBPCENR |= RCC_USBHSEN | RCC_AHBPeriph_DMA1;
 #else
 #error "Need to add USB clock setup for this chip"
@@ -850,6 +878,9 @@ int USBHSSetup()
 	USBHS->HOST_CTRL = USBHS_UH_PHY_SUSPENDM;
 	USBHS->BASE_CTRL = USBHS_UC_DMA_EN | USBHS_UC_INT_BUSY | (FUSB_SPEED<<5);
 	USBHS->INT_EN = USBHS_UIE_SETUP_ACT | USBHS_UIE_TRANSFER | USBHS_UIE_DETECT | USBHS_UIE_SUSPEND;
+#if (FUSB_SOF_HSITRIM)
+	USBHS->INT_EN |= USBHS_UIE_SOF_ACT;
+#endif
 	USBHS_InternalFinishSetup();
 	USBHS->BASE_CTRL |= USBHS_UC_DEV_PU_EN;
 #else
