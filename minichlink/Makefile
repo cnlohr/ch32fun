@@ -8,10 +8,10 @@ H_S:=cmdserver.h funconfig.h hidapi.h libusb.h microgdbstub.h minichlink.h seria
 # gdb-multilib {file}
 # target remote :2345
 
-CFLAGS_WINDOWS:=-Os -s -Wall -D_WIN32_WINNT=0x0600 -I. -Wall -DCH32V003 -DMINICHLINK
-LDFLAGS_WINDOWS:=-L. -lpthread -lusb-1.0 -lsetupapi -lws2_32
 ifeq ($(OS),Windows_NT)
-	TOOLS:=minichlink.exe
+	TOOLS:=minichlink minichlink.dll
+	CFLAG:=-Os -s -Wall -D_WIN32_WINNT=0x0600 -I. -Wall -DCH32V003 -DMINICHLINK
+	LDFLAGS:=-L. -lpthread -lusb-1.0 -lsetupapi -lws2_32
 else
 	OS_NAME := $(shell uname -s | tr A-Z a-z)
 	ifeq ($(OS_NAME),linux)
@@ -39,18 +39,14 @@ endif
 
 all : $(TOOLS)
 
-# will need mingw-w64-x86-64-dev gcc-mingw-w64-x86-64
-minichlink.exe : $(C_S) $(H_S) Makefile
-	x86_64-w64-mingw32-gcc -o $@ $(C_S) $(LDFLAGS_WINDOWS) $(CFLAGS_WINDOWS)
+minichlink : $(C_S) $(H_S)
+	$(CC) -o $@ $(C_S) $(LDFLAGS) $(CFLAGS) $(INCS)
 
-minichlink : $(C_S) $(H_S) Makefile
-	gcc -o $@ $(C_S) $(LDFLAGS) $(CFLAGS) $(INCS)
+minichlink.so : $(C_S) $(H_S)
+	$(CC) -o $@ $(C_S) $(LDFLAGS) $(CFLAGS) $(INCS) -shared -fPIC
 
-minichlink.so : $(C_S) $(H_S) Makefile
-	gcc -o $@ $(C_S) $(LDFLAGS) $(CFLAGS) $(INCS) -shared -fPIC
-
-minichlink.dll : $(C_S) $(H_S) Makefile
-	x86_64-w64-mingw32-gcc -o $@ $(C_S) $(LDFLAGS_WINDOWS) $(CFLAGS_WINDOWS) $(INCS) -shared -DMINICHLINK_AS_LIBRARY
+minichlink.dll : $(C_S) $(H_S)
+	$(CC) -o $@ $(C_S) $(LDFLAGS) $(CFLAGS) $(INCS) -shared -DMINICHLINK_AS_LIBRARY
 
 install_udev_rules :
 	cp 99-minichlink.rules /etc/udev/rules.d/
@@ -62,4 +58,4 @@ inspect_bootloader : minichlink
 	riscv64-unknown-elf-objdump -S -D test.bin -b binary -m riscv:rv32 | less
 
 clean :
-	rm -rf $(TOOLS) minichlink.exe
+	rm -rf $(TOOLS)
