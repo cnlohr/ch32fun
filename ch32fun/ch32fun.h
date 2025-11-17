@@ -83,6 +83,7 @@
 #define FUNCONF_USE_5V_VDD 0            // Enable this if you plan to use your part at 5V - affects USB and PD configration on the x035.
 #define FUNCONF_DEBUG_HARDFAULT    1    // Log fatal errors with "printf"
 #define FUNCONF_ISR_IN_RAM 0            // Put the interrupt vector in RAM.
+#define FUNCONF_SUPPORT_CONSTRUCTORS 0	// Call functions with __attribute__((constructor)) in SystemInit()
 */
 
 // Sanity check for when porting old code.
@@ -127,10 +128,6 @@
 
 #if !defined( FUNCONF_DEBUG_HARDFAULT )
 	#define FUNCONF_DEBUG_HARDFAULT 1
-#endif
-
-#if !defined( FUNCONF_INIT_ANALOG )
-	#define FUNCONF_INIT_ANALOG 1
 #endif
 
 #if defined( CH32X03x ) && FUNCONF_USE_PLL
@@ -1033,6 +1030,8 @@ void poll_input( void );
 // Receiving bytes from host.  Override if you wish.
 void handle_debug_input( int numbytes, uint8_t * data );
 
+// Call functions with __attribute__((constructor)). Defining FUNCONF_SUPPORT_CONSTRUCTORS 1 will do it for you
+void CallConstructors( void );
 
 // Functions from ch32fun.c
 #include <stdarg.h>

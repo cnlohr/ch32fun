@@ -115,7 +115,19 @@ int serial_dev_read(serial_dev_t *dev, void* data, size_t len) {
 	}
 	return (int) dwBytesRead;
 #else
-	return read(dev->fd, data, len);
+	int got, count = 0;
+
+	/* On Linux, raw mode only blocks on the first character: man 3 termios. */
+
+	while (count < len) {
+		got = read(dev->fd, (char *)data + count, len - count);
+		if (got < 0)
+			return got;
+		count += got;
+		if (count < len)
+			usleep((100000 / dev->baud) * (len - count));
+	}
+	return count;
 #endif
 }
 

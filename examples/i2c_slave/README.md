@@ -84,5 +84,3 @@ SetupSecondaryI2CSlave(0x42, i2c_registers2, sizeof(i2c_registers2), onWrite2, o
 The function arguments are identical to the normal `SetupI2CSlave` function. The secondary I2C address acts like a completely separate I2C device with it's own registers.
 
 Calling `SetupSecondaryI2CSlave` with the I2C address set to 0 disables listening on the secondary address.
-
-It is recommended to react to register writes using the `onWrite` callback and not by reading the registers array from main(). There is a chance the compiler will optimize away your code if you do that.

@@ -1,6 +1,6 @@
 all : flash
 
-TARGET:=GPIO
+TARGET:=branchless_gpio_lib
 
 TARGET_MCU?=CH32V003
 include ../../ch32fun/ch32fun.mk

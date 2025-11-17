@@ -46,7 +46,7 @@ typedef enum {
 	ADC_PGA_GAIN_2 = 0b11		// 6dB 2		range: 0.6V ~ 1.5V
 } ADC_PGA_GAIN_t;
 
-u16 adc_set_config(ADC_FREQ_DIV_t adc_freq, ADC_PGA_GAIN_t pa_gain, u8 differential_mode) {
+void adc_set_config(ADC_FREQ_DIV_t adc_freq, ADC_PGA_GAIN_t pa_gain, u8 differential_mode) {
 	R8_TKEY_CFG &= ~RB_TKEY_PWR_ON;
 	R8_ADC_CFG = RB_ADC_POWER_ON | (pa_gain << 4) | (adc_freq << 6);
 
@@ -119,8 +119,8 @@ void adc_dma_start(u8 auto_cycle, u16 *buf, u8 sample_len, u8 loop) {
     // higher auto_cycle = faster conversion. 16 clock per cycle
     // sample timing = (256 - auto_cycle) * 16 * Tsys
     R8_ADC_AUTO_CYCLE = auto_cycle;
-    R16_ADC_DMA_BEG = (u16)buf;
-    R16_ADC_DMA_END = (u16)buf + (sample_len*sizeof(u16));        // 2 bytes per sample
+    R16_ADC_DMA_BEG = (u32)buf;
+    R16_ADC_DMA_END = (u32)buf + (sample_len*sizeof(u16));        // 2 bytes per sample
     R8_ADC_CTRL_DMA |= RB_ADC_DMA_ENABLE | RB_ADC_IE_DMA_END;
 
     if (loop) {
@@ -179,23 +179,25 @@ s32 adc_to_mCelsius(u16 raw) {
 
 s32 adc_to_mV(u16 raw, ADC_PGA_GAIN_t pa_gain) {
 	//? Table 15-2 PGA gain selection and input votlage range
-	s32  vref_mV = 1050;			// +-15mV
+	s32 res = 0;
+	s32 vref_mV = 1050;			// +-15mV
 
     //! NOTE: expand multiplications to keep integer math precisions
 	switch (pa_gain) {
 		case ADC_PGA_GAIN_1_4:
 			// -12dB: vref * (raw/512 - 3)
-			return vref_mV * raw / 512 - vref_mV * 3;
+			res = vref_mV * raw / 512 - vref_mV * 3;
 		case ADC_PGA_GAIN_1_2:
 			// -6dB: vref * (raw/1024 - 1)
-			return vref_mV * raw / 1024 - vref_mV;
+			res = vref_mV * raw / 1024 - vref_mV;
 		case ADC_PGA_GAIN_1:
 			// 0dB: vref * (raw/2048)
-			return vref_mV * raw / 2048;
+			res = vref_mV * raw / 2048;
 		case ADC_PGA_GAIN_2:
 			// 6dB: vref * (raw/4096 + 0.5)
 			// vref_mv * raw/4090 + vref_mV/2;
-            return vref_mV * raw / 4096 + vref_mV / 2;
+            res = vref_mV * raw / 4096 + vref_mV / 2;
 	}
+	return res;
 }
 

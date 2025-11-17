@@ -912,6 +912,23 @@ int USBFSSetup()
 	return 0;
 }
 
+#ifdef CH5xx
+void USBFSReset()
+{
+	NVIC_DisableIRQ( USB_IRQn );
+#if defined (CH570_CH572)
+	R16_PIN_ALTERNATE &= ~(RB_PIN_USB_EN | RB_UDP_PU_EN);
+#elif defined (CH584_CH585)
+	R16_PIN_CONFIG &= ~(RB_PIN_USB_EN | RB_UDP_PU_EN);
+#else
+	R16_PIN_ANALOG_IE &= ~(RB_PIN_USB_IE | RB_PIN_USB_DP_PU);
+#endif
+	USBFS->BASE_CTRL = USBFS_UC_RESET_SIE | USBFS_UC_CLR_ALL;
+	USBFS->BASE_CTRL = 0x00;
+	Delay_Us(10);
+}
+#endif
+
 static inline uint8_t * USBFS_GetEPBufferIfAvailable( int endp )
 {
 	if( USBFSCTX.USBFS_Endp_Busy[ endp ] ) return 0;

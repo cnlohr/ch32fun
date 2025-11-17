@@ -11,7 +11,7 @@
 
 #include "ch32fun.h"
 #include <stdio.h>
-#include "debug_utilities.h"
+#include "register_debug_utilities.h"
 
 void adc_injection_init(u8 sampling_time) {
 	// Enable the ADC1 module

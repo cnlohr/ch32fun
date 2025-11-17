@@ -9,6 +9,5 @@
 #define FUNCONF_DEBUG_HARDFAULT   0
 #define FUNCONF_USE_CLK_SEC       0
 #define FUNCONF_USE_DEBUGPRINTF   0 // saves 16 bytes, enable / remove if you want printf over swio
-#define FUNCONF_INIT_ANALOG       0 // ADC is not implemented yet
 #define FUNCONF_POWERED_BY_V5PIN  0 // Set this to 1 if you use CH570/2 and use 5V to power it.
 #endif

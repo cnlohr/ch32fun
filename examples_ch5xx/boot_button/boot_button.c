@@ -3,8 +3,8 @@
  * Most ch5xx dev boards come with a "boot" or "download" button, when this
  * is pressed the chip resets and executes the ISP bootloader which presents
  * itself on USB to the host.
- * NOTE: this does not work together with "FUNCONF_USE_USBPRINTF"! For use
- * in combination with that refer to the examples_usb/USBFS/usbfs_cdc_tty demo.
+ * NOTE: if "FUNCONF_USE_USBPRINTF" is used, a call to USBFSReset() is needed
+ *       just before jump_isprom()
  */
 
 #include "ch32fun.h"

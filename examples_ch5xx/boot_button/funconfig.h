@@ -9,6 +9,5 @@
 #define FUNCONF_DEBUG_HARDFAULT   0
 #define FUNCONF_USE_CLK_SEC       0
 #define FUNCONF_USE_DEBUGPRINTF   1 // saves 16 bytes, enable / remove if you want printf over swio
-#define FUNCONF_INIT_ANALOG       0 // ADC is not implemented yet
 
 #endif

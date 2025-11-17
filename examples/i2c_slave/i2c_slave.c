@@ -6,10 +6,12 @@
 // note that the register set is modified by interrupts, to prevent the compiler from accidently optimizing stuff
 // away make sure to declare the register array volatile
 
-volatile uint8_t i2c_registers[32] = {0x00};
+volatile uint8_t i2c_registers[3] = {0x00};
 
 void onWrite(uint8_t reg, uint8_t length) {
-    funDigitalWrite(PA2, i2c_registers[0] & 1);
+    // Called from the interrupt when an I2C write operation completes
+    // Put one-off operations involving changes to i2c_registers here,
+    // but you can also just read i2c_registers from main().
 }
 
 int main() {
@@ -24,5 +26,7 @@ int main() {
     // Initialize LED
     funPinMode(PA2, GPIO_CFGLR_OUT_10Mhz_PP); // LED
 
-    while (1) {} // Do not let main exit, you can do other things here
+    while (1) {
+        funDigitalWrite(PA2, i2c_registers[0] & 1);
+    }
 }
