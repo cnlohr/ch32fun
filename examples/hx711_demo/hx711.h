@@ -75,7 +75,7 @@ static inline uint32_t hx711_get_offset(void) {
     return hx711_offset;
 }
 
-inline bool hx711_is_ready(void) {
+bool hx711_is_ready(void) {
     return funDigitalRead(HX711_DATA_PIN) == FUN_LOW;
 }
 
