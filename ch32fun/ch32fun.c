@@ -966,6 +966,9 @@ void USBPD_WKUP_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTIO
 void TIM2_CC_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void TIM2_TRG_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void TIM2_BRK_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void LPTIMWakeUp_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void LPTIM_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void CMPWakeUp_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 // CH5xx
 void TMR0_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void GPIOA_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
