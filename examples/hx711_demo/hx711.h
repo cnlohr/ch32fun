@@ -14,21 +14,22 @@
 static uint8_t hx711_data_pin = 0;
 static uint8_t hx711_clock_pin = 0;
 static uint8_t hx711_gain = 0;
-static float hx711_scale = 0;
+static uint32_t hx711_scale = 0; // Scale factor * 100
 static uint32_t hx711_offset = 0;
 
-uint8_t hx711_shift_in(uint8_t dataPin, uint8_t clockPin) {
+uint8_t hx711_shift_in() __attribute__((section(".srodata"))) __attribute__((used));
+uint8_t hx711_shift_in() {
     uint8_t value = 0;
     uint8_t i;
 
     for (i = 0; i < 8; ++i) {
-        funDigitalWrite(clockPin, 1);
+        funDigitalWrite(hx711_clock_pin, FUN_HIGH);
         Delay_Us(1);
-        value |= funDigitalRead(dataPin) << i;
-        funDigitalWrite(clockPin, 0);
+        value |= funDigitalRead(hx711_data_pin) << (7 - i);
+        funDigitalWrite(hx711_clock_pin, FUN_LOW);
         Delay_Us(1);
     }
-    return value;
+    return (uint8_t)value;
 }
 
 void hx711_set_gain(uint8_t gain) {
@@ -50,7 +51,7 @@ void hx711_init(uint8_t dataPin, uint8_t clockPin, uint8_t gain) {
     hx711_clock_pin = clockPin;
 
     // Clock pin as output
-    funPinMode(hx711_clock_pin, GPIO_CFGLR_OUT_50Mhz_PP);
+    funPinMode(hx711_clock_pin, GPIO_Speed_10MHz | GPIO_CNF_OUT_PP);
 
     // Data pin as input with pullup
     funPinMode(hx711_data_pin, GPIO_CFGLR_IN_PUPD);
@@ -59,11 +60,11 @@ void hx711_init(uint8_t dataPin, uint8_t clockPin, uint8_t gain) {
     hx711_set_gain(gain);    
 }
 
-void hx711_set_scale(float scale) {
+void hx711_set_scale(uint32_t scale) {
     hx711_scale = scale;
 }
 
-float hx711_get_scale(void) {
+uint32_t hx711_get_scale(void) {
     return hx711_scale;
 }
 
@@ -120,7 +121,7 @@ uint32_t hx711_read(void) {
 
     // Read 24 bits
     for (uint8_t i = 0; i < 3; i++) {
-        data[i] = hx711_shift_in(hx711_data_pin, hx711_clock_pin);
+        data[2 - i] = hx711_shift_in();
     }
 
     // Set gain for next reading
@@ -134,12 +135,15 @@ uint32_t hx711_read(void) {
     __enable_irq();
 
     // Combine bytes to 24-bit value
-    value = ((uint32_t)data[0] << 16) | ((uint32_t)data[1] << 8) | data[2];
-
-    // Convert to signed 24-bit
-    if (value & 0x800000) {
-        value |= 0xFF000000;
+    uint8_t filler = 0x00;
+    if(data[2] & 0x80) {
+        filler = 0xFF;
     }
+
+    value = ( (uint32_t)filler << 24
+            | (uint32_t)data[2] << 16) 
+            | ((uint32_t)data[1] << 8) 
+            | data[0];
 
     return value;
 }
@@ -152,12 +156,12 @@ uint32_t hx711_read_average(uint8_t times) {
     return (uint32_t)(sum / times);
 }
 
-double hx711_get_value(uint8_t times) {
-    return (double)(hx711_read_average(times) - hx711_offset);
+uint32_t hx711_get_value(uint8_t times) {
+    return hx711_read_average(times) - hx711_offset;
 }
 
-float hx711_get_units(uint8_t times) {
-    return hx711_get_value(times) / hx711_scale;
+uint32_t hx711_get_units(uint8_t times) {
+    return hx711_get_value(times) * 100 / hx711_scale;
 }
 
 void hx711_tare(uint8_t times) {

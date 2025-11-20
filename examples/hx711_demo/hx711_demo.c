@@ -1,5 +1,4 @@
 #include "ch32fun.h"
-#include <stdint.h>
 #include <stdio.h>
 
 #include "hx711.h"
@@ -12,48 +11,24 @@ static int input_len = 0;
 
 void calibration( void );
 
-// Called when debug/serial input is received
-void handle_debug_input( int numbytes, uint8_t *data )
+// handle_debug_input: only buffer input
+void handle_debug_input(int numbytes, uint8_t *data)
 {
-    // Echo back received data
-    int echo_bytes = 0;
-    while ( echo_bytes < numbytes )
+    for (int i = 0; i < numbytes && input_len < sizeof(input_buffer) - 1; i++)
     {
-        putchar( data[echo_bytes] );
-        echo_bytes++;
+        char c = (char)data[i];
+        input_buffer[input_len++] = c;
+        if (c == '\n' || c == '\r')
+        {
+            input_buffer[input_len] = '\0';
+        }
     }
-
-	// Accumulate input into buffer
-	for ( int i = 0; i < numbytes && input_len < sizeof( input_buffer ) - 1; i++ )
-	{
-		char c = (char)data[i];
-		if ( c == '\n' || c == '\r' )
-		{
-			input_buffer[input_len] = '\0';
-
-			// Parse command
-			if ( strcmp( input_buffer, "C" ) == 0 )
-			{
-				calibration();
-			}
-			else if ( strcmp( input_buffer, "V" ) == 0 )
-			{
-				int value_int = (int)( hx711_get_units( 10 ) * 100 );
-				printf( "%d.%02d\n", value_int / 100, value_int % 100 );
-			}
-			input_len = 0;
-		}
-		else
-		{
-			input_buffer[input_len++] = c;
-		}
-	}
 }
 
 // Calibration routine
 void calibration( void )
 {
-	int target_weight_int = 0; // grams
+	int target_weight_int = 100; // grams * 100
 	int iterations = 3;
 	int divider_accum = 0;
 
@@ -70,7 +45,7 @@ void calibration( void )
 		{
 			poll_input();
 			if ( input_len > 0 && ( input_buffer[input_len - 1] == '\n' || input_buffer[input_len - 1] == '\r' ) )
-{
+            {
 				input_buffer[input_len - 1] = '\0';
 				// Convert string to integer
 				target_weight_int = 0;
@@ -84,37 +59,63 @@ void calibration( void )
 				break;
 			}
 		}
-		float measured_weight = (int)( hx711_get_units( 10 ) );
-		int divider = measured_weight / (float)target_weight_int;
+		uint32_t measured_weight = hx711_get_units( 10 );
+		uint32_t divider = measured_weight / target_weight_int;
 		divider_accum += divider;
 
-		printf( "Ok\n" );
+		printf( "%d grams - Ok\n", target_weight_int );
 		input_len = 0;
 	}
 
-	float divider_final = divider_accum / iterations;
+	uint32_t divider_final = divider_accum / iterations;
 
-	int divider_int = (int)(divider_final * 100);
-
-	printf( "Calibration divider: %d.%02d\n", divider_int / 100, divider_int % 100 );
+	printf( "Calibration divider: %ld.%02ld\n", divider_final / 100, divider_final % 100 );
 	hx711_set_scale( divider_final );
 	printf( "Calibrated\n" );
 }
 
-int main( void )
+// main loop: handle echo and command parsing
+int main(void)
 {
-	SystemInit();
-	WaitForDebuggerToAttach( 60000 );
+    SystemInit();
+    while (!DebugPrintfBufferFree());
 
-    printf( "Start\n" );
+    funGpioInitD();
 
-	hx711_init( LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN, 128 );
-	hx711_tare( 1 );
+    printf("Start\n");
+    hx711_init(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN, 128);
+    hx711_tare(1);
+    printf("Tara done, give commands\n");
 
-	printf("Tara done, give commands\n");
-
-	while ( 1 )
-	{
+    while (1)
+    {
 		poll_input();
-	}
+
+        // If a command is ready
+        if (input_len > 0 && (input_buffer[input_len - 1] == '\n' || input_buffer[input_len - 1] == '\r'))
+        {
+            // Echo back
+            for (int i = 0; i < input_len; i++)
+                putchar(input_buffer[i]);
+            input_buffer[input_len] = '\0';
+
+            printf("Received command: %s\n", input_buffer);
+
+            // Parse command
+            int b = strncmp(input_buffer, "C", 1);
+            printf("Compare result: %d\n", b);
+            if (strncmp(input_buffer, "C", 1) == 0)
+            {
+                printf("Calibration\n");
+                calibration();
+            }
+            else if (strncmp(input_buffer, "V", 1) == 0)
+            {
+                printf("Value\n");
+                uint32_t value = hx711_get_units(10);
+                printf("%ld\n", value);
+            }
+            input_len = 0;
+        }
+    }
 }
