@@ -11,9 +11,27 @@
 #include "ch32fun.h"
 #include <stdbool.h>
 
-static uint8_t hx711_data_pin = 0;
-static uint8_t hx711_clock_pin = 0;
-static uint8_t hx711_gain = 0;
+// control pins
+#ifndef HX711_DATA_PIN
+#define HX711_DATA_PIN PD4
+#endif
+
+#ifndef HX711_CLK_PIN
+#define HX711_CLK_PIN PD5
+#endif
+
+#ifdef HX711_GAIN
+    #if HX711_GAIN == 128
+        #define HX711_GAIN 1
+    #elif HX711_GAIN == 64
+        #define HX711_GAIN 3
+    #elif HX711_GAIN == 32
+        #define HX711_GAIN 2
+    #endif
+#else
+    #define HX711_GAIN_VALUE 1
+#endif
+
 static uint32_t hx711_scale = 0; // Scale factor * 100
 static uint32_t hx711_offset = 0;
 
@@ -23,61 +41,42 @@ uint8_t hx711_shift_in() {
     uint8_t i;
 
     for (i = 0; i < 8; ++i) {
-        funDigitalWrite(hx711_clock_pin, FUN_HIGH);
+        funDigitalWrite(HX711_CLK_PIN, FUN_HIGH);
         Delay_Us(1);
-        value |= funDigitalRead(hx711_data_pin) << (7 - i);
-        funDigitalWrite(hx711_clock_pin, FUN_LOW);
+        value |= funDigitalRead(HX711_DATA_PIN) << (7 - i);
+        funDigitalWrite(HX711_CLK_PIN, FUN_LOW);
         Delay_Us(1);
     }
     return (uint8_t)value;
 }
 
-void hx711_set_gain(uint8_t gain) {
-    switch(gain) {
-        case 128:
-            hx711_gain = 1;
-            break;
-        case 64:
-            hx711_gain = 3;
-            break;
-        case 32:
-            hx711_gain = 2;
-            break;
-    }
-}
-
-void hx711_init(uint8_t dataPin, uint8_t clockPin, uint8_t gain) {
-    hx711_data_pin = dataPin;
-    hx711_clock_pin = clockPin;
-
+void hx711_init() {
     // Clock pin as output
-    funPinMode(hx711_clock_pin, GPIO_Speed_10MHz | GPIO_CNF_OUT_PP);
+    funPinMode(HX711_CLK_PIN, GPIO_Speed_10MHz | GPIO_CNF_OUT_PP);
 
     // Data pin as input with pullup
-    funPinMode(hx711_data_pin, GPIO_CFGLR_IN_PUPD);
-    funDigitalWrite(hx711_data_pin, FUN_HIGH);
-
-    hx711_set_gain(gain);    
+    funPinMode(HX711_DATA_PIN, GPIO_CFGLR_IN_PUPD);
+    funDigitalWrite(HX711_DATA_PIN, FUN_HIGH);
 }
 
-void hx711_set_scale(uint32_t scale) {
+static inline void hx711_set_scale(uint32_t scale) {
     hx711_scale = scale;
 }
 
-uint32_t hx711_get_scale(void) {
+static inline uint32_t hx711_get_scale(void) {
     return hx711_scale;
 }
 
-void hx711_set_offset(uint32_t offset) {
+static inline void hx711_set_offset(uint32_t offset) {
     hx711_offset = offset;
 }
 
-uint32_t hx711_get_offset(void) {
+static inline uint32_t hx711_get_offset(void) {
     return hx711_offset;
 }
 
-static inline bool hx711_is_ready(void) {
-    return funDigitalRead(hx711_data_pin) == FUN_LOW;
+inline bool hx711_is_ready(void) {
+    return funDigitalRead(HX711_DATA_PIN) == FUN_LOW;
 }
 
 void hx711_wait_ready(uint32_t delay) {
@@ -125,10 +124,10 @@ uint32_t hx711_read(void) {
     }
 
     // Set gain for next reading
-    for (uint8_t i = 0; i < hx711_gain; i++) {
-        funDigitalWrite(hx711_clock_pin, 1);
+    for (uint8_t i = 0; i < HX711_GAIN_VALUE; i++) {
+        funDigitalWrite(HX711_CLK_PIN, 1);
         Delay_Us(1);
-        funDigitalWrite(hx711_clock_pin, 0);
+        funDigitalWrite(HX711_CLK_PIN, 0);
         Delay_Us(1);
     }
 
@@ -156,24 +155,24 @@ uint32_t hx711_read_average(uint8_t times) {
     return (uint32_t)(sum / times);
 }
 
-uint32_t hx711_get_value(uint8_t times) {
+static inline uint32_t hx711_get_value(uint8_t times) {
     return hx711_read_average(times) - hx711_offset;
 }
 
-uint32_t hx711_get_units(uint8_t times) {
+static inline uint32_t hx711_get_units(uint8_t times) {
     return hx711_get_value(times) * 100 / hx711_scale;
 }
 
-void hx711_tare(uint8_t times) {
+static inline void hx711_tare(uint8_t times) {
     uint32_t sum = hx711_read_average(times);
     hx711_set_offset(sum);
 }
 
 void hx711_power_down(void) {
-    funDigitalWrite(hx711_clock_pin, FUN_LOW);
-    funDigitalWrite(hx711_clock_pin, FUN_HIGH);
+    funDigitalWrite(HX711_CLK_PIN, FUN_LOW);
+    funDigitalWrite(HX711_CLK_PIN, FUN_HIGH);
 }
 
 void hx711_power_up(void) {
-    funDigitalWrite(hx711_clock_pin, FUN_LOW);
+    funDigitalWrite(HX711_CLK_PIN, FUN_LOW);
 }

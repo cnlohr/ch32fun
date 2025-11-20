@@ -3,9 +3,6 @@
 
 #include "hx711.h"
 
-const uint8_t LOADCELL_DOUT_PIN = PD4;
-const uint8_t LOADCELL_SCK_PIN = PD5;
-
 static char input_buffer[64];
 static int input_len = 0;
 
@@ -83,7 +80,7 @@ int main(void)
     funGpioInitD();
 
     printf("Start\n");
-    hx711_init(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN, 128);
+    hx711_init();
     hx711_tare(1);
     printf("Tara done, give commands\n");
 
