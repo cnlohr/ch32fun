@@ -7,12 +7,12 @@
 #define UART_RX_PIN PA3
 #include "uart.h"
 
-#ifndef CH32V10x
+
+#if defined( FUNCONF_SYSTICK_USE_HCLK ) && FUNCONF_SYSTICK_USE_HCLK && !defined(CH32V10x)
 #define SYSTICK_DIV 1
 #else
 #define SYSTICK_DIV 8
 #endif
-#define SYSTICK_ONE_MILLISECOND ((uint32_t)FUNCONF_SYSTEM_CORE_CLOCK / SYSTICK_DIV / 1000)
 #if !defined(CH32V10x) && !defined (CH32X03x)
 volatile uint32_t millis_cnt = 0;
 #else
@@ -173,17 +173,17 @@ void systick_init(void)
 
 	SysTick->CTLR = 0;
 #ifndef CH32V10x
-	SysTick->CMP = SYSTICK_ONE_MILLISECOND - 1;
+	SysTick->CMP = DELAY_MS_TIME - 1;
 	SysTick->CNT = 0;
 	SysTick->CTLR |= SYSTICK_CTLR_STE |  // Enable Counter
                   SYSTICK_CTLR_STIE |  // Enable Interrupts
 #if SYSTICK_DIV==1
                   SYSTICK_CTLR_STCLK;  // Set Clock Source to HCLK/1
 #else
-                                    ;
+                  0                 ;
 #endif
 #else
-	uint64_t cmp_tmp = SYSTICK_ONE_MILLISECOND - 1;
+	uint64_t cmp_tmp = DELAY_MS_TIME - 1;
 	// In CH32V103 we can write systick regs only in 8bit manner
 	SysTick->CMP0 = (uint8_t)cmp_tmp;
 	SysTick->CMP1 = (uint8_t)(cmp_tmp >> 8);
@@ -217,10 +217,10 @@ void SysTick_Handler(void) __attribute__((interrupt));
 void SysTick_Handler(void)
 {
 #ifndef CH32V10x
-	SysTick->CMP += SYSTICK_ONE_MILLISECOND;
+	SysTick->CMP += DELAY_MS_TIME;
 	SysTick->SR = 0;
 #else
-	uint64_t cmp_tmp = SysTick->CMP + SYSTICK_ONE_MILLISECOND;
+	uint64_t cmp_tmp = SysTick->CMP + DELAY_MS_TIME;
 	
 	SysTick->CMP0 = (uint8_t)cmp_tmp;
 	SysTick->CMP1 = (uint8_t)(cmp_tmp >> 8);

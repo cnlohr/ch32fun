@@ -19,7 +19,7 @@
 
 #include "ch32fun.h"
 #include <stdio.h>
-#include "debug_utilities.h"
+#include "register_debug_utilities.h"
 
 void configure_PVD(u8 threshold) {
 	// Enable PWR clock

@@ -1,16 +1,13 @@
 #include "ch32fun.h"
 #include <stdio.h>
 
-// Number of ticks elapsed per millisecond
-#define SYSTICK_ONE_MILLISECOND ((uint32_t)FUNCONF_SYSTEM_CORE_CLOCK / 1000)
-
 #ifdef CH570_CH572
 #define LED PA9
 #else
 #define LED PA8
 #endif
 
-#define INTERVAL 300*SYSTICK_ONE_MILLISECOND
+#define INTERVAL 300*DELAY_MS_TIME
 
 /*
  * Initialises the SysTick to trigger an IRQ with auto-reload, using HCLK/1 as

@@ -24,7 +24,7 @@ void UTIL_PRINT_BITS(u32 val, u8 len, const char* format, ...) {
 	
 	printf("[");
 	for (int i = (len)-1; i >= 0; i--) {
-		printf("%d", ((val) >> i) & 1);
+		printf("%d", (unsigned int)(((val) >> i) & 1));
 		if (i > 0) printf(i % divider_len ? " " : " %s ", separator);
 	}
 	printf("]\n");
@@ -55,6 +55,7 @@ void UTIL_PRINT_BITS_VALUES(u32 reg, ...) {
 		const char* name = va_arg(count_args, const char*);
 		if (name == NULL) break;
 		int pos = va_arg(count_args, int);
+		(void)pos;
 		pair_count++;
 	}
 	va_end(count_args);
@@ -71,7 +72,7 @@ void UTIL_PRINT_BITS_VALUES(u32 reg, ...) {
 	// Print the pairs
 	for (int i = 0; i < pair_count; i++) {
 		if (i > 0) printf(", ");
-		printf("%s=%d", pairs[i].name, (reg >> pairs[i].pos) & 1);
+		printf("%s=%d", pairs[i].name, (unsigned int)((reg >> pairs[i].pos) & 1));
 	}
 }
 
@@ -104,7 +105,9 @@ void UTIL_PRINT_BIT_RANGE(u32 reg, ...) {
 		const char* name = va_arg(count_args, const char*);
 		if (name == NULL) break;
 		int start = va_arg(count_args, int);
+		(void)start;
 		int end = va_arg(count_args, int);
+		(void)end;
 		field_count++;
 	}
 	va_end(count_args);
@@ -125,11 +128,11 @@ void UTIL_PRINT_BIT_RANGE(u32 reg, ...) {
 		
 		if (fields[i].end == fields[i].start) {
 			// Single bit
-			printf("%s=%d", fields[i].name, (reg >> fields[i].start) & 1);
+			printf("%s=%d", fields[i].name, (unsigned int)((reg >> fields[i].start) & 1));
 		} else {
 			// Multiple bits
 			int mask = ((1 << (fields[i].end - fields[i].start + 1)) - 1);
-			printf("%s=0x%02X", fields[i].name, (reg >> fields[i].start) & mask);
+			printf("%s=0x%02X", fields[i].name, (unsigned int)((reg >> fields[i].start) & mask));
 		}
 	}
 	printf("\n");
@@ -140,8 +143,8 @@ void UTIL_PRINT_BIT_RANGE(u32 reg, ...) {
 //! PRINT REGS
 //! ####################################
 
-#define UTIL_PRINT_REG8(reg, label) printf("%s: 0x%02X\n", label, reg);
-#define UTIL_PRINT_REG16(reg, label) printf("%s: 0x%04X\n", label, reg);
-#define UTIL_PRINT_REG32(reg, label) printf("%s: 0x%08lX\n", label, reg);
+#define UTIL_PRINT_REG8(reg, label) printf("%s: 0x%02X\n", label, (unsigned int)(reg));
+#define UTIL_PRINT_REG16(reg, label) printf("%s: 0x%04X\n", label, (unsigned int)(reg));
+#define UTIL_PRINT_REG32(reg, label) printf("%s: 0x%08X\n", label, (unsigned int)(reg));
 
 

@@ -10,18 +10,12 @@
 #include "ch32fun.h"
 #include <stdio.h>
 
-// Number of ticks elapsed per millisecond (10,000 when using 80MHz Clock)
-// Need to divide by 8, because this is the only option for CH32V103
-#define SYSTICK_ONE_MILLISECOND ((uint32_t)FUNCONF_SYSTEM_CORE_CLOCK / 8 / 1000)
-// Number of ticks elapsed per microsecond (10 when using 80MHz Clock)
-#define SYSTICK_ONE_MICROSECOND ((uint32_t)FUNCONF_SYSTEM_CORE_CLOCK / 8 / 1000000)
-
 // Simple macro functions to give a arduino-like functions to call
 // millis() reads the incremented systick variable
 // micros() reads the raw SysTick Count, and divides it by the number of 
 // ticks per microsecond ( WARN: Wraps every 90 seconds!)
 #define millis() (systick_millis)
-#define micros() (SysTick->CNT / SYSTICK_ONE_MICROSECOND)
+#define micros() (SysTick->CNT / DELAY_US_TIME)
 
 // Incremented in the SysTick IRQ - in this example once per millisecond
 volatile uint64_t systick_millis;
@@ -36,7 +30,7 @@ void systick_init(void)
 	SysTick->CTLR = 0;
 	
 	// Set the compare register to trigger once per millisecond
-	uint64_t cmp_tmp = SYSTICK_ONE_MILLISECOND - 1;
+	uint64_t cmp_tmp = DELAY_MS_TIME - 1;
 	// In CH32V103 we can write systick regs only in 8bit manner
 	SysTick->CMP0 = (uint8_t)cmp_tmp;
 	SysTick->CMP1 = (uint8_t)(cmp_tmp >> 8);
@@ -78,7 +72,7 @@ void SysTick_Handler(void)
 	// If more than this number of ticks elapse before the trigger is reset,
 	// you may miss your next interrupt trigger
 	// (Make sure the IQR is lightweight and CMP value is reasonable)
-	uint64_t cmp_tmp = SysTick->CMP + SYSTICK_ONE_MILLISECOND - 1;
+	uint64_t cmp_tmp = SysTick->CMP + DELAY_MS_TIME - 1;
 	
 	SysTick->CMP0 = (uint8_t)cmp_tmp;
 	SysTick->CMP1 = (uint8_t)(cmp_tmp >> 8);

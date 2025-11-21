@@ -338,7 +338,7 @@ static inline void GPIO_tim2_init();
 #define GPIO_digitalWrite_1(GPIOv)					GPIO_digitalWrite_hi(GPIOv)
 
 #undef GPIO_digitalWrite_branching
-#define GPIO_digitalWrite_branching(GPIOv, lowhigh)			(lowhigh ? GPIO_digitalWrite_hi(GPIOv) : GPIO_digitalWrite_lo(GPIOv))
+#define GPIO_digitalWrite_branching(GPIOv, lowhigh)			(lowhigh ? (GPIO_digitalWrite_hi(GPIOv)) : (GPIO_digitalWrite_lo(GPIOv)))
 
 #undef GPIO_digitalRead
 #define GPIO_digitalRead(GPIOv)			 			((GPIOv_to_GPIObase(GPIOv)->INDR >> GPIOv_to_PIN(GPIOv)) & 0b1)

@@ -850,8 +850,10 @@ extern "C" {
 #define Delay_Us(n) DelaySysTick( (n) * DELAY_US_TIME )
 #define Delay_Ms(n) DelaySysTick( (n) * DELAY_MS_TIME )
 
-#define Ticks_from_Us(n)	(n * DELAY_US_TIME)
-#define Ticks_from_Ms(n)	(n * DELAY_MS_TIME)
+#define Ticks_from_Us(n)	((n) * DELAY_US_TIME)
+#define Ticks_from_Ms(n)	((n) * DELAY_MS_TIME)
+
+#define TimeElapsed32(now,start)  ((uint32_t)((uint32_t)(now)-(uint32_t)(start)))
 
 // Add a certain number of nops.  Note: These are usually executed in pairs
 // and take two cycles, so you typically would use 0, 2, 4, etc.
@@ -871,7 +873,7 @@ extern "C" {
 #define GPIO_InverseBits(pin)         (*(&R32_PA_OUT + OFFSET_FOR_GPIOB(pin)) ^= (pin & ~PB))
 #define GPIO_ReadPortPin(pin)         (*(&R32_PA_PIN + OFFSET_FOR_GPIOB(pin)) &  (pin & ~PB))
 #define funDigitalRead(pin)           GPIO_ReadPortPin(pin)
-#define funDigitalWrite( pin, value ) { if((value)==FUN_HIGH){GPIO_SetBits(pin);} else if((value)==FUN_LOW){GPIO_ResetBits(pin);} }
+#define funDigitalWrite( pin, value ) do{ if((value)==FUN_HIGH){GPIO_SetBits(pin);} else if((value)==FUN_LOW){GPIO_ResetBits(pin);} }while(0)
 #define funGpioInitAll()              // funGpioInitAll() does not do anything on ch5xx, put here for consistency
 
 RV_STATIC_INLINE void funPinMode(u32 pin, GPIOModeTypeDef mode)
@@ -912,7 +914,7 @@ RV_STATIC_INLINE void funPinMode(u32 pin, GPIOModeTypeDef mode)
 // For pins, use things like PA8, PB15
 // For configuration, use things like GPIO_CFGLR_OUT_10Mhz_PP
 
-#define funDigitalWrite( pin, value ) { GpioOf( pin )->BSHR = 1<<((!(value))*16 + ((pin) & 0xf)); }
+#define funDigitalWrite( pin, value ) do{ GpioOf( pin )->BSHR = 1<<((!(value))*16 + ((pin) & 0xf)); }while(0)
 
 #if defined(CH32X03x)
 #define funGpioInitAll() { RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC ); }

@@ -10,7 +10,7 @@
 #define GET_REG16(base, offset) (*(vu16 *)((vu32)base + offset))
 
 void uart_init_ch5xx(vu32 *uart_ctrl, int baudrate) {
-	//# Configure GPIOs
+	//# Configure GPIOs for CH582
     if (uart_ctrl == &R32_UART0_CTRL) {
         funPinMode(PB4, GPIO_CFGLR_IN_PU);           // RX0 (PB4)
         funPinMode(PB7, GPIO_CFGLR_OUT_2Mhz_PP);     // TX0 (PB7)
@@ -61,20 +61,21 @@ void uart_send_ch5xx(vu32 *uart_ctrl, u8 *buf, u16 len) {
 	}
 }
 
-u16 uart_receive_ch5xx(vu32 *uart_ctrl, u8 *buf, u16 max_len) {
+u32 time_ref = 0;
+
+u16 uart_receive_ch5xx(u32 time, vu32 *uart_ctrl, u8 *buf, u16 max_len) {
     u16 len = 0;
-    u32 time_ref = millis();
-    
+
 	//! NOTE: if you are debugging with printf, note that it introduces a delay
     while (len < max_len - 1) {
         while (GET_REG8(uart_ctrl, UART_RFC) && len < max_len - 1) {
             buf[len++] = GET_REG8(uart_ctrl, UART_RBR);
-            time_ref = millis();	// Reset timeout
+            time_ref = time;	// Reset timeout
         }
         
         // Wait 1ms to see if more data arrives. If no data for 1ms, assume message is complete
 		// the wait time may need to be adjusted depending on the baudrate
-        if ((millis() - time_ref) > 1) { break;}
+        if ((time - time_ref) > 1) { break;}
     }
     
     buf[len] = '\0';
