@@ -1877,6 +1877,7 @@ typedef struct
 
 /*******************  Bit definition for PWR_CSR register  ********************/
 #define PWR_CSR_PVDO                            ((uint16_t)0x0004) /* PVD Output */
+#define PVD_MAX_THRESHOLD_LVL                   3
 
 /******************************************************************************/
 /*                         Reset and Clock Control                            */
