@@ -58,4 +58,4 @@ inspect_bootloader : minichlink
 	riscv64-unknown-elf-objdump -S -D test.bin -b binary -m riscv:rv32 | less
 
 clean :
-	rm -rf $(TOOLS)
+	rm -rf $(TOOLS) minichlink.exe
