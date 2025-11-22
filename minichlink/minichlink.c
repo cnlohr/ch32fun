@@ -2784,35 +2784,37 @@ int DefaultReadBinaryBlob( void * dev, uint32_t address_to_read_from, uint32_t r
 		}
 		else
 		{
-			if( ( rpos & 1 ) )
-			{
-				uint8_t rw;
-				r = MCF.ReadByte( dev, rpos, &rw );
-				if( r ) return r;
-				memcpy( blob, &rw, 1 );
-				blob += 1;
-				rpos += 1;
-				remain -= 1;
-			}
-			if( ( rpos & 2 ) && remain >= 2 )
-			{
-				uint16_t rw;
-				r = MCF.ReadHalfWord( dev, rpos, &rw );
-				if( r ) return r;
-				memcpy( blob, &rw, 2 );
-				blob += 2;
-				rpos += 2;
-				remain -= 2;
-			}
 			if( remain >= 1 )
 			{
-				uint8_t rw;
-				r = MCF.ReadByte( dev, rpos, &rw );
-				if( r ) return r;
-				memcpy( blob, &rw, 1 );
-				blob += 1;
-				rpos += 1;
-				remain -= 1;
+			    uint8_t rw;
+			    r = MCF.ReadByte( dev, rpos, &rw );
+			    if( r ) return r;
+			    memcpy( blob, &rw, 1 );
+			    blob += 1;
+			    rpos += 1;
+			    remain -= 1;
+			}
+        
+			if( ( rpos & 1 ) && remain >= 1 )
+			{
+			    uint8_t rw;
+			    r = MCF.ReadByte( dev, rpos, &rw );
+			    if( r ) return r;
+			    memcpy( blob, &rw, 1 );
+			    blob += 1;
+			    rpos += 1;
+			    remain -= 1;
+			}
+			
+			if( ( rpos & 2 ) && remain >= 2 )
+			{
+			    uint16_t rw;
+			    r = MCF.ReadHalfWord( dev, rpos, &rw );
+			    if( r ) return r;
+			    memcpy( blob, &rw, 2 );
+			    blob += 2;
+			    rpos += 2;
+			    remain -= 2;
 			}
 		}
 	}
