@@ -1757,8 +1757,9 @@ typedef struct{
 #define I2C1_BASE                               (APB1PERIPH_BASE + 0x5400)
 #define I2C2_BASE                               (APB1PERIPH_BASE + 0x5800)
 #define CAN1_BASE                               (APB1PERIPH_BASE + 0x6400)
-#define CAN2_BASE             (APB1PERIPH_BASE + 0x6800)
+#define CAN2_BASE                               (APB1PERIPH_BASE + 0x6800)
 #define BKP_BASE                                (APB1PERIPH_BASE + 0x6C00)
+#define BKP2_BASE                               (APB1PERIPH_BASE + 0x6C40)
 #define PWR_BASE                                (APB1PERIPH_BASE + 0x7000)
 #define DAC_BASE              					(APB1PERIPH_BASE + 0x7400)
 
@@ -9014,6 +9015,18 @@ typedef struct
 #define RTC_FLAG_OW       ((uint16_t)0x0004) /* Overflow flag */
 #define RTC_FLAG_ALR      ((uint16_t)0x0002) /* Alarm flag */
 #define RTC_FLAG_SEC      ((uint16_t)0x0001) /* Second flag */
+
+// Wait for last write operation to complete, enter configuration mode
+// perform configuration
+// wait for last write operation to complete,exit configuration mode
+#define RTC_CONFIG_CHANGE(a) do { \
+	while (!(RTC->CTLRL & RTC_FLAG_RTOFF)); \
+	RTC->CTLRL |= RTC_CTLRL_CNF; \
+	{a} \
+	while (!(RTC->CTLRL & RTC_FLAG_RTOFF)); \
+	RTC->CTLRL &= ~RTC_CTLRL_CNF; \
+} while (0)
+
 
 #if defined(CH32V20x_D8) || defined(CH32V20x_D8W)
 #define RB_OSC32K_HTUNE       (0x1FE0)

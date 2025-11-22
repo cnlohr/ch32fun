@@ -818,12 +818,6 @@ int USBFSSetup()
 #endif
 
 #if defined (CH32V20x) || defined (CH32V30x) || defined(CH32L103)
-#if (defined (CH32V20x_D8W) || defined (CH32V20x_D8)) && (defined (FUNCONF_USE_HSE) && FUNCONF_USE_HSE)
-	RCC->CFGR0 = (RCC->CFGR0 & ~(3<<22)) | (3<<22);
-#else
-#if (FUNCONF_SYSTEM_CORE_CLOCK != 144000000) && (FUNCONF_SYSTEM_CORE_CLOCK != 96000000) && (FUNCONF_SYSTEM_CORE_CLOCK != 48000000)
-#error CH32V20x/30x need 144/96/48MHz main clock for USB to work
-#endif
 #ifdef CH32V30x_D8C
 	RCC->CFGR2 = RCC_USBHSSRC | RCC_USBHSPLL | 1<< RCC_USBHSCLK_OFFSET | RCC_USBHSPLLSRC | 1 << RCC_USBHSDIV_OFFSET;
 	RCC->AHBPCENR |= RCC_USBHSEN;
@@ -832,13 +826,14 @@ int USBFSSetup()
 	// Must be done before enabling clock to USBFS tree.
 #if FUNCONF_SYSTEM_CORE_CLOCK == 144000000
 	RCC->CFGR0 = (RCC->CFGR0 & ~(3<<22)) | (2<<22);
-#endif
-#if FUNCONF_SYSTEM_CORE_CLOCK == 96000000
+#elif FUNCONF_SYSTEM_CORE_CLOCK == 96000000
 	RCC->CFGR0 = (RCC->CFGR0 & ~(3<<22)) | (1<<22);
-#endif
-#if FUNCONF_SYSTEM_CORE_CLOCK == 48000000
+#elif FUNCONF_SYSTEM_CORE_CLOCK == 48000000
 	RCC->CFGR0 = (RCC->CFGR0 & ~(3<<22));
-#endif
+#elif FUNCONF_SYSTEM_CORE_CLOCK == 240000000
+#error CH32V20x/30x is unstable at 240MHz
+#else
+#error CH32V20x/30x need 144/96/48MHz main clock for USB to work
 #endif
 #endif
 #endif
@@ -965,6 +960,7 @@ int USBFS_SendEndpointNEW( int endp, uint8_t* data, int len, int copy)
 	{
 		if( copy )
 		{
+			UEP_DMA( endp ) = (uintptr_t)USBFSCTX.ENDPOINTS[endp];
 			copyBuffer( USBFSCTX.ENDPOINTS[endp], data, len );
 			copyBufferComplete();
 		}

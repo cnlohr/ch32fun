@@ -43,20 +43,14 @@ void adc_touchKey_init(u8 sampling_time) {
 	printf("\nPrint Bit Ranges:");
 	UTIL_PRINT_BIT_RANGE(
 		ADC1->SAMPTR2,
-		"\nSMP0", 0, 2,
-		"\nSMP1", 3, 5,
-		"\nSMP2", 6, 8,
+		"\nSMP2", 8, 6,
+		"\nSMP1", 5, 3,
+		"\nSMP0", 2, 0,
 		NULL
 	);
 
 	printf("\nPrint bits (default): \n");
-	UTIL_PRINT_BITS(ADC1->CTLR1, 32, NULL);
-
-	printf("\nPrint bits (custom separator): \n");
-	UTIL_PRINT_BITS(ADC1->CTLR1, 32, "-", 8);
-
-	printf("\nPrint bits (custom separator and divider_len): \n");
-	UTIL_PRINT_BITS(ADC1->CTLR1, 32, "\n", 16);
+	UTIL_PRINT_BITS(ADC1->CTLR1, 32, 16);
 
 	printf("\nPrint bits values:");
 	UTIL_PRINT_BITS_VALUES(
