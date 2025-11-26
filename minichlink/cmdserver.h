@@ -30,7 +30,7 @@ int WSAAPI WSAPoll(struct pollfd * fdArray, ULONG fds, INT timeout );
 
 #ifdef __linux__
 #include <linux/in.h>
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) || defined(__FreeBSD__)
 #include <netinet/in.h>
 #endif
 
