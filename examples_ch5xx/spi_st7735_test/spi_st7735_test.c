@@ -1,5 +1,15 @@
+// Simple example to test SPI ST7735 display
+// This example uses SPI0, wire the display as follows:
+// PA13:	SCK
+// PA14:	MOSI
+// PA10:	RST
+// PA11:	DC
+
+// The display should be filled with a purple color
+// and display a text string with a counter
+
 #include "ch32fun.h"
-#include "fun_st7735.h"
+#include "lib_st7735.h"
 
 // R32_SPI0_CONTROL
 // PA13:	SCK
@@ -16,21 +26,25 @@ int main() {
 
 	SPI_Device_t spi_device = {
 		.spi_ctrl = &R32_SPI0_CONTROL,
+		.mosi_pin = PA14,
+		.sck_pin = PA13,
 		.rst_pin = PA10, 
 		.dc_pin = PA11, 
-		.cs_pin = PA15
+		.cs_pin = -1
 	};
 
 	printf("~SPI ST7735 TEST~\n");
-	fun_st7335_init(160, 80, &spi_device);
-	tft_fill_rect(0, 0, 160, 80, ST_PURPLE);
+	// clock div = 16, mode: 1 = slave, 0 = master
+	SPI_init(&spi_device, 16, 0);
+	ST7735_init(&spi_device, 160, 80);
+	ST7735_fill_all(ST_PURPLE);
 
 	char str[25] = {0};
 	int counter = 0;
 
 	while(1) {
 		sprintf(str, "Hello Bee %d", counter++);
-		tft_print(str, 0, 0, ST_WHITE, ST_PURPLE);
+		tft_print(&default_font, str, 0, 0, ST_WHITE, ST_PURPLE);
 		Delay_Ms(1000);
 	}
 }

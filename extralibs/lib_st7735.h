@@ -28,17 +28,20 @@
 //###########################################
 //# INTERFACES
 //###########################################
+SPI_Device_t *SELECTED_SPI_DEV = NULL;
 
-SPI_Device_t *SPI_Dev;
-
-// Disable
-void INT_TFT_CS_HIGH() {
-	funDigitalWrite(SPI_Dev->cs_pin, 1);
+void TFT_SELECT_SPI_DEV(void *spi_dev) {
+	SELECTED_SPI_DEV = (SPI_Device_t *)spi_dev;
 }
 
-// Enable
-void INT_TFT_CS_LOW() {
-	funDigitalWrite(SPI_Dev->cs_pin, 0);
+// SPI Device Disable
+void TFT_CS_HIGH() {
+	funDigitalWrite(SELECTED_SPI_DEV->cs_pin, 1);
+}
+
+// SPI DeviceEnable
+void TFT_CS_LOW() {
+	funDigitalWrite(SELECTED_SPI_DEV->cs_pin, 0);
 }
 
 #define ST7735_CASET 0x2A	// Column Address Set
@@ -48,40 +51,40 @@ void INT_TFT_CS_LOW() {
 u8 ST7735_XOFFSET = 0;
 u8 ST7735_YOFFSET = 0;
 
-void INTF_TFT_SET_WINDOW(u16 x0, u16 y0, u16 x1, u16 y1) {
-	SPI_Cmd_Reg8(SPI_Dev, ST7735_CASET);
-	SPI_Cmd_Data16(SPI_Dev, x0 + ST7735_XOFFSET);
-	SPI_Cmd_Data16(SPI_Dev, x1 + ST7735_XOFFSET);
-	SPI_Cmd_Reg8(SPI_Dev, ST7735_RASET);
-	SPI_Cmd_Data16(SPI_Dev, y0 + ST7735_YOFFSET);
-	SPI_Cmd_Data16(SPI_Dev, y1 + ST7735_YOFFSET);
-	SPI_Cmd_Reg8(SPI_Dev, ST7735_RAMWR);
+void TFT_SET_WINDOW(u16 x0, u16 y0, u16 x1, u16 y1) {
+	SPI_Cmd_Reg8(SELECTED_SPI_DEV, ST7735_CASET);
+	SPI_Cmd_Data16(SELECTED_SPI_DEV, x0 + ST7735_XOFFSET);
+	SPI_Cmd_Data16(SELECTED_SPI_DEV, x1 + ST7735_XOFFSET);
+	SPI_Cmd_Reg8(SELECTED_SPI_DEV, ST7735_RASET);
+	SPI_Cmd_Data16(SELECTED_SPI_DEV, y0 + ST7735_YOFFSET);
+	SPI_Cmd_Data16(SELECTED_SPI_DEV, y1 + ST7735_YOFFSET);
+	SPI_Cmd_Reg8(SELECTED_SPI_DEV, ST7735_RAMWR);
 }
 
-void INTF_TFT_SEND_BUFF8(const u8* buffer, u16 len) {
+void TFT_SEND_BUFF8(const u8* buffer, u16 len) {
 	for (int i = 0; i < len; i++) {
-		SPI_Cmd_Data8(SPI_Dev, buffer[i]);
+		SPI_Cmd_Data8(SELECTED_SPI_DEV, buffer[i]);
 	}
 }
 
 #define SWAP_BYTES(x) (((x) >> 8) | ((x) << 8))
 
-void INTF_TFT_SEND_BUFF16(u16* buffer, u16 len) {
+void TFT_SEND_BUFF16(u16* buffer, u16 len) {
 	#ifdef ST7735_USE_DMA
-		funDigitalWrite(SPI_Dev->dc_pin, 1);
+		funDigitalWrite(SELECTED_SPI_DEV->dc_pin, 1);
 
 		for (u16 i = 0; i < len; i++) { buffer[i] = SWAP_BYTES(buffer[i]); }
-		fun_spi0_dma_send((u8*)buffer, len*2, 1);
+		SPI0_dma_send((u8*)buffer, len*2, 1);
 		for (u16 i = 0; i < len; i++) { buffer[i] = SWAP_BYTES(buffer[i]); }
 	#else
 		for (int i = 0; i < len; i++) {
-			SPI_Cmd_Data16(SPI_Dev, buffer[i]);
+			SPI_Cmd_Data16(SELECTED_SPI_DEV, buffer[i]);
 		}
 	#endif
 }
 
-void INTF_TFT_SEND_PIXEL(u16 color) {
-	SPI_Cmd_Data16(SPI_Dev, color);
+void TFT_SEND_PIXEL(u16 color) {
+	SPI_Cmd_Data16(SELECTED_SPI_DEV, color);
 }
 
 
@@ -107,16 +110,13 @@ void INTF_TFT_SEND_PIXEL(u16 color) {
 u8 ST7735_WIDTH = 160;
 u8 ST7735_HEIGHT = 80;
 
-void fun_st7735_fill_all(u16 color) {
+void ST7735_fill_all(u16 color) {
 	tft_fill_rect(0, 0, ST7735_WIDTH, ST7735_HEIGHT, color);
 }
 
-void fun_st7335_init(u8 width, u8 height, SPI_Device_t *dev) {
-	// clock div = 16, mode: 1 = slave, 0 = master
-	fun_spi_init(dev, 16, 0);
-	fun_spi_GPIOs(dev);
+void ST7735_init(SPI_Device_t *dev, u8 width, u8 height) {
+	TFT_SELECT_SPI_DEV(dev);
 
-	SPI_Dev = dev;
 	ST7735_WIDTH = width;
 	ST7735_HEIGHT = height;
 
@@ -126,7 +126,7 @@ void fun_st7335_init(u8 width, u8 height, SPI_Device_t *dev) {
 		ST7735_YOFFSET = 26;
 	}
 
-	INT_TFT_CS_LOW();
+	TFT_CS_LOW();
 
 	//# Software reset
 	//! 1.8" display need at least 110ms delay after reset
@@ -164,7 +164,7 @@ void fun_st7335_init(u8 width, u8 height, SPI_Device_t *dev) {
 		0x17, 0x15, 0x1E, 0x2B, 0x04, 0x05, 0x02, 0x0E
 	};
 	SPI_Cmd_Reg8(dev, ST7735_GAMCTRP);
-	INTF_TFT_SEND_BUFF8(gamma_pos, 16);
+	TFT_SEND_BUFF8(gamma_pos, 16);
 
 	//# Gamma- Adjustments Control (magic numbers)
 	u8 gamma_neg[] = {
@@ -172,12 +172,12 @@ void fun_st7335_init(u8 width, u8 height, SPI_Device_t *dev) {
 		0x1B, 0x1A, 0x24, 0x2B, 0x06, 0x06, 0x02, 0x0F
 	};
 	SPI_Cmd_Reg8(dev, ST7735_GAMCTRN);
-	INTF_TFT_SEND_BUFF8(gamma_neg, 16);
+	TFT_SEND_BUFF8(gamma_neg, 16);
 	Delay_Ms(10);
 
 	//# Display On
 	SPI_Cmd_Reg8(dev, ST7735_DISPON);
 	Delay_Ms(10);
 
-	INT_TFT_CS_HIGH();
+	TFT_CS_HIGH();
 }
