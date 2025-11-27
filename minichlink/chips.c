@@ -313,7 +313,7 @@ const struct RiscVChip_s ch32h415 = {
 	.options_offset = 0x1FFFF800,
 	.options_size = 128,
 	.interface_speed = 0x01,
-	.protocol = PROTOCOL_UNSUPPORTED,
+	.protocol = PROTOCOL_DEFAULT,
 };
 
 const struct RiscVChip_s ch32h416 = {
@@ -330,7 +330,7 @@ const struct RiscVChip_s ch32h416 = {
 	.options_offset = 0x1FFFF800,
 	.options_size = 128,
 	.interface_speed = 0x01,
-	.protocol = PROTOCOL_UNSUPPORTED,
+	.protocol = PROTOCOL_DEFAULT,
 };
 
 const struct RiscVChip_s ch32h417 = {
@@ -347,7 +347,7 @@ const struct RiscVChip_s ch32h417 = {
 	.options_offset = 0x1FFFF800,
 	.options_size = 128,
 	.interface_speed = 0x01,
-	.protocol = PROTOCOL_UNSUPPORTED,
+	.protocol = PROTOCOL_DEFAULT,
 };
 
 const struct RiscVChip_s ch32m030 = {
@@ -805,4 +805,9 @@ const struct RiscVChip_s* FindChipISP(uint16_t chip_id)
 		chip = chip_collection[cnt++];
 	}
 	return chip;
+}
+
+uint32_t getMemoryEnd(const struct RiscVChip_s * chip, enum MemoryArea area)
+{
+	return (&chip->flash_offset)[(area-1)*2] + (&chip->flash_size)[(area-1)*2];
 }

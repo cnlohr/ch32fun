@@ -430,7 +430,9 @@ typedef struct
 	__IO uint32_t              INTENR;
 	__IO uint32_t              ERRSR;
 	__IO uint32_t              BTIMR;
-	uint32_t                   RESERVED0[88];
+	__IO uint32_t              TTCTLR;
+	__IO uint32_t              TTCNT;
+	uint32_t                   RESERVED0[86];
 	CAN_TxMailBox_TypeDef      sTxMailBox[3];
 	CAN_FIFOMailBox_TypeDef    sFIFOMailBox[2];
 	uint32_t                   RESERVED1[12];
@@ -927,6 +929,8 @@ typedef struct
 typedef struct
 {
     __IO uint32_t EXTEN_CTR;
+    __IO uint32_t EXTEN_CTR2;
+    __IO uint32_t FEATURE_SIGN;
 } EXTEN_TypeDef;
 
 /* The reference manual for the ch32v2xx/v3xx reference this as "CTR" field in the "EXTEND" register so adding an alias here. */
@@ -8602,7 +8606,7 @@ typedef struct
 #define PWR_FLAG_WU               ((uint32_t)0x00000001)
 #define PWR_FLAG_SB               ((uint32_t)0x00000002)
 #define PWR_FLAG_PVDO             ((uint32_t)0x00000004)
-
+#define PVD_MAX_THRESHOLD_LVL     7
 
 
 /* ch32v00x_rcc.h ------------------------------------------------------------*/

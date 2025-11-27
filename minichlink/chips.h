@@ -6,17 +6,17 @@ struct RiscVChip_s {
 	char name_str[10]; // Name of the chip
 	enum RiscVChip family_id; // ChipID[3]
 	uint16_t model_id; // ChipID[4-5] & 0xFFF0
-	uint32_t ram_base; // A few old chips have weird RAM offset, the rest have 0x20000000
-	uint32_t ram_size; // RAM size in bytes
 	uint32_t sector_size; // For erasing and writing flash
 	uint32_t flash_offset; // 0x0800000 on CH32 and 0 on the most of CH5xx
 	uint32_t flash_size; // Some chips have configurable flash/RAM size here maximum value will be written
 	uint32_t bootloader_offset;
 	uint32_t bootloader_size;
-	uint32_t eeprom_offset; // EEPROM partition is present on some CH5xx chips
-	uint32_t eeprom_size; // EEPROM size
 	uint32_t options_offset; // Offset of the Option Bytes partition
 	uint32_t options_size; // Size in bytes of the Option Bytes partition
+	uint32_t eeprom_offset; // EEPROM partition is present on some CH5xx chips
+	uint32_t eeprom_size; // EEPROM size
+	uint32_t ram_base; // A few old chips have weird RAM offset, the rest have 0x20000000
+	uint32_t ram_size; // RAM size in bytes
 	uint8_t interface_speed; // WCH-LinkE has 3 speed settings for SWD communcation 6MHz, 4MHz and 400KHz. Some chips can't handle the highest speed
 	enum ProgProtocol protocol;	// Currently there are 2 distinct flashing protocols one is for CH32 chips and the other is for CH5xx chips
 	uint8_t no_autoexec; // Some chips seem to lack autoexec functionality in DM (3.12.8 in RISC-V External Debug Support manual)
@@ -25,6 +25,7 @@ struct RiscVChip_s {
 
 const struct RiscVChip_s* FindChip(uint32_t chip_id);
 const struct RiscVChip_s* FindChipISP(uint16_t chip_id);
+uint32_t getMemoryEnd(const struct RiscVChip_s * chip, enum MemoryArea area);
 
 extern const struct RiscVChip_s ch32v003;
 extern const struct RiscVChip_s ch32v002;

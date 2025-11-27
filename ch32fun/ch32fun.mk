@@ -73,7 +73,7 @@ ifeq ($(findstring CH32V00,$(TARGET_MCU)),CH32V00) # CH32V002, 3, 4, 5, 6, 7
 	else ifeq ($(findstring CH32V004, $(TARGET_MCU)), CH32V004)
 		TARGET_MCU_LD:=6
 	else ifeq ($(findstring CH32V005, $(TARGET_MCU)), CH32V005)
-		TARGET_MCU_LD:=7
+		TARGET_MCU_LD:=6
 	else ifeq ($(findstring CH32V006, $(TARGET_MCU)), CH32V006)
 		TARGET_MCU_LD:=7
 	else ifeq ($(findstring CH32V007, $(TARGET_MCU)), CH32V007)
@@ -316,6 +316,26 @@ else ifeq ($(findstring CH59,$(TARGET_MCU)),CH59) # CH592 1
 
 	TARGET_MCU_LD:=9
 	IS_CH5XX:=1
+else ifeq ($(findstring CH32H41,$(TARGET_MCU)),CH32H41)
+	TARGET_MCU_PACKAGE?=CH32H417
+	ENABLE_FPU?=1
+	MCU_PACKAGE?=1
+
+	ifeq ($(ENABLE_FPU), 1)
+		CFLAGS_ARCH+= -march=rv32imafc -mabi=ilp32f
+	else
+		CFLAGS_ARCH+= -march=rv32imac -mabi=ilp32 -DDISABLED_FLOAT
+	endif
+
+	ifeq ($(findstring 416, $(TARGET_MCU_PACKAGE)), 416)
+		MCU_PACKAGE:=2
+	else ifeq ($(findstring 415, $(TARGET_MCU_PACKAGE)), 415)
+		MCU_PACKAGE:=3
+	endif
+
+	CFLAGS+=-DMCU_PACKAGE=$(MCU_PACKAGE)
+	CFLAGS+=-DCH32H41x
+	TARGET_MCU_LD:=11
 else
 	ERROR:=$(error Unknown MCU $(TARGET_MCU))
 endif

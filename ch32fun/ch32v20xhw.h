@@ -371,7 +371,9 @@ typedef struct
 	__IO uint32_t              INTENR;
 	__IO uint32_t              ERRSR;
 	__IO uint32_t              BTIMR;
-	uint32_t                   RESERVED0[88];
+	__IO uint32_t              TTCTLR;
+	__IO uint32_t              TTCNT;
+	uint32_t                   RESERVED0[86];
 	CAN_TxMailBox_TypeDef      sTxMailBox[3];
 	CAN_FIFOMailBox_TypeDef    sFIFOMailBox[2];
 	uint32_t                   RESERVED1[12];

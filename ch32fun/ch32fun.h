@@ -84,10 +84,11 @@
 #define FUNCONF_DEBUG_HARDFAULT    1    // Log fatal errors with "printf"
 #define FUNCONF_ISR_IN_RAM 0            // Put the interrupt vector in RAM.
 #define FUNCONF_SUPPORT_CONSTRUCTORS 0	// Call functions with __attribute__((constructor)) in SystemInit()
+#define FUNCONF_ICACHE_EN 1				// Enables ICache on cores that support it, may require power-down + power up to work properly at flash time.
 */
 
 // Sanity check for when porting old code.
-#if defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x) || defined(CH32X03x) || defined(CH32L103)
+#if defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x) || defined(CH32X03x) || defined(CH32L103)  || defined(CH32H41x)
 	#if defined(CH32V003)
 		#error Cannot define CH32V003 and another arch.
 	#endif
@@ -164,6 +165,8 @@
 		#define HSE_VALUE				  (8000000)
 	#elif defined(CH57x) || defined(CH58x) || defined(CH59x)
 		#define HSE_VALUE				  (32000000)
+	#elif defined(CH32H41x)
+		#define HSE_VALUE				  (25000000)
 	#endif
 #endif
 
@@ -179,6 +182,8 @@
 		#define HSI_VALUE					(8000000)
 	#elif defined(CH32V30x)
 		#define HSI_VALUE					(8000000)
+	#elif defined(CH32H41x)
+		#define HSI_VALUE					(25000000)
 	#endif
 #endif
 
@@ -201,6 +206,8 @@
 			#define FUNCONF_PLL_MULTIPLIER 18	// Default: 8 * 18 = 144 MHz
 		#elif defined(CH32V30x)
 			#define FUNCONF_PLL_MULTIPLIER 18	// Default: 8 * 18 = 144 MHz
+		#elif defined(CH32H41x)
+			#define FUNCONF_PLL_MULTIPLIER 16	// Default: 25 * 16 = 400 MHz
 		#else // CH32V003
 			#define FUNCONF_PLL_MULTIPLIER 2	// Default: 24 * 2 = 48 MHz
 		#endif
@@ -214,6 +221,20 @@
 		#define FUNCONF_SYSTEM_CORE_CLOCK 60000000 // default in ch32fun.c using CLK_SOURCE_PLL_60MHz
 		#if defined(CLK_SOURCE_CH5XX)
 			#error Must define FUNCONF_SYSTEM_CORE_CLOCK too if CLK_SOURCE_CH5XX is defined
+		#endif
+	#elif defined(CH32H41x)
+		#if defined(FUNCONF_USE_PLL) && FUNCONF_USE_PLL
+			#if defined(FUNCONF_USE_HSI) && FUNCONF_USE_HSI
+				#define FUNCONF_SYSTEM_CORE_CLOCK ((HSI_VALUE / 4)*(FUNCONF_PLL_MULTIPLIER))
+			#elif defined(FUNCONF_USE_HSE) && FUNCONF_USE_HSE
+				#define FUNCONF_SYSTEM_CORE_CLOCK ((HSE_VALUE / 4)*(FUNCONF_PLL_MULTIPLIER))
+			#endif
+		#else
+			#if defined(FUNCONF_USE_HSI) && FUNCONF_USE_HSI
+				#define FUNCONF_SYSTEM_CORE_CLOCK ((HSI_VALUE)*(FUNCONF_PLL_MULTIPLIER))
+			#elif defined(FUNCONF_USE_HSE) && FUNCONF_USE_HSE
+				#define FUNCONF_SYSTEM_CORE_CLOCK ((HSE_VALUE)*(FUNCONF_PLL_MULTIPLIER))
+			#endif
 		#endif
 	#elif defined(FUNCONF_USE_HSI) && FUNCONF_USE_HSI
 		#define FUNCONF_SYSTEM_CORE_CLOCK ((HSI_VALUE)*(FUNCONF_PLL_MULTIPLIER))
@@ -234,6 +255,10 @@
 
 #ifndef FUNCONF_ISR_IN_RAM
 	#define FUNCONF_ISR_IN_RAM 0
+#endif
+
+#ifndef FUNCONF_ICACHE_EN
+	#define FUNCONF_ICACHE_EN 1
 #endif
 
 // Default package for CH32V20x
@@ -388,6 +413,8 @@ typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
 	#include "ch32v30xhw.h"
 #elif defined( CH57x ) || defined( CH58x ) || defined( CH59x )
 	#include "ch5xxhw.h"
+#elif defined( CH32H41x )
+	#include "ch32h41xhw.h"
 #endif
 
 #if defined(__riscv) || defined(__riscv__) || defined( CH32V003FUN_BASE )
@@ -762,6 +789,14 @@ static inline uint32_t __get_MHARTID(void)
 	return (result);
 }
 
+// Return stack pointer register (SP)
+static inline uint32_t __get_SP(void)
+{
+	uint32_t result;
+	__ASM volatile( "mv %0,""sp": "=r"(result):);
+	return (result);
+}
+
 #if defined(CH32V003) && CH32V003
 
 // Return DBGMCU_CR Register value
@@ -779,13 +814,6 @@ static inline void __set_DEBUG_CR(uint32_t value)
 	__ASM volatile( ADD_ARCH_ZICSR "csrw 0x7C0, %0" : : "r" (value) );
 }
 
-// Return stack pointer register (SP)
-static inline uint32_t __get_SP(void)
-{
-	uint32_t result;
-	__ASM volatile( "mv %0,""sp": "=r"(result):);
-	return (result);
-}
 #endif // CH32V003
 
 #endif // !assembler
@@ -926,6 +954,22 @@ RV_STATIC_INLINE void funPinMode(u32 pin, GPIOModeTypeDef mode)
 #define funGpioInitAll() { RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOD ); }
 #define funPinMode( pin, mode ) { *((&GpioOf(pin)->CFGLR)+((pin&0x8)>>3)) = ( (*((&GpioOf(pin)->CFGLR)+((pin&0x8)>>3))) & (~(0xf<<(4*((pin)&0x7))))) | ((mode)<<(4*((pin)&0x7))); }
 #define funGpioInitB() { RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOB ); }
+#elif defined(CH32H41x)
+#define funGpioInitAll() { RCC->HB2PCENR |= ( RCC_HB2Periph_AFIO | RCC_HB2Periph_GPIOA | RCC_HB2Periph_GPIOB | RCC_HB2Periph_GPIOC | RCC_HB2Periph_GPIOD | RCC_HB2Periph_GPIOE | RCC_HB2Periph_GPIOF ); }
+
+RV_STATIC_INLINE void funPinMode(u32 pin, GPIOMode_TypeDef mode, GPIOSpeed_TypeDef speed)
+{
+	*((&GpioOf(pin)->CFGLR)+((pin&0x8)>>3)) = ( (*((&GpioOf(pin)->CFGLR)+((pin&0x8)>>3))) & (~(0xf<<(4*((pin)&0x7))))) | ((mode)<<(4*((pin)&0x7)));
+	GpioOf(pin)->SPEED = (GpioOf(pin)->SPEED & ~(0x3 << (2 * (pin & 0xF)))) | (speed << (2 * (pin & 0xF)));
+}
+
+/* Helper for AF */
+RV_STATIC_INLINE void funPinAF(u32 pin, u32 af)
+{
+	volatile uint32_t* afio = (uint32_t*)(AFIO_BASE + 4U + 4U * (pin >> 3));
+	*afio = (*afio & ~(0xf << (4U * (pin & 0x7)))) | (af << (4U * (pin & 0x7)));
+}
+
 #else
 #define funGpioInitAll() { RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOD ); }
 #define funPinMode( pin, mode ) { GpioOf(pin)->CFGLR = (GpioOf(pin)->CFGLR & (~(0xf<<(4*((pin)&0xf))))) | ((mode)<<(4*((pin)&0xf))); }

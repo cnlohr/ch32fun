@@ -1,0 +1,11 @@
+#ifndef _FUNCONFIG_H
+#define _FUNCONFIG_H
+
+#define FUNCONF_USE_HSE 1
+#define FUNCONF_USE_PLL 1
+#define FUNCONF_PLL_MULTIPLIER 16
+// Place configuration items here, you can see a full list in ch32fun/ch32fun.h
+// To reconfigure to a different processor, update TARGET_MCU in the  Makefile
+
+#endif
+
