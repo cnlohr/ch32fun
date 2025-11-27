@@ -37,7 +37,10 @@ void ssd1306_i2c_setup(void)
 #define SCL_HIGH funDigitalWrite( SSD1306_I2C_BITBANG_SCL, 1 );
 #define SDA_LOW  funDigitalWrite( SSD1306_I2C_BITBANG_SDA, 0 );
 #define SCL_LOW  funDigitalWrite( SSD1306_I2C_BITBANG_SCL, 0 );
+#define SDA_RELEASE { funPinMode( SSD1306_I2C_BITBANG_SDA, GPIO_CFGLR_IN_PUPD ); funDigitalWrite( SSD1306_I2C_BITBANG_SDA, 1 ); }
 #define SDA_IN   funDigitalRead( SSD1306_I2C_BITBANG_SDA );
+#define SDA_DRIVE { funDigitalWrite( SSD1306_I2C_BITBANG_SDA, 1 ); funPinMode( SSD1306_I2C_BITBANG_SDA, GPIO_CFGLR_OUT_10Mhz_PP ); }
+
 #ifndef I2CSPEEDBASE
 #define I2CSPEEDBASE 1
 #endif
@@ -47,6 +50,7 @@ void ssd1306_i2c_setup(void)
 
 static void ssd1306_i2c_sendstart()
 {
+	I2CDELAY_FUNC( 1 * I2CSPEEDBASE );
 	SCL_HIGH
 	I2CDELAY_FUNC( 1 * I2CSPEEDBASE );
 	SDA_LOW
@@ -57,6 +61,7 @@ static void ssd1306_i2c_sendstart()
 
 void ssd1306_i2c_sendstop()
 {
+	I2CDELAY_FUNC( 1 * I2CSPEEDBASE );
 	SDA_LOW
 	I2CDELAY_FUNC( 1 * I2CSPEEDBASE );
 	SCL_LOW
@@ -87,8 +92,8 @@ unsigned char ssd1306_i2c_sendbyte( unsigned char data )
 
 	//Immediately after sending last bit, open up DDDR for control.
 	I2CDELAY_FUNC( 1 * I2CSPEEDBASE );
-	funPinMode( SSD1306_I2C_BITBANG_SDA, GPIO_CFGLR_IN_PUPD );
 	SDA_HIGH
+	SDA_RELEASE
 	I2CDELAY_FUNC( 1 * I2CSPEEDBASE );
 	SCL_HIGH
 	I2CDELAY_FUNC( 1 * I2CSPEEDBASE );
@@ -96,7 +101,8 @@ unsigned char ssd1306_i2c_sendbyte( unsigned char data )
 	I2CDELAY_FUNC( 1 * I2CSPEEDBASE );
 	SCL_LOW
 	I2CDELAY_FUNC( 1 * I2CSPEEDBASE );
-	SDA_HIGH // Maybe?
+	SDA_DRIVE
+	SDA_HIGH
 	funPinMode( SSD1306_I2C_BITBANG_SDA, GPIO_CFGLR_OUT_10Mhz_PP );
 	I2CDELAY_FUNC( 1 * I2CSPEEDBASE );
 	return !!i;

@@ -301,6 +301,59 @@ typedef struct
 	uint16_t      RESERVED45;
 } BKP_TypeDef;
 
+/* Controller Area Network TxMailBox */
+typedef struct
+{
+	__IO uint32_t TXMIR;
+	__IO uint32_t TXMDTR;
+	__IO uint32_t TXMDLR;
+	__IO uint32_t TXMDHR;
+} CAN_TxMailBox_TypeDef;
+
+/* Controller Area Network FIFOMailBox */
+typedef struct
+{
+	__IO uint32_t RXMIR;
+	__IO uint32_t RXMDTR;
+	__IO uint32_t RXMDLR;
+	__IO uint32_t RXMDHR;
+} CAN_FIFOMailBox_TypeDef;
+
+/* Controller Area Network FilterRegister */
+typedef struct
+{
+	__IO uint32_t FR1;
+	__IO uint32_t FR2;
+} CAN_FilterRegister_TypeDef;
+
+/* Controller Area Network */
+typedef struct
+{
+	__IO uint32_t              CTLR;
+	__IO uint32_t              STATR;
+	__IO uint32_t              TSTATR;
+	__IO uint32_t              RFIFO0;
+	__IO uint32_t              RFIFO1;
+	__IO uint32_t              INTENR;
+	__IO uint32_t              ERRSR;
+	__IO uint32_t              BTIMR;
+	__IO uint32_t              TTCTLR;
+	__IO uint32_t              TTCNT;
+	uint32_t                   RESERVED0[86];
+	CAN_TxMailBox_TypeDef      sTxMailBox[3];
+	CAN_FIFOMailBox_TypeDef    sFIFOMailBox[2];
+	uint32_t                   RESERVED1[12];
+	__IO uint32_t              FCTLR;
+	__IO uint32_t              FMCFGR;
+	uint32_t                   RESERVED2;
+	__IO uint32_t              FSCFGR;
+	uint32_t                   RESERVED3;
+	__IO uint32_t              FAFIFOR;
+	uint32_t                   RESERVED4;
+	__IO uint32_t              FWR;
+	uint32_t                   RESERVED5[8];
+	CAN_FilterRegister_TypeDef sFilterRegister[14];
+} CAN_TypeDef;
 
 /* CRC Calculation Unit */
 typedef struct
@@ -892,6 +945,7 @@ typedef struct{
 #define UART5               					((USART_TypeDef *) UART5_BASE)
 #define I2C1                                    ((I2C_TypeDef *)I2C1_BASE)
 #define I2C2                                    ((I2C_TypeDef *)I2C2_BASE)
+#define CAN1                                    ((CAN_TypeDef *)CAN1_BASE)
 #define BKP                                     ((BKP_TypeDef *)BKP_BASE)
 #define PWR                                     ((PWR_TypeDef *)PWR_BASE)
 #define DAC                 					((DAC_TypeDef *) DAC_BASE)

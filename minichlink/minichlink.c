@@ -1483,6 +1483,7 @@ static int DefaultDetermineChipType( void * dev )
 			uint32_t flash_size_address = 0x1ffff7e0;
 			uint32_t masked_id = sevenf_id & 0xfff00000;
 			uint32_t masked_id2 = sevenf_id & 0xfff00f00;
+
 			if( masked_id == 0x3b00000 )
 			{
 				iss->target_chip = &ch32m030;
@@ -1509,6 +1510,11 @@ static int DefaultDetermineChipType( void * dev )
 				iss->target_chip = &ch32v004;
 				chip_id_address = 0x1ffff704;
 			}
+			else if( masked_id == 0x00500000 )
+			{
+				iss->target_chip = &ch32v005;
+				chip_id_address = 0x1ffff704;
+			}
 			else if( masked_id == 0x00600000 )
 			{
 				iss->target_chip = &ch32v006;
@@ -1523,13 +1529,13 @@ static int DefaultDetermineChipType( void * dev )
 			{
 				switch ((sevenf_id & 0xfff00000) >> 20)
 				{
-					case 415:
+					case 0x415:
 						iss->target_chip = &ch32h415;
 						break;
-					case 416:
+					case 0x416:
 						iss->target_chip = &ch32h416;
 						break;
-					case 417:
+					case 0x417:
 						iss->target_chip = &ch32h417;
 						break;
 				}
@@ -1946,7 +1952,7 @@ static int DefaultWriteWord( void * dev, uint32_t address_to_write, uint32_t dat
 				0x4200c254 : 0x42000001  );
 
 			MCF.WriteReg32( dev, DMPROGBUF4,
-				(iss->target_chip_type == CHIP_CH32V20x || iss->target_chip_type == CHIP_CH32V30x ) ?
+				(iss->target_chip_type == CHIP_CH32V20x || iss->target_chip_type == CHIP_CH32V30x  || iss->target_chip_type == CHIP_CH32H41x) ?
 				0xfc758809 : 0xfc758805 );
 
 			MCF.WriteReg32( dev, DMPROGBUF5, 0x90029002 );
@@ -2182,7 +2188,7 @@ int DefaultWriteBinaryBlob( void * dev, uint32_t address_to_write, uint32_t blob
 				{
 					if( !InternalIsMemoryErased( iss, base ) )
 						MCF.Erase( dev, base, sectorsize, 0 );
-					if( iss->target_chip_type != CHIP_CH32V20x && iss->target_chip_type != CHIP_CH32V30x )
+					if( iss->target_chip_type != CHIP_CH32V20x && iss->target_chip_type != CHIP_CH32V30x && iss->target_chip_type != CHIP_CH32H41x )
 					{
 						// V003, x035, maybe more.
 						MCF.WriteWord( dev, 0x40022010, CR_PAGE_PG ); // THIS IS REQUIRED, (intptr_t)&FLASH->CTLR = 0x40022010
@@ -2220,7 +2226,7 @@ int DefaultWriteBinaryBlob( void * dev, uint32_t address_to_write, uint32_t blob
 
 				if( is_flash )
 				{
-					if( iss->target_chip_type == CHIP_CH32V20x || iss->target_chip_type == CHIP_CH32V30x )
+					if( iss->target_chip_type == CHIP_CH32V20x || iss->target_chip_type == CHIP_CH32V30x || iss->target_chip_type == CHIP_CH32H41x )
 					{
 						MCF.WriteWord( dev, 0x40022010, 1<<21 ); // Page Start
 					}
@@ -2260,7 +2266,7 @@ int DefaultWriteBinaryBlob( void * dev, uint32_t address_to_write, uint32_t blob
 				{
 					if( !InternalIsMemoryErased( iss, base ) )
 						MCF.Erase( dev, base, sectorsize, 0 );
-					if( iss->target_chip_type != CHIP_CH32V20x && iss->target_chip_type != CHIP_CH32V30x )
+					if( iss->target_chip_type != CHIP_CH32V20x && iss->target_chip_type != CHIP_CH32V30x && iss->target_chip_type != CHIP_CH32H41x )
 					{
 						// V003, x035, maybe more.
 						MCF.WriteWord( dev, 0x40022010, CR_PAGE_PG ); // THIS IS REQUIRED, (intptr_t)&FLASH->CTLR = 0x40022010
@@ -2290,7 +2296,7 @@ int DefaultWriteBinaryBlob( void * dev, uint32_t address_to_write, uint32_t blob
 						// On the v2xx, v3xx, you also need to make sure FLASH->STATR & 2 is not set.  This is only an issue when running locally.
 					}
 
-					if( iss->target_chip_type == CHIP_CH32V20x || iss->target_chip_type == CHIP_CH32V30x )
+					if( iss->target_chip_type == CHIP_CH32V20x || iss->target_chip_type == CHIP_CH32V30x || iss->target_chip_type == CHIP_CH32H41x )
 					{
 						MCF.WriteWord( dev, 0x40022010, 1<<21 ); // Page Start
 					}
@@ -2381,14 +2387,17 @@ static int DefaultReadWord( void * dev, uint32_t address_to_read, uint32_t * dat
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
 
 	int autoincrement = 1;
-	if( address_to_read == 0x40022010 || address_to_read == 0x4002200C )  // Don't autoincrement when checking flash flag. 
+	if( address_to_read == 0x40022010 ||
+      address_to_read == 0x4002200C ||
+      address_to_read + 4 >= getMemoryEnd(iss->target_chip, iss->current_area))
 	{
+    // Don't autoincrement when checking flash flag. Or on last byte of memory area.
 		autoincrement = 0;
 	}
 
 	if( iss->statetag != STTAG( "RDSQ" ) || address_to_read != iss->currentstateval || autoincrement != iss->autoincrement )
 	{
-		if( iss->statetag != STTAG( "RDSQ" ) )
+		if( iss->statetag != STTAG( "RDSQ" ) || !autoincrement )
 		{
 			if( iss->statetag != STTAG( "WRSQ" ) )
 			{
@@ -2508,7 +2517,8 @@ int DefaultErase( void * dev, uint32_t address, uint32_t length, int type )
 			return rw;
 	}
 
-	if( type == 1 )
+	/* Workaround for Ch32H41x differently sized (but very fast) erase */
+	if( type == 1 || iss->target_chip_type == CHIP_CH32H41x )
 	{
 		// Whole-chip flash
 		iss->statetag = STTAG( "XXXX" );
@@ -2784,7 +2794,17 @@ int DefaultReadBinaryBlob( void * dev, uint32_t address_to_read_from, uint32_t r
 		}
 		else
 		{
-			if( ( rpos & 1 ) )
+			if( remain >= 1 )
+			{
+				uint8_t rw;
+				r = MCF.ReadByte( dev, rpos, &rw );
+				if( r ) return r;
+				memcpy( blob, &rw, 1 );
+				blob += 1;
+				rpos += 1;
+				remain -= 1;
+			}
+			if( ( rpos & 1 ) && remain >= 1 )
 			{
 				uint8_t rw;
 				r = MCF.ReadByte( dev, rpos, &rw );
@@ -2803,16 +2823,6 @@ int DefaultReadBinaryBlob( void * dev, uint32_t address_to_read_from, uint32_t r
 				blob += 2;
 				rpos += 2;
 				remain -= 2;
-			}
-			if( remain >= 1 )
-			{
-				uint8_t rw;
-				r = MCF.ReadByte( dev, rpos, &rw );
-				if( r ) return r;
-				memcpy( blob, &rw, 1 );
-				blob += 1;
-				rpos += 1;
-				remain -= 1;
 			}
 		}
 	}

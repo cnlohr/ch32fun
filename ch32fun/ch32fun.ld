@@ -64,11 +64,11 @@ MEMORY
 	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 16K
 	RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 4K
 #elif TARGET_MCU_LD == 6
-	/* CH32V004 */
+	/* CH32V005, CH32V004 */
 	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 32K
 	RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 6K
 #elif TARGET_MCU_LD == 7
-	/* CH32V005, CH32V006, CH32V007 */
+	/* CH32V006, CH32V007 */
 	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 62K
 	RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 8K
 #elif TARGET_MCU_LD == 8
@@ -110,6 +110,29 @@ MEMORY
 	#else
 		#error "Unknown MCU package"
 	#endif
+#elif TARGET_MCU_LD == 11
+	/* CH32H41x */
+	#if MCU_PACKAGE == 1 || MCU_PACKAGE == 3
+		/* Flash */
+		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 960K
+		/* ITCM V5F only */
+		ITCM (xrw) : ORIGIN = 0x200A0000, LENGTH = 128K
+		/* DTCM V5F only, used for V5F stack  */
+		DTCM (xrw) : ORIGIN = 0x200C0000, LENGTH = 256K
+		/* Shared RAM, end used for V3F Stack*/
+		RAM (xrw) : ORIGIN = 0x20100000, LENGTH = 512K
+	#elif MCU_PACKAGE == 2
+		/* Flash */
+		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 480K
+		/* ITCM V5F only */
+		ITCM (xrw) : ORIGIN = 0x200A0000, LENGTH = 128K
+		/* DTCM V5F only, used for V5F stack */
+		DTCM (xrw) : ORIGIN = 0x200C0000, LENGTH = 256K
+		/* Shared RAM, end used for V3F Stack*/
+		RAM (xrw) : ORIGIN = 0x20100000, LENGTH = 512K
+	#else
+		#error "Unknown MCU package"
+	#endif
 #else
 	#error "Unknown MCU target"
 #endif
@@ -143,6 +166,37 @@ SECTIONS
 		} >RAM AT>FLASH
 #endif
 
+#if TARGET_MCU_LD == 11
+		.itcmalign :
+		{
+			. = ALIGN(4);
+			PROVIDE(_itcm_lma = .);
+		} >FLASH AT>FLASH
+
+		.itcm :
+		{
+			. = ALIGN(4);
+			PROVIDE(_itcm_vma_start = .);
+			*(.itcm*)
+			. = ALIGN(4);
+			PROVIDE(_itcm_vma_end = .);
+		} >ITCM AT>FLASH
+
+		.dtcmalign :
+		{
+			. = ALIGN(4);
+			PROVIDE(_dtcm_lma = .);
+		} >FLASH AT>FLASH
+
+		.dtcm :
+		{
+			. = ALIGN(4);
+			PROVIDE(_dtcm_vma_start = .);
+			*(.dtcm*)
+			. = ALIGN(4);
+			PROVIDE(_dtcm_vma_end = .);
+		} >DTCM AT>FLASH
+#endif
 		.text :
 		{
 			. = ALIGN(4);
@@ -291,7 +345,12 @@ SECTIONS
 
 		PROVIDE( end = . );
 
+#if TARGET_MCU_LD == 11
+		PROVIDE( _v3f_stack = ORIGIN(RAM) + LENGTH(RAM));
+		PROVIDE( _v5f_stack = ORIGIN(DTCM) + LENGTH(DTCM));
+#else
 		PROVIDE( _eusrstack = ORIGIN(RAM) + LENGTH(RAM));
+#endif
 
 #if TARGET_MCU_LD == 2 /* v20x */
 		.storage :

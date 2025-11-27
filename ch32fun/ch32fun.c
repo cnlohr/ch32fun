@@ -92,6 +92,26 @@ void __libc_init_array(void)
 #include <stdint.h>
 #include <ch32fun.h>
 
+#if defined(CH32H41x)
+volatile v5f_main v5f_start_function = NULL;
+static int start_v5f(void)
+{
+	if (v5f_start_function == NULL)
+	{
+		asm volatile (
+		"li a1, 1\n\
+		sw a1, (a0)\n" // deep sleepy time for V5F
+		"li a0, 0xE000ED10\n\
+		li a1, 0x80000000\n\
+		sw a1, (a0)\n" // self-SYSRST when we are not supposed to be running
+		);
+		return -1;
+	}
+
+	return v5f_start_function();
+}
+#endif
+
 WEAK int errno;
 
 static int __puts_uart( char *s, int len, void *buf )
@@ -991,6 +1011,59 @@ void NFC_IRQHandler( void )				__attribute__((section(VECTOR_HANDLER_SECTION))) 
 void USB2_DEVICE_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void USB2_HOST_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void LED_IRQHandler( void )				__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+// CH32H41x
+void IPC_CH0_Handler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void IPC_CH1_Handler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void IPC_CH2_Handler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void IPC_CH3_Handler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void HSEM_Handler( void )				__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void SPI4_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void USBPDWakeUp_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void CAN1_TX_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void CAN1_RX0_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void USBSS_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void USBSS_LINK_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void USBHSWakeup_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void USBSSWakeup_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void I2C3_EV_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void I2C3_ER_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void I2C4_EV_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void I2C4_ER_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void QSPI1_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void SERDES_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void TIM9_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void TIM10_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void TIM11_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void TIM12_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void FMC_IRQHandler( void )				__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void SDMMC_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void LPTIM1_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void LPTIM2_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void USART5_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void USART6_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void USART7_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void USART8_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void I3C_EV_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void I3C_ER_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void ECDC_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void SAI_IRQHandler( void )				__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void LTDC_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void GPHA_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void DFSDM0_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void DFSDM1_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void SWPMI_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void QSPI2_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void SWPMI_WKUP_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void CAN3_SCE_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void CAN3_TX_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void CAN3_RX0_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void CAN3_RX1_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void LPTIM2_WKUP_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void LPTIM1_WKUP_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void I3C_WKUP_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void HSADC_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void UHSIF_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void USART_WKUP_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 
 void handle_reset( void ) __attribute__((section(".text.handle_reset")));
 
@@ -1208,6 +1281,155 @@ void handle_reset( void )
 "	mret\n" : : [main]"r"(main) );
 }
 
+#elif defined(CH32H41x)
+
+void __ITCM setup_cache( void ) {
+	asm volatile(
+"	beqz a7, 3f\n"
+	"li a0, 0x1000003\n\
+	csrw 0xbc2, a0\n"
+	"li a0, 0x0\n\
+	csrw 0xBD0, a0\n" // supposed to clear cache, clearly not doing it
+	"li a0, 0x1000001\n\
+	csrw 0xbc2, a0\n"
+"3:"
+	);
+}
+
+void handle_reset( void )
+{
+	asm volatile( "\n\
+.option push\n\
+.option norelax\n\
+	la gp, __global_pointer$\n\
+.option pop\n\
+	csrr a7, mhartid\n\
+	bnez a7, 5f\n\
+	la sp, _v3f_stack\n\
+	j 3f\n\
+5:	la sp, _v5f_stack\n"
+"3:\n"
+	);
+
+	asm volatile(
+#if __GNUC__ > 10
+"	.option arch, +zicsr\n"
+#endif
+	);
+
+	// Careful: Use registers to prevent overwriting of self-data.
+	// This clears out BSS.
+	asm volatile(
+	/* v3f already cleared BSS */
+"	bnez a7, 5f\n\
+	la a0, _sbss\n\
+	la a1, _ebss\n\
+	bgeu a0, a1, 2f\n\
+1:	sw zero, 0(a0)\n\
+	addi a0, a0, 4\n\
+	bltu a0, a1, 1b\n\
+2:\n"
+
+	// Load ITCM code from FLASH to ITCM.
+"	la a0, _itcm_lma\n\
+	la a1, _itcm_vma_start\n\
+	la a2, _itcm_vma_end\n\
+	bgeu a1, a2, 2f\n\
+1:	lw t0, (a0)\n\
+	sw t0, (a1)\n\
+	addi a0, a0, 4\n\
+	addi a1, a1, 4\n\
+	bltu a1, a2, 1b\n\
+2:\n"
+	// Load DTCM code from FLASH to DTCM.
+"	la a0, _dtcm_lma\n\
+	la a1, _dtcm_vma_start\n\
+	la a2, _dtcm_vma_end\n\
+	bgeu a1, a2, 2f\n\
+1:	lw t0, (a0)\n\
+	sw t0, (a1)\n\
+	addi a0, a0, 4\n\
+	addi a1, a1, 4\n\
+	bltu a1, a2, 1b\n\
+2:\n"
+	// This loads DATA from FLASH to RAM.
+"	la a0, _data_lma\n\
+	la a1, _data_vma\n\
+	la a2, _edata\n\
+	beq a1, a2, 2f\n\
+1:	lw t0, 0(a0)\n\
+	sw t0, 0(a1)\n\
+	addi a0, a0, 4\n\
+	addi a1, a1, 4\n\
+	bltu a1, a2, 1b\n\
+2:5:\n"
+#ifdef CPLUSPLUS
+	// Call __libc_init_array function
+"	call %0 \n\t"
+: : "i" (__libc_init_array)
+#else
+: :
+#endif
+: "a0", "a1", "a2", "a3", "memory"
+);
+
+	// Setup the interrupt vector, processor status and INTSYSCR.
+	asm volatile(
+"	bnez a7, 5f\n\
+	la t0, 0x12370303\n\
+	csrw 0xbc0, t0\n\
+	j 3f\n\
+5:	la t0, 0x12378400\n\
+	csrw 0xbc0, t0\n\
+3:\n"
+
+#if !defined( DISABLED_FLOAT )
+"	li t0, 0x7888\n\
+	csrs mstatus, t0\n"
+#else
+"	li t0, 0x1888\n\
+	csrs mstatus, t0\n"
+#endif
+
+#if FUNCONF_ENABLE_HPE
+"	bnez a7, 5f\n\
+	li t0, 0x01\n\
+	csrw 0xBC1, t0\n\
+	li t0, 0x0b\n\
+	csrw 0x804, t0\n\
+	j 3f\n\
+5:	li t0, 0x07\n\
+	csrw 0xBC1, t0\n\
+	li t0, 0x0b\n\
+	csrw 0x804, t0\n\
+3:\n"
+#endif
+"	la t0, InterruptVector\n\
+	ori t0, t0, 3\n\
+	csrw mtvec, t0\n"
+	: : [InterruptVector]"r"(InterruptVector) : "t0", "memory"
+	);
+
+#if defined( FUNCONF_SYSTICK_USE_HCLK ) && FUNCONF_SYSTICK_USE_HCLK
+	SysTick->CTLR = 5;
+#else
+	SysTick->CTLR = 1;
+#endif
+
+
+
+#if defined(FUNCONF_ICACHE_EN) && FUNCONF_ICACHE_EN
+	setup_cache();
+#endif
+
+	asm volatile(
+"	bnez a7, 5f\n\
+	csrw mepc, %[main]\n\
+	mret\n\
+5: 	csrw mepc, %[start_v5f]\n\
+	mret\n"
+	: : [main]"r"(main), [start_v5f]"r"(start_v5f) );
+}
 #endif
 
 #if defined( __riscv_float_abi_double )
@@ -1339,6 +1561,26 @@ void SetupUART( int uartBRR )
 	R8_UART1_LCR = RB_LCR_WORD_SZ;
 	R8_UART1_IER = RB_IER_TXD_EN;
 	R8_UART1_DIV = 1;
+#elif defined(CH32H41x)
+	RCC->HB2PCENR |= RCC_HB2Periph_GPIOA | RCC_HB2Periph_USART1 | RCC_HB2Periph_AFIO;
+	RCC->HB1PCENR |= RCC_HB1Periph_USART6;
+	/* out pin USART1 */
+	funPinAF( PA9, 7);
+	funPinMode( PA9, GPIO_Mode_AF_PP, GPIO_Speed_180MHz );
+	/* out pin USART6 */
+	funPinAF( PA12, 6);
+	funPinMode( PA12, GPIO_Mode_AF_PP, GPIO_Speed_180MHz );
+
+	USART1->CTLR1 = USART_WordLength_8b | USART_Parity_No | USART_Mode_Tx;
+	USART1->CTLR2 = USART_StopBits_1;
+	USART1->CTLR3 = USART_HardwareFlowControl_None;
+	USART1->BRR = uartBRR;
+	USART1->CTLR1 |= CTLR1_UE_Set;
+	USART6->CTLR1 = USART_WordLength_8b | USART_Parity_No | USART_Mode_Tx;
+	USART6->CTLR2 = USART_StopBits_1;
+	USART6->CTLR3 = USART_HardwareFlowControl_None;
+	USART6->BRR = uartBRR;
+	USART6->CTLR1 |= CTLR1_UE_Set;
 #else
 	RCC->APB2PCENR |= RCC_APB2Periph_GPIOA | RCC_APB2Periph_USART1;
 
@@ -1365,6 +1607,15 @@ WEAK int _write(int fd, const char *buf, int size)
 #ifdef CH5xx
 		while(!(R8_UART1_LSR & RB_LSR_TX_ALL_EMP));
 		R8_UART1_THR = buf[i];
+#elif defined(CH32H41x)
+		if (__get_MHARTID()) {
+			while( !(USART6->STATR & USART_FLAG_TC));
+			USART6->DATAR = *buf++;
+		}
+		else {
+			while( !(USART1->STATR & USART_FLAG_TC));
+			USART1->DATAR = *buf++;
+		}
 #else
 		while( !(USART1->STATR & USART_FLAG_TC));
 		USART1->DATAR = *buf++;
@@ -1379,6 +1630,15 @@ WEAK int putchar(int c)
 #ifdef CH5xx
 	while(!(R8_UART1_LSR & RB_LSR_TX_ALL_EMP));
 	R8_UART1_THR = c;
+#elif defined(CH32H41x)
+	if (__get_MHARTID()) {
+		while( !(USART6->STATR & USART_FLAG_TC));
+		USART6->DATAR = (const char)c;
+	}
+	else {
+		while( !(USART1->STATR & USART_FLAG_TC));
+		USART1->DATAR = (const char)c;
+	}
 #else
 	while( !(USART1->STATR & USART_FLAG_TC));
 	USART1->DATAR = (const char)c;
@@ -1590,7 +1850,7 @@ void DelaySysTick( uint32_t n )
 #if defined(CH32V003) || defined(CH32V00x)
 	uint32_t targend = SysTick->CNT + n;
 	while( ((int32_t)( SysTick->CNT - targend )) < 0 );
-#elif defined(CH32V20x) || defined(CH32V30x) || defined(CH32X03x) || defined(CH32L103) || defined(CH582_CH583) || defined(CH591_CH592)
+#elif defined(CH32V20x) || defined(CH32V30x) || defined(CH32X03x) || defined(CH32L103) || defined(CH582_CH583) || defined(CH591_CH592) || defined(CH32H41x)
 	uint64_t targend = SysTick->CNT + n;
 	while( ((int64_t)( SysTick->CNT - targend )) < 0 );
 #elif defined(CH32V10x) || defined(CH570_CH572) || defined(CH584_CH585)
@@ -1604,6 +1864,18 @@ void DelaySysTick( uint32_t n )
 	#error DelaySysTick not defined.
 #endif
 }
+
+#if defined(CH32H41x)
+void StartV5F(v5f_main function)
+{
+	volatile uint32_t addr = (uint32_t)handle_reset;
+
+	v5f_start_function = function;
+
+	NVIC->WAKEIP[1] = addr & ~(0x1);
+	NVIC->SCTLR |= (1<<5);
+}
+#endif
 
 void SystemInit( void )
 {
@@ -1628,12 +1900,16 @@ void SystemInit( void )
 		#define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PLLSRC_HSI_Mul2    // HCLK = SYSCLK = APB1 And, enable PLL
 	#elif defined(CH32V20x_D8) || defined(CH32V20x_D8W) 
 		#define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PPRE2_DIV1 | RCC_PPRE1_DIV1 | PLL_MULTIPLICATION
+	#elif defined(CH32H41x)
+		#define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PPRE2_DIV2 | RCC_PPRE2_DIV2 | RCC_FPRE_DIV4 | RCC_CFGR0_MCO_SYSCLK
 	#else
 		#define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PPRE2_DIV1 | RCC_PPRE1_DIV2 | PLL_MULTIPLICATION
 	#endif
 #else
 	#if defined(CH32V003) || defined(CH32X03x) || defined(CH32V00x)
 		#define BASE_CFGR0 RCC_HPRE_DIV1     					  // HCLK = SYSCLK = APB1 And, no pll.
+	#elif defined(CH32H41x)
+		#define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PPRE2_DIV0 | RCC_PPRE2_DIV0 | RCC_CFGR0_MCO_SYSCLK
 	#else
 		#define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PPRE2_DIV1 | RCC_PPRE1_DIV1
 	#endif
@@ -1661,6 +1937,18 @@ void SystemInit( void )
 	#endif
 #elif defined(CH32X03x)
 	FLASH->ACTLR = FLASH_ACTLR_LATENCY_2;                   // +2 Cycle Latency (Recommended per TRM)
+#elif defined(CH32H41x)
+	FLASH->ACTLR |= FLASH_ACTLR_EHMOD;
+#endif
+
+#if defined(CH32H41x)
+	#if defined(FUNCONF_USE_PLL) && FUNCONF_USE_PLL
+		#if defined(FUNCONF_USE_HSI) && FUNCONF_USE_HSI
+			RCC->PLLCFGR = PLL_MULTIPLICATION | RCC_PLLSource_HSI;
+		#elif defined(FUNCONF_USE_HSE) && FUNCONF_USE_HSE
+			RCC->PLLCFGR = PLL_MULTIPLICATION | RCC_PLLSource_HSE;
+		#endif
+	#endif
 #endif
 
 #ifdef CH5xx // has no HSI except ch584/5
@@ -1761,6 +2049,8 @@ void SystemInit( void )
 
 	#if defined(CH32V003) || defined(CH32V00x)
 		RCC->CFGR0 = RCC_PLLSRC_HSE_Mul2 | RCC_SW_HSE;
+	#elif defined(CH32H41x)
+		RCC->CFGR0 = BASE_CFGR0 | RCC_SW_HSE;
 	#else
 		RCC->CFGR0 = BASE_CFGR0 | RCC_PLLSRC_HSE | RCC_PLLXTPRE_HSE;
 	#endif
@@ -1811,7 +2101,10 @@ void SystemInit( void )
 #endif
 
 #if defined(FUNCONF_USE_PLL) && FUNCONF_USE_PLL && !defined(CH5xx)
-	while((RCC->CTLR & RCC_PLLRDY) == 0);                       	// Wait till PLL is ready
+	while((RCC->CTLR & RCC_PLLRDY) == 0) {};                       	// Wait till PLL is ready
+	#if defined(CH32H41x)
+		RCC->PLLCFGR |= RCC_SYSPLL_GATE;
+	#endif
 	uint32_t tmp32 = RCC->CFGR0 & ~(0x03);							// clr the SW
 	RCC->CFGR0 = tmp32 | RCC_SW_PLL;                       			// Select PLL as system clock source
 	while ((RCC->CFGR0 & (uint32_t)RCC_SWS) != (uint32_t)0x08); 	// Wait till PLL is used as system clock source
@@ -1834,12 +2127,18 @@ void funAnalogInit( void )
 	// Please remember that ADC clock should not exceed 14Mhz!
 	// To ensure that, you may need to adjust RCC depending on your clock speed in the following way:
 	// RCC->CFGR0 |= RCC_ADCPRE_DIV6 // ADC prediv
-	// RCC->CFGR0 |= RCC_PPRE2_DIV2; // Divide HCLK by 2 in PPRE2 because ADCPRE is not enough at high speeds 
+	// RCC->CFGR0 |= RCC_PPRE2_DIV2; // Divide HCLK by 2 in PPRE2 because ADCPRE is not enough at high speeds
+	#if defined(CH32H41x)
+	RCC->HB2PCENR |= RCC_HB2Periph_ADC1;
+	// Reset ADC.
+	RCC->HB2PRSTR |= RCC_HB2Periph_ADC1;
+	RCC->HB2PRSTR &= ~RCC_HB2Periph_ADC1;
+	#else
 	RCC->APB2PCENR |= RCC_APB2Periph_ADC1;
-
 	// Reset ADC.
 	RCC->APB2PRSTR |= RCC_APB2Periph_ADC1;
 	RCC->APB2PRSTR &= ~RCC_APB2Periph_ADC1;
+	#endif
 
 	// set sampling time for all channels to 15 (A good middleground) ADC_SMP0_1.
 	ADC1->SAMPTR2 = (ADC_SMP0_1<<(3*0)) | (ADC_SMP0_1<<(3*1)) | (ADC_SMP0_1<<(3*2)) | (ADC_SMP0_1<<(3*3)) | (ADC_SMP0_1<<(3*4)) | (ADC_SMP0_1<<(3*5)) | (ADC_SMP0_1<<(3*6)) | (ADC_SMP0_1<<(3*7)) | (ADC_SMP0_1<<(3*8)) | (ADC_SMP0_1<<(3*9));

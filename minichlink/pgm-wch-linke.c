@@ -38,6 +38,7 @@ static int checkChip(enum RiscVChip chip) {
 		case CHIP_CH32V10x:
 		case CHIP_CH32V20x:
 		case CHIP_CH32V30x:
+		case CHIP_CH32V41x
 			return 1; // Use binary blob mode
 		case CHIP_CH56x:
 		default:
