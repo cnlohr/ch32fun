@@ -875,6 +875,9 @@ extern "C" {
 #define DELAY_MS_TIME ((FUNCONF_SYSTEM_CORE_CLOCK)/8000)
 #endif
 
+#define DELAY_MSEC_COUNT(n) (DELAY_MS_TIME * n)
+#define DELAY_SEC_COUNT(n) (DELAY_MS_TIME * 1000 * n)
+
 #define Delay_Us(n) DelaySysTick( (n) * DELAY_US_TIME )
 #define Delay_Ms(n) DelaySysTick( (n) * DELAY_MS_TIME )
 
