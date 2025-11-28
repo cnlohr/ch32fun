@@ -19,13 +19,15 @@
 // PA0: 	SCK1
 // PA1: 	MOSI1
 
+#define TARGETED_SPI SPI0
+
 int main() {
 	SystemInit();
 	Delay_Ms(100);
 	funGpioInitAll();
 
 	SPI_Device_t spi_device = {
-		.spi_ctrl = &R32_SPI0_CONTROL,
+		.SPIx = TARGETED_SPI,
 		.mosi_pin = PA14,
 		.sck_pin = PA13,
 		.rst_pin = PA10, 
