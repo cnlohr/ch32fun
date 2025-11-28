@@ -6,9 +6,7 @@
 #define CLK_SOURCE_CH5XX          CLK_SOURCE_PLL_60MHz // default so not really needed
 #define FUNCONF_SYSTEM_CORE_CLOCK 60 * 1000 * 1000     // keep in line with CLK_SOURCE_CH5XX
 
-#define FUNCONF_DEBUG_HARDFAULT   0
 #define FUNCONF_USE_CLK_SEC       0
-#define FUNCONF_INIT_ANALOG       0 // ADC is not implemented yet
 #define FUNCONF_USE_DEBUGPRINTF   1
 
 
