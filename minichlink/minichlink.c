@@ -48,12 +48,16 @@ void * MiniCHLinkInitAsDLL( struct MiniChlinkFunctions ** MCFO, const init_hints
 			dev = TryInit_WCHLinkE();
 		else if( strcmp( specpgm, "isp" ) == 0 )
 			dev = TryInit_WCHISP();
+#ifndef __FreeBSD__
 		else if( strcmp( specpgm, "esp32s2chfun" ) == 0 )
 			dev = TryInit_ESP32S2CHFUN();
+#endif
 		else if( strcmp( specpgm, "nchlink" ) == 0 )
 			dev = TryInit_NHCLink042();
+#ifndef __FreeBSD__
 		else if( strcmp( specpgm, "b003boot" ) == 0 )
 			dev = TryInit_B003Fun(SimpleReadNumberInt(init_hints->serial_port, 0x1209b003));
+#endif
 		else if( strcmp( specpgm, "ardulink" ) == 0 )
 			dev = TryInit_Ardulink(init_hints);
 	}
@@ -67,18 +71,22 @@ void * MiniCHLinkInitAsDLL( struct MiniChlinkFunctions ** MCFO, const init_hints
 		{
 			fprintf( stderr, "Found WCH Link\n" );
 		}
+#ifndef __FreeBSD__
 		else if( (dev = TryInit_ESP32S2CHFUN()) )
 		{
 			fprintf( stderr, "Found ESP32S2-Style Programmer\n" );
 		}
+#endif
 		else if ((dev = TryInit_NHCLink042()))
 		{
 			fprintf( stderr, "Found NHC-Link042 Programmer\n" );
 		}
+#ifndef __FreeBSD__
 		else if ((dev = TryInit_B003Fun(SimpleReadNumberInt(init_hints->serial_port, 0x1209b003))))
 		{
 			fprintf( stderr, "Found B003Fun Bootloader\n" );
 		}
+#endif
 		else if ( init_hints->serial_port && strncmp( init_hints->serial_port, "0x", 2 ) && (dev = TryInit_Ardulink(init_hints)))
 		{
 			fprintf( stderr, "Found Ardulink Programmer\n" );
@@ -150,7 +158,7 @@ int main( int argc, char ** argv )
 		}
 	}
 
-#if !defined(WINDOWS) && !defined(WIN32) && !defined(_WIN32) && !defined(__APPLE__)
+#if defined(__linux__)
 	{
 		uid_t uid = getuid();
 		struct passwd* pw = getpwuid(uid);

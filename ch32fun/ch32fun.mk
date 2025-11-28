@@ -11,6 +11,8 @@ PREFIX_DEFAULT:=riscv64-elf
 
 ifneq ($(shell $(WHICH) riscv64-unknown-elf-gcc 2>$(NULLDEV)),)
 	PREFIX_DEFAULT:=riscv64-unknown-elf
+else ifneq ($(shell $(WHICH) riscv32-unknown-elf-gcc 2>$(NULLDEV)),)
+	PREFIX_DEFAULT:=riscv32-unknown-elf
 else ifneq ($(shell $(WHICH) riscv-none-elf-gcc 2>$(NULLDEV)),)
 	PREFIX_DEFAULT:=riscv-none-elf
 endif
@@ -394,7 +396,7 @@ gdbclient :
 	gdb-multiarch $(TARGET).elf -ex "target remote :3333"
 
 clangd :
-	make clean
+	$(MAKE) clean
 	bear -- make build
 
 clangd_clean :
@@ -417,11 +419,11 @@ ch32fun.o : $(SYSTEM_C)
 	$(PREFIX)-gcc -c -o $@ $(SYSTEM_C) $(CFLAGS)
 
 cv_flash : $(TARGET).bin
-	make -C $(MINICHLINK) all
+	$(MAKE) -C $(MINICHLINK) all
 	$(FLASH_COMMAND)
 
 cv_flash_ext : $(TARGET)_ext.bin
-	make -C $(MINICHLINK) all
+	$(MAKE) -C $(MINICHLINK) all
 	$(FLASH_EXT_COMMAND)
 
 cv_clean :
