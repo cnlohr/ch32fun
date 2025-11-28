@@ -809,5 +809,6 @@ const struct RiscVChip_s* FindChipISP(uint16_t chip_id)
 
 uint32_t getMemoryEnd(const struct RiscVChip_s * chip, enum MemoryArea area)
 {
+	if (area == DEFAULT_AREA) return 0;
 	return (&chip->flash_offset)[(area-1)*2] + (&chip->flash_size)[(area-1)*2];
 }
