@@ -30,7 +30,7 @@
 
 #include "ch32fun.h"
 #include <stdio.h>
-#include "lib_i2c.h"
+#include "../i2c_sensor_test/lib_i2c.h"
 
 #define SYSTEM_CLOCK_HZ 48000000
 #define I2C_SELF_ADDR 0x66

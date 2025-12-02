@@ -405,7 +405,7 @@ void USBFS_IRQHandler()
 						const struct descriptor_list_struct * e_end = e + DESCRIPTOR_LIST_ENTRIES;
 						for( ; e != e_end; e++ )
 						{
-							if( e->lIndexValue == USBFS_IndexValue )
+							if( e->lIndexValue == (uint32_t)USBFS_IndexValue )
 							{
 								ctx->pCtrlPayloadPtr = (uint8_t*)e->addr;
 								len = e->length;
@@ -417,6 +417,8 @@ void USBFS_IRQHandler()
 						if( len > USBFS_SetupReqLen )
 							len = USBFS_SetupReqLen;
 						ctx->USBFS_SetupReqLen = len;
+
+						break;
 					}
 
 					/* Set usb address */
