@@ -9,8 +9,6 @@
 // R32_UART2_CTRL: RX PA6, TX PA7
 // R32_UART3_CTRL: RX PA4, TX PA5
 
-#define DELAY_SEC_TIME(n) (DELAY_MS_TIME * 1000 * n)
-
 #define TARGET_UART &R32_UART3_CTRL
 
 u32 get_tickCount() { return SysTick->CNT; }
@@ -41,7 +39,7 @@ int main() {
 	u32 time_ref = get_tickCount();
 
 	while(1) {
-		if (TimeElapsed32(get_tickCount(), time_ref) > DELAY_SEC_TIME(1)) {
+		if (TimeElapsed32(get_tickCount(), time_ref) > DELAY_SEC_COUNT(1)) {
 			time_ref = get_tickCount();
 			printf("send: %s\r\n", msg);
 			uart_send_ch5xx(TARGET_UART, msg, sizeof(msg));
