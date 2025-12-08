@@ -1,6 +1,7 @@
 #include "hsusb.h"
 #include "ch32fun.h"
 #include <string.h>
+#include <stdio.h>
 
 struct _USBState USBHSCTX;
 volatile uint8_t usb_debug = 0;
@@ -25,6 +26,10 @@ void * fast_memcpy( void *dst, void *src, uint32_t size )
 // #define copyBuffer memcpy
 #else
 #define copyBuffer memcpy
+#endif
+
+#if (FUSB_OUT_FLOW_CONTROL > 0) && (FUSB_USER_HANDLERS < 1)
+#error FUSB_OUT_FLOW_CONTROL requires FUSB_USER_HANDLERS
 #endif
 
 #if (USBHS_IMPL==2)
@@ -615,10 +620,14 @@ replycomplete:
 					if( UEP_CTRL_RX(ep) & (1<<4) ) // RB_UEP_R_TOG_MATCH
 #endif
 					{
-						UEP_CTRL_RX(ep) ^= USBHS_UEP_R_TOG_DATA1;
-#if (USBHS_IMPL==2)
-						UEP_CTRL_RX(ep) = ( UEP_CTRL_RX(ep) & ~USBHS_UEP_R_RES_MASK) | USBHS_UEP_R_RES_ACK; // clear
+						uint_fast8_t rx_ctrl = UEP_CTRL_RX(ep) & ~USBHS_UEP_R_RES_MASK;
+						rx_ctrl ^= USBHS_UEP_R_TOG_DATA1;
+#if FUSB_OUT_FLOW_CONTROL > 0
+						rx_ctrl |= USBHS_UEP_R_RES_NAK; // ACK later when receiver is ready
+#else
+						rx_ctrl |= USBHS_UEP_R_RES_ACK;
 #endif
+						UEP_CTRL_RX(ep) = rx_ctrl;
 #if FUSB_USER_HANDLERS
 						HandleDataOut( ctx, ep, ctx->ENDPOINTS[ep-1], len );
 #endif
@@ -847,6 +856,14 @@ void USBHS_InternalFinishSetup()
 	}
 }
 
+#if FUSB_OUT_FLOW_CONTROL > 0
+void USBHS_RxReady(int endp)
+{
+	// Just ACK previous transfer for the RX to get ready
+	UEP_CTRL_RX(endp) &= ~USBHS_UEP_R_RES_MASK;
+}
+#endif
+
 int USBHSSetup()
 {
 #if defined (CH584_CH585)
@@ -926,7 +943,7 @@ static inline int USBHS_SendEndpoint( int endp, int len )
 	return 0;
 }
 
-static inline int USBHS_SendEndpointNEW( int endp, uint8_t* data, int len, int copy)
+static inline int USBHS_SendEndpointNEW( int endp, const uint8_t* data, int len, int copy)
 {
 	if( USBHSCTX.USBHS_errata_dont_send_endpoint_in_window || USBHSCTX.USBHS_Endp_Busy[endp] ) return -1;
 	// This prevents sending while ep0 is receiving
