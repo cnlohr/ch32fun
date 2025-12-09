@@ -1,6 +1,7 @@
 #include "ch32fun.h"
 #include <stdio.h>
-#include "lib_i2c.h"
+// #include "lib_i2c.h"
+#include "../../examples_x035/i2c_sensor_test/lib_i2c.h"
 
 #define I2C_TARGET I2C1
 #define I2C_ADDRESS 0x23		// use this for BH1750
