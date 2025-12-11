@@ -205,6 +205,29 @@ typedef struct
 	uint8_t       RESERVED7[0x810]; // 500H
 	__IO uint32_t SCTLR;            // D10H
 } PFIC_Type;
+
+typedef struct {
+	__IO uint8_t CTRL_MOD;
+	__IO uint8_t CTRL_CFG;
+	__IO uint8_t INTER_EN;
+	__IO uint8_t CLOCK_DIV;
+	__IO uint8_t BUFFER;
+	__IO uint8_t RUN_FLAG;
+	__IO uint8_t INT_FLAG;
+	__IO uint8_t FIFO_COUNT;
+	uint8_t RESERVED1[4];
+	__IO uint16_t TOTAL_CNT;
+	uint8_t RESERVED2[3];
+	__IO uint8_t FIFO;
+	uint8_t RESERVED3[2];
+	__IO uint8_t FIFO_COUNT1;
+	__IO uint16_t DMA_NOW;
+	uint8_t RESERVED4[2];
+	__IO uint16_t DMA_BEG;
+	uint8_t RESERVED5[2];
+	__IO uint16_t DMA_END;
+} SPI_Typedef;
+
 #endif /* __ASSEMBLER__*/
 
 #ifdef __ASSEMBLER__
@@ -1478,6 +1501,9 @@ typedef enum
 #define SPI_DMA_NOW         0x14
 #define SPI_DMA_BEG         0x18
 #define SPI_DMA_END         0x1C
+
+#define SPI0				((SPI_Typedef*)BA_SPI0)
+#define SPI1				((SPI_Typedef*)BA_SPI1)
 
 /* I2C register */
 #define R16_I2C_CTRL1       (*((vu16*)0x40004800))    // RW, I2C control 1
