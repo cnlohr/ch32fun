@@ -44,7 +44,7 @@
 #include <wchar.h>
 
 #ifdef _WIN32
-	#define HID_API_EXPORT __declspec(dllexport)
+	#define HID_API_EXPORT  /* __declspec(dllexport)  */
 	#define HID_API_CALL
 	#include <stdint.h>
 	#include <guiddef.h>
