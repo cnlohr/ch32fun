@@ -6,7 +6,6 @@
 #ifdef CH570_CH572
 #define CRCPOLY1           BB2
 #define ACCESSADDRESS1     BB3
-#define RSSI               BB12 // ? couldn't find it, not sure
 #define CTRL_TX            BB13
 #define CRCINIT2           BB22
 #define CRCPOLY2           BB23
@@ -713,7 +712,13 @@ void DevSetChannel(uint8_t channel) {
 
 __HIGH_CODE
 int8_t ReadRSSI() {
+#ifdef CH570_CH572
+	uint8_t *tx_buf = (uint8_t*)LLE_BUF;
+	int len = tx_buf[1];
+	return (int8_t)tx_buf[len +4];
+#else
 	return (int8_t)(BB->RSSI >> 0xf);
+#endif
 }
 
 __HIGH_CODE
