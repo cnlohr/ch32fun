@@ -22,9 +22,8 @@
 // The advertisement to be sent. The MAC address should be in the first 6 bytes in reversed byte order,
 // after that any BLE flag can be used.
 __attribute__((aligned(4))) uint8_t adv[] = {
-		0x02, 0x11, // header for LL: PDU + frame length
+		0x02, 0x0f, // header for LL: PDU + frame length
 		0x66, 0x55, 0x44, 0x33, 0x22, 0x11, // MAC (reversed)
-		0x03, 0x19, 0x00, 0x00, // 0x19: "Appearance", 0x00, 0x00: "Unknown"
 		0x08, 0x09, 'c', 'h', '3', '2', 'f', 'u', 'n'}; // 0x09: "Complete Local Name"
 uint8_t adv_channels[] = {37,38,39};
 
