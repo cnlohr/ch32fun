@@ -5,8 +5,8 @@
 
 typedef struct {
 	volatile uint32_t CFG;
-	volatile uint32_t STA;
-	volatile uint32_t some_reg1;
+	volatile uint32_t STA; // Completely (?) useless
+	volatile uint32_t some_reg1; // Don't know yet what are these 4 for
 	volatile uint32_t some_reg2;
 	volatile uint32_t some_reg3;
 	volatile uint32_t some_reg4;
@@ -18,8 +18,8 @@ typedef struct {
 
 void doAES(uint32_t * key, uint32_t * in, uint32_t * out, uint8_t enc) {
 	
-	AES->CFG = 0x100;
-	AES->CFG = enc?0:2;
+	AES->CFG = 0x100; // Don't know what it does, maybe enables the peripheral or clock for it
+	AES->CFG = enc?0:2; // Type of operation
 	AES->key[0] = key[0];
 	AES->key[1] = key[1];
 	AES->key[2] = key[2];
@@ -30,11 +30,10 @@ void doAES(uint32_t * key, uint32_t * in, uint32_t * out, uint8_t enc) {
 	AES->data[3] = in[3];
 	// AES->STA &= 0xfffffffd;
 	// AES->STA |= 1;
-	AES->CFG |= 1;
-  while(AES->CFG & 1);
-  // printf("%08x\n", AES->CFG);
-	// Delay_Us(10);
-  // printf("%08x\n", AES->CFG);
+	AES->CFG |= 1; // Start process
+  
+  while(AES->CFG & 1); // Wait for it to finish
+  
 	out[0] = AES->data[0];
 	out[1] = AES->data[1];
 	out[2] = AES->data[2];
