@@ -39,3 +39,15 @@ To read temperature from these sensors you need first request the internal ADC c
 - 9 bit - 93.75ms
 
 Sometimes the first reading can be 85°C, this is a normal behavior, described in the datasheet, this means that temperature register was not yet updated after power-on reset of the sensor.
+
+## Connecting the sensor
+
+1-wire protocol requires only one wire for communication. There can be many devices on the same bus all connected in parallel via the same wires. This example uses built-in pull-up resistor, which is sufficient for a general usage, but for a larger network that would use a long wires it could be beneficial to use an external 4.7K resistor connected between signal pin of the sensor and VCC for a stronger pull-up.
+
+To use this example as is, you'll ned to connect your DS18x20 sensor in such manner (in case of most usual TO-92 package):
+
+- pin 1 - GND
+- pin 2 - the GPIO pin of your choosing (PA3 by default)
+- pin 3 - VCC
+
+(If your sensor is heating to a hot-to-the-touch state, you've probably connected it backwards)

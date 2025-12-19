@@ -14,7 +14,7 @@ AES functions in WCH BLE lib are represented by this 4 functions:
 
 ``void AES_DevPktEnc(uint32_t param_1, uint32_t * param_2)``
 
-The first two were REd into one ``doAES`` function in this example. Another two seem to be for bulk packet processing, maybe involving some DMA, but they haven't been reverse engineered yet. They use 4 registers for unknown purposes, and these registers are yet to be named.
+The first two were RE'd into one ``doAES`` function in this example. Another two seem to be for bulk packet processing, maybe involving some DMA, but they haven't been reverse engineered yet. They use 4 registers for unknown purposes, and these registers are yet to be named.
 
 The second register ``STA`` is used for tracking ongoing job, but it seems that it's used just as a global flag, that is manually set and then reset in the BLE interrupt, it doesn't clear automatically. I've found that you can just check the first bit of ``AES->CFG`` to see when it's done.
 
