@@ -909,7 +909,7 @@ extern "C" {
 #define GPIO_ResetBits(pin)           (*(&R32_PA_CLR + OFFSET_FOR_GPIOB(pin)) =  (pin & ~PB))
 #define GPIO_InverseBits(pin)         (*(&R32_PA_OUT + OFFSET_FOR_GPIOB(pin)) ^= (pin & ~PB))
 #define GPIO_ReadPortPin(pin)         (*(&R32_PA_PIN + OFFSET_FOR_GPIOB(pin)) &  (pin & ~PB))
-#define funDigitalRead(pin)           GPIO_ReadPortPin(pin)
+#define funDigitalRead(pin)           !!GPIO_ReadPortPin(pin)
 #define funDigitalWrite( pin, value ) do{ if((value)==FUN_HIGH){GPIO_SetBits(pin);} else if((value)==FUN_LOW){GPIO_ResetBits(pin);} }while(0)
 #define funGpioInitAll()              // funGpioInitAll() does not do anything on ch5xx, put here for consistency
 
