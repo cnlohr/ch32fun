@@ -6,8 +6,8 @@
 
 #define ONEPREFIX  oneWire
 #define DELAY(n)   Delay_Us(n)
-#define ONE_INPUT  { funPinMode(PIN_ONE, GPIO_CFGLR_IN_PUPD); funDigitalWrite(PIN_ONE, 1); }
-#define ONE_OUTPUT { funDigitalWrite(PIN_ONE, 0); funPinMode(PIN_ONE, GPIO_CFGLR_OUT_2Mhz_PP); }
+#define ONE_INPUT  { funPinMode(PIN_ONE, GPIO_CFGLR_IN_PUPD); funDigitalWrite(PIN_ONE, 1); } 
+#define ONE_OUTPUT { funDigitalWrite(PIN_ONE, 0); funPinMode(PIN_ONE, GPIO_CFGLR_OUT_2Mhz_PP); } 
 #define ONE_SET    { funDigitalWrite(PIN_ONE, 1); }
 #define ONE_CLEAR  { funDigitalWrite(PIN_ONE, 0); }
 #define ONE_READ   funDigitalRead(PIN_ONE)
@@ -98,9 +98,6 @@ int main() {
 	SystemInit();
 
 	funGpioInitAll();
-
-	funPinMode(PA2, GPIO_CFGLR_OUT_2Mhz_PP);
-	funDigitalWrite(PA2, 0);
 
 	printf("---Scanning 1-Wire Bus for Devices---\n");
 	int result = oneWireScan(sensor_list, BUS_SIZE);
