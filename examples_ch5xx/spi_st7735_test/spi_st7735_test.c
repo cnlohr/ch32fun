@@ -30,9 +30,9 @@ int main() {
 		.SPIx = TARGETED_SPI,
 		.mosi_pin = PA14,
 		.sck_pin = PA13,
-		.rst_pin = PA10, 
+		.rst_pin = PA12, 
 		.dc_pin = PA11, 
-		.cs_pin = -1
+		.cs_pin = PA10
 	};
 
 	printf("~SPI ST7735 TEST~\n");

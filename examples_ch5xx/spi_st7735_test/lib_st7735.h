@@ -48,10 +48,10 @@ void TFT_CS_LOW() {
 #define ST7735_RASET 0x2B	// Row Address Set
 #define ST7735_RAMWR 0x2C	// RAM Write
 
-u8 ST7735_XOFFSET = 0;
-u8 ST7735_YOFFSET = 0;
+int ST7735_XOFFSET = 0;
+int ST7735_YOFFSET = 0;
 
-void TFT_SET_WINDOW(u16 x0, u16 y0, u16 x1, u16 y1) {
+void TFT_SET_WINDOW(int x0, int y0, int x1, int y1) {
 	SPI_Cmd_Reg8(SELECTED_SPI_DEV, ST7735_CASET);
 	SPI_Cmd_Data16(SELECTED_SPI_DEV, x0 + ST7735_XOFFSET);
 	SPI_Cmd_Data16(SELECTED_SPI_DEV, x1 + ST7735_XOFFSET);
@@ -61,7 +61,7 @@ void TFT_SET_WINDOW(u16 x0, u16 y0, u16 x1, u16 y1) {
 	SPI_Cmd_Reg8(SELECTED_SPI_DEV, ST7735_RAMWR);
 }
 
-void TFT_SEND_BUFF8(const u8* buffer, u16 len) {
+void TFT_SEND_BUFF8(const u8* buffer, int len) {
 	for (int i = 0; i < len; i++) {
 		SPI_Cmd_Data8(SELECTED_SPI_DEV, buffer[i]);
 	}
@@ -69,13 +69,13 @@ void TFT_SEND_BUFF8(const u8* buffer, u16 len) {
 
 #define SWAP_BYTES(x) (((x) >> 8) | ((x) << 8))
 
-void TFT_SEND_BUFF16(u16* buffer, u16 len) {
+void TFT_SEND_BUFF16(u16* buffer, int len) {
 	#ifdef ST7735_USE_DMA
 		funDigitalWrite(SELECTED_SPI_DEV->dc_pin, 1);
 
-		for (u16 i = 0; i < len; i++) { buffer[i] = SWAP_BYTES(buffer[i]); }
+		for (int i = 0; i < len; i++) { buffer[i] = SWAP_BYTES(buffer[i]); }
 		SPI0_dma_send((u8*)buffer, len*2, 1);
-		for (u16 i = 0; i < len; i++) { buffer[i] = SWAP_BYTES(buffer[i]); }
+		for (int i = 0; i < len; i++) { buffer[i] = SWAP_BYTES(buffer[i]); }
 	#else
 		for (int i = 0; i < len; i++) {
 			SPI_Cmd_Data16(SELECTED_SPI_DEV, buffer[i]);
@@ -114,7 +114,7 @@ void ST7735_fill_all(u16 color) {
 	tft_fill_rect(0, 0, ST7735_WIDTH, ST7735_HEIGHT, color);
 }
 
-void ST7735_init(SPI_Device_t *dev, u8 width, u8 height) {
+void ST7735_init(SPI_Device_t *dev, int width, int height) {
 	TFT_SELECT_SPI_DEV(dev);
 
 	ST7735_WIDTH = width;

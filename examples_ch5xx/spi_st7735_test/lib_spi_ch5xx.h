@@ -20,15 +20,15 @@
 
 typedef struct {
 	SPI_Typedef *SPIx;
-	s16 mosi_pin;
-	s16 miso_pin;
-	s16 sck_pin;
-	s16 rst_pin;
-	s16 dc_pin;
-	s16 cs_pin;
+	int mosi_pin;
+	int miso_pin;
+	int sck_pin;
+	int rst_pin;
+	int dc_pin;
+	int cs_pin;
 } SPI_Device_t;
 
-void SPI_init(SPI_Device_t *dev, u8 divider, u8 slave_mode) {
+void SPI_init(SPI_Device_t *dev, int divider, int slave_mode) {
 	//# Setup SPI pins
 	if (dev->mosi_pin >= 0) {
 		funPinMode(dev->mosi_pin, GPIO_CFGLR_OUT_10Mhz_PP);		// MOSI
@@ -161,7 +161,7 @@ void SPI0_dma_stop() {
 	SPI0->INT_FLAG |= RB_SPI_IF_DMA_END;
 }
 
-void SPI0_dma_send(u8 *buf, u16 len, u8 send_or_receive) {
+void SPI0_dma_send(u8 *buf, int len, int send_or_receive) {
 	if (send_or_receive) {
 		// Send
 		SPI0->CTRL_MOD &= ~RB_SPI_FIFO_DIR;
