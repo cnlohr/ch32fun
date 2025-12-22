@@ -452,6 +452,15 @@ typedef struct
 	__IO uint32_t INTFCR;
 } DMA_TypeDef;
 
+/* DMA MUX Controller */
+typedef struct
+{
+	__IO uint32_t CFGR0_3;
+	__IO uint32_t CFGR4_7;
+	__IO uint32_t CFGR8_11;
+	__IO uint32_t CFGR12_15;
+} DMAMUX_TypeDef;
+
 /* External Interrupt/Event Controller */
 typedef struct
 {
@@ -492,17 +501,17 @@ typedef struct
 	__IO uint16_t WRPR3;
 } OB_TypeDef;
 
-/* FSMC Bank1 Registers */
+/* FMC Bank1 Registers */
 typedef struct
 {
-	__IO uint32_t BTCR[8];
-} FSMC_Bank1_TypeDef;
+  __IO uint32_t BTCR[8];
+} FMC_Bank1_TypeDef;
 
-/* FSMC Bank1E Registers */
+/* FMC Bank1E Registers */
 typedef struct
 {
-	__IO uint32_t BWTR[7];
-} FSMC_Bank1E_TypeDef;
+  __IO uint32_t BWTR[7];
+} FMC_Bank1E_TypeDef;
 
 /* FMC Bank3 Registers */
 typedef struct
@@ -1164,6 +1173,151 @@ typedef struct
 	__IO uint32_t USBPD_DMA;
 } USBPD_TypeDef;
 
+/* USBSS Deveice Registers */
+typedef struct
+{
+	__IO uint8_t  UEP_TX_CFG;             // 0x0
+	__IO uint8_t  UEP_TX_CR;              // 0x1
+	__IO uint8_t  UEP_TX_SEQ;             // 0x2
+	__IO uint8_t  UEP_TX_ST;              // 0x3
+	__IO uint8_t  UEP_TX_CHAIN_CR;        // 0x4
+	__IO uint8_t  UEP_TX_CHAIN_ST;        // 0x5
+	__IO uint16_t UEP_TX_CHAIN_LEN;       // 0x6
+	__IO uint8_t  UEP_TX_CHAIN_EXP_NUMP;  // 0x8
+	__IO uint8_t  UEP_TX_CHAIN_NUMP;      // 0x9
+	__IO uint16_t UEP_TX_DMA_OFS;         // 0xA
+	__IO uint32_t UEP_TX_DMA;             // 0xC
+} USBSS_EP_TX_TypeDef;
+
+typedef struct
+{
+	__IO uint8_t  UEP_RX_CFG;             // 0x0
+	__IO uint8_t  UEP_RX_CR;              // 0x1
+	__IO uint8_t  UEP_RX_SEQ;             // 0x2
+	__IO uint8_t  UEP_RX_ST;              // 0x3
+	__IO uint8_t  UEP_RX_CHAIN_CR;        // 0x4
+	__IO uint8_t  UEP_RX_CHAIN_ST;        // 0x5
+	__IO uint16_t UEP_RX_CHAIN_LEN;       // 0x6
+	__IO uint8_t  UEP_RX_CHAIN_MAX_NUMP;  // 0x8
+	__IO uint8_t  UEP_RX_CHAIN_NUMP;      // 0x9
+	__IO uint16_t UEP_RX_DMA_OFS;         // 0xA
+	__IO uint32_t UEP_RX_DMA;             // 0xC
+} USBSS_EP_RX_TypeDef;
+
+typedef struct
+{
+	__IO uint32_t LINK_CFG;
+	__IO uint32_t LINK_CTRL;
+	__IO uint32_t LINK_INT_CTRL;
+	__IO uint32_t LINK_INT_FLAG;
+	__IO uint32_t LINK_STATUS;
+	uint8_t Reserved0[3];
+	__IO uint8_t LINK_ITP_PRE;
+	uint8_t Reserved1[5];
+	__IO uint8_t LINK_U2_INACT_TIMER;
+	uint8_t Reserved2[10];
+	__IO uint8_t LINK_U1_WKUP_FILTER;
+	uint8_t Reserved3[1];
+	__IO uint16_t LINK_U1_WKUP_TMR;
+	__IO uint8_t LINK_U2_WKUP_FILTER;
+	uint8_t Reserved4[3];
+	__IO uint8_t LINK_U3_WKUP_FILTER;
+	uint8_t Reserved5[1];
+	__IO uint16_t LINK_U3_WKUP_TMR;
+	uint8_t Reserved6[12];
+	__IO uint16_t LINK_ISO_DLY;
+	uint8_t Reserved7[14];
+	__IO uint16_t LINK_LPM_CR;
+	uint8_t Reserved8[2];
+	__IO uint32_t LINK_LMP_PORT_CAP;
+	__IO uint32_t LINK_LMP_RX_DATA0;
+	__IO uint32_t LINK_LMP_RX_DATA1;
+	__IO uint32_t LINK_LMP_RX_DATA2;
+	__IO uint32_t LINK_LMP_TX_DATA0;
+	__IO uint32_t LINK_LMP_TX_DATA1;
+	__IO uint32_t LINK_LMP_TX_DATA2;
+	__IO uint32_t USB_CONTROL;
+	__IO uint32_t USB_STATUS;
+	__IO uint32_t USB_ITP;
+	__IO uint32_t USB_ITP_ADJ;
+	__IO uint16_t UEP_TX_EN;
+	__IO uint16_t UEP_RX_EN;
+	__IO uint32_t UEP0_TX_CTRL;
+	__IO uint32_t UEP0_RX_CTRL;
+	__IO uint32_t UEP0_TX_DMA;
+	__IO uint32_t UEP0_RX_DMA;
+	__IO uint32_t UEP0_TX_DMA_OFS;
+	__IO uint32_t UEP0_RX_DMA_OFS;
+	uint8_t Reserved9[36];
+	__IO USBSS_EP_TX_TypeDef EP1_TX;
+	__IO USBSS_EP_RX_TypeDef EP1_RX;
+	__IO USBSS_EP_TX_TypeDef EP2_TX;
+	__IO USBSS_EP_RX_TypeDef EP2_RX;
+	__IO USBSS_EP_TX_TypeDef EP3_TX;
+	__IO USBSS_EP_RX_TypeDef EP3_RX;
+	__IO USBSS_EP_TX_TypeDef EP4_TX;
+	__IO USBSS_EP_RX_TypeDef EP4_RX;
+	__IO USBSS_EP_TX_TypeDef EP5_TX;
+	__IO USBSS_EP_RX_TypeDef EP5_RX;
+	__IO USBSS_EP_TX_TypeDef EP6_TX;
+	__IO USBSS_EP_RX_TypeDef EP6_RX;
+	__IO USBSS_EP_TX_TypeDef EP7_TX;
+	__IO USBSS_EP_RX_TypeDef EP7_RX;
+} USBSSD_TypeDef;
+
+typedef struct
+{
+	__IO uint32_t LINK_CFG;
+	__IO uint32_t LINK_CTRL;
+	__IO uint32_t LINK_INT_CTRL;
+	__IO uint32_t LINK_INT_FLAG;
+	__IO uint32_t LINK_STATUS;
+	uint8_t Reserved0[3];
+	__IO uint8_t LINK_ITP_PRE;
+	uint8_t Reserved1[5];
+	__IO uint8_t LINK_U2_INACT_TIMER;
+	uint8_t Reserved2[10];
+	__IO uint8_t LINK_U1_WKUP_FILTER;
+	uint8_t Reserved3[3];
+	__IO uint8_t LINK_U2_WKUP_FILTER;
+	uint8_t Reserved4[3];
+	__IO uint8_t LINK_U3_WKUP_FILTER;
+	uint8_t Reserved5[15];
+	__IO uint16_t LINK_ISO_DLY;
+	uint8_t Reserved6[14];
+	__IO uint16_t LINK_LPM_CR;
+	uint8_t Reserved7[2];
+	__IO uint32_t LINK_LMP_PORT_CAP;
+	__IO uint32_t LINK_LMP_RX_DATA0;
+	__IO uint32_t LINK_LMP_RX_DATA1;
+	__IO uint32_t LINK_LMP_RX_DATA2;
+	__IO uint32_t LINK_LMP_TX_DATA0;
+	__IO uint32_t LINK_LMP_TX_DATA1;
+	__IO uint32_t LINK_LMP_TX_DATA2;
+
+	__IO uint32_t USB_CONTROL;
+	__IO uint32_t USB_STATUS;
+	__IO uint32_t USB_ITP;
+	__IO uint32_t USB_ITP_ADJ;
+	__IO uint16_t UEP_TX_EN;
+	__IO uint16_t UEP_RX_EN;
+
+	__IO uint32_t UH_TX_CTRL;
+	__IO uint32_t UH_RX_CTRL;
+	__IO uint32_t UH_TX_DMA;
+	__IO uint32_t UH_RX_DMA;
+	__IO uint32_t UH_TX_DMA_OFS;
+	__IO uint32_t UH_RX_DMA_OFS;
+	__IO uint16_t HOST_TX_NUMP;
+	__IO uint16_t HOST_RX_NUMP;
+	__IO uint32_t HOST_STATUS;
+	__IO uint16_t HOST_TX_FC_STATUS;
+	__IO uint16_t HOST_RX_FC_STATUS;
+	__IO uint32_t TP_RX_DATA0;
+	__IO uint32_t TP_RX_DATA1;
+	__IO uint32_t TP_RX_DATA2;
+} USBSSH_TypeDef;
+
 /* USBHS Device Registers */
 typedef struct
 {
@@ -1571,6 +1725,183 @@ typedef struct
 	__IO uint32_t RDR;
 	__IO uint32_t OR;
 } SWPMI_TypeDef;
+
+/* ECDC Registers */
+typedef struct
+{
+	__IO uint32_t CTRL;
+	__IO uint32_t INT_FG;
+	__IO uint32_t KEY_255T224;
+	__IO uint32_t KEY_223T192;
+	__IO uint32_t KEY_191T160;
+	__IO uint32_t KEY_159T128;
+	__IO uint32_t KEY_127T96;
+	__IO uint32_t KEY_95T64;
+	__IO uint32_t KEY_63T32;
+	__IO uint32_t KEY_31T0;
+	__IO uint32_t IV_127T96;
+	__IO uint32_t IV_95T64;
+	__IO uint32_t IV_63T32;
+	__IO uint32_t IV_31T0;
+	uint32_t RESERVED3[2];
+	__IO uint32_t SGSD_127T96;
+	__IO uint32_t SGSD_95T64;
+	__IO uint32_t SGSD_63T32;
+	__IO uint32_t SGSD_31T0;
+	__IO uint32_t SGRT_127T96;
+	__IO uint32_t SGRT_95T64;
+	__IO uint32_t SGRT_63T32;
+	__IO uint32_t SGRT_31T0;
+	__IO uint32_t SRC_ADDR;
+	__IO uint32_t DST_ADDR;
+	__IO uint32_t SRAM_LEN;
+} ECDC_TypeDef;
+
+/* DFSDM filter Registers */
+typedef struct
+{
+	__IO uint32_t CR1;
+	uint32_t RESERVED0;
+	__IO uint32_t CR2;
+	uint32_t RESERVED1;
+	__IO uint32_t ISR;
+	uint32_t RESERVED2;
+	__IO uint32_t ICR;
+	uint32_t RESERVED3;
+	__IO uint32_t JCHGR;
+	uint32_t RESERVED4;
+	__IO uint32_t FCR3;
+	uint32_t RESERVED5;
+	__IO uint32_t JDATAR;
+	uint32_t RESERVED6;
+	__IO uint32_t RDATAR;
+	uint32_t RESERVED7;
+	__IO uint32_t AWHTR;
+	uint32_t RESERVED8;
+	__IO uint32_t AWLTR;
+	uint32_t RESERVED9;
+	__IO uint32_t AWSR;
+	uint32_t RESERVED10;
+	__IO uint32_t AWCFR;
+	uint32_t RESERVED11;
+	__IO uint32_t EXMAX;
+	uint32_t RESERVED12;
+	__IO uint32_t EXMIN;
+	uint32_t RESERVED13;
+	__IO uint32_t NVTIMR;
+	uint32_t RESERVED14;
+} DFSDM_FLT_TypeDef;
+
+/* DFSDM channel Registers */
+typedef struct
+{
+	__IO uint32_t CFGR1;
+	uint32_t RESERVED0;
+	__IO uint32_t CFGR2;
+	uint32_t RESERVED1;
+	__IO uint32_t AWSCDR;
+	uint32_t RESERVED2;
+	__IO uint32_t WDATR;
+	uint32_t RESERVED3;
+	union{
+	__IO uint32_t DATINR;
+	struct{
+		__IO int16_t DATINR0;
+		__IO int16_t DATINR1;
+	};
+	};
+} DFSDM_Channel_TypeDef;
+
+/* LTDC Registers */
+typedef struct
+{
+	__IO uint32_t SSCR;
+	__IO uint32_t BPCR;
+	__IO uint32_t AWCR;
+	__IO uint32_t TWCR;
+	__IO uint32_t GCR;
+	__IO uint32_t SRCR;
+	__IO uint32_t BCCR;
+	__IO uint32_t IER;
+	__IO uint32_t ISR;
+	__IO uint32_t ICR;
+	__IO uint32_t LIPCR;
+	__IO uint32_t CPSR;
+	__IO uint32_t CDSR;
+} LTDC_TypeDef;
+
+/* LTDC Layer Registers */
+typedef struct
+{
+	__IO uint32_t CR;
+	__IO uint32_t WHPCR;
+	__IO uint32_t WVPCR;
+	__IO uint32_t CKCR;
+	__IO uint32_t PFCR;
+	__IO uint32_t CACR;
+	__IO uint32_t DCCR;
+	__IO uint32_t BFCR;
+	__IO uint32_t CFBAR;
+	__IO uint32_t CFBLR;
+	__IO uint32_t CFBLNR;
+	__IO uint32_t CLUTWR;
+} LTDC_Layer_TypeDef;
+
+/* GPHA Registers */
+typedef struct
+{
+	__IO uint32_t CTLR;
+	__IO uint32_t ISR;
+	__IO uint32_t IFCR;
+	__IO uint32_t FGMAR;
+	__IO uint32_t FGOR;
+	__IO uint32_t BGMAR;
+	__IO uint32_t BGOR;
+	__IO uint32_t FGPFCCR;
+	__IO uint32_t FGCOLR;
+	__IO uint32_t BGPFCCR;
+	__IO uint32_t BGCOLR;
+	__IO uint32_t FGCMAR;
+	__IO uint32_t BGCMAR;
+	__IO uint32_t OPFCCR;
+	__IO uint32_t OCOLR;
+	__IO uint32_t OMAR;
+	__IO uint32_t OOR;
+	__IO uint32_t NLR;
+	__IO uint32_t LWR;
+	__IO uint32_t AMTCR;
+	__IO uint32_t FGCWRS;
+	__IO uint32_t FGCDAT;
+	__IO uint32_t BGCWRS;
+	__IO uint32_t BGCDAT;
+} GPHA_TypeDef;
+
+/* HSADC Registers */
+typedef struct
+{
+	__IO uint32_t CFGR;
+	__IO uint32_t CTLR1;
+	__IO uint32_t CTLR2;
+	__IO uint32_t STATR;
+	__IO uint32_t DATAR;
+	__IO uint32_t ADDR0;
+	__IO uint32_t ADDR1;
+} HSADC_TypeDef;
+
+/* SerDes Registers */
+typedef struct
+{
+	__IO uint32_t CTRL;
+	__IO uint32_t INT_EN;
+	__IO uint32_t STATUS;
+	__IO uint32_t RTX_CTRL;
+	__IO uint32_t RX_LEN0;
+	__IO uint32_t DATA0;
+	__IO uint32_t DMA_0;
+	__IO uint32_t RX_LEN1;
+	__IO uint32_t DATA1;
+	__IO uint32_t DMA_1;
+} SDS_TypeDef;
 
 /* memory mapped structure for Program Fast Interrupt Controller (PFIC) */
 typedef struct{
@@ -16390,6 +16721,1110 @@ typedef struct
 #define WWDG_Prescaler_2    ((uint32_t)0x00000080)
 #define WWDG_Prescaler_4    ((uint32_t)0x00000100)
 #define WWDG_Prescaler_8    ((uint32_t)0x00000180)
+
+/* ch32h417_hsadc.h -----------------------------------------------------------*/
+
+/* HSADC_First_Conversion_Cycle */
+#define HSADC_First_Conversion_Cycle_8    ((uint32_t)0x00000000)
+#define HSADC_First_Conversion_Cycle_9    ((uint32_t)0x00000020)
+#define HSADC_First_Conversion_Cycle_10   ((uint32_t)0x00000040)
+#define HSADC_First_Conversion_Cycle_11   ((uint32_t)0x00000060)
+
+/* HSADC_data_size */
+#define HSADC_DataSize_16b                ((uint32_t)0x00000000)
+#define HSADC_DataSize_8b                 ((uint32_t)0x00000080)
+
+/* HSADC_channels */
+#define HSADC_Channel_0                   ((uint8_t)0x00)
+#define HSADC_Channel_1                   ((uint8_t)0x01)
+#define HSADC_Channel_2                   ((uint8_t)0x02)
+#define HSADC_Channel_3                   ((uint8_t)0x03)
+#define HSADC_Channel_4                   ((uint8_t)0x04)
+#define HSADC_Channel_5                   ((uint8_t)0x05)
+#define HSADC_Channel_6                   ((uint8_t)0x06)
+
+/* HSADC_interrupts_definition */
+#define HSADC_IT_EOC                      ((uint16_t)0x0100)
+#define HSADC_IT_DMAEnd                   ((uint16_t)0x0200)
+#define HSADC_IT_BurstEnd                 ((uint16_t)0x0400)
+
+/* HSADC_flags_definition */
+#define HSADC_FLAG_EOC                    ((uint16_t)0x0001)
+#define HSADC_FLAG_DMAEnd                 ((uint16_t)0x0002)
+#define HSADC_FLAG_BurstEnd               ((uint16_t)0x0004)
+#define HSADC_FLAG_RXNE                   ((uint16_t)0x0008)
+#define HSADC_FLAG_DualBufferAddr1        ((uint16_t)0x0010)
+#define HSADC_FLAG_FIFO_NE                ((uint16_t)0x0100)
+#define HSADC_FLAG_FIFO_Full              ((uint16_t)0x0200)
+#define HSADC_FLAG_FIFO_OV                ((uint16_t)0x0400)
+
+/* ch32h417_hsem.h -----------------------------------------------------------*/
+
+/* HSEM_Core_ID */
+#define HSEM_Core_ID_V3F   ((uint32_t)0x00000000)
+#define HSEM_Core_ID_V5F   ((uint32_t)0x00000100)
+
+/* ch32h417_i3c.h -----------------------------------------------------------*/
+
+/* I3C_SDAHoldTime*/
+#define I3C_SDAHoldTime_0_5                  ((uint32_t)0x00000000)
+#define I3C_SDAHoldTime_1_5                  ((uint32_t)0x10000000)
+
+/* I3C_WaitTime */
+#define I3C_WaitTime_State_0                 ((uint32_t)0x00000000)
+#define I3C_WaitTime_State_1                 ((uint32_t)0x00000100)
+#define I3C_WaitTime_State_2                 ((uint32_t)0x00000200)
+#define I3C_WaitTime_State_3                 ((uint32_t)0x00000300)
+
+/* I3C_IBIPayloadSize */
+#define I3C_IBIPayloadSize_None              ((uint32_t)0x00000000)
+#define I3C_IBIPayloadSize_1B                ((uint32_t)0x00010000)
+#define I3C_IBIPayloadSize_2B                ((uint32_t)0x00020000)
+#define I3C_IBIPayloadSize_3B                ((uint32_t)0x00030000)
+#define I3C_IBIPayloadSize_4B                ((uint32_t)0x00040000)
+
+/* I3C_DataTurnAroundDuration */
+#define I3C_DataTurnAroundDuration_Mode0     ((uint32_t)0x00000000)
+#define I3C_DataTurnAroundDuration_Mode1     ((uint32_t)0x01000000)
+
+/* I3C_MaxDataSpeed */
+#define I3C_MaxDataSpeed_Format_Mode0        ((uint32_t)0x00000000)
+#define I3C_MaxDataSpeed_Format_Mode1        ((uint32_t)0x00000100)
+#define I3C_MaxDataSpeed_Format_Mode2        ((uint32_t)0x00000200)
+#define I3C_MaxDataSpeed_Format_Mode3        ((uint32_t)0x00000300)
+
+/* I3C_HandOffActivityState */
+#define I3C_HandOffActivityState_0           ((uint32_t)0x00000000)
+#define I3C_HandOffActivityState_1           ((uint32_t)0x00000001)
+#define I3C_HandOffActivityState_2           ((uint32_t)0x00000002)
+#define I3C_HandOffActivityState_3           ((uint32_t)0x00000003)
+
+/* I3C_DeviceIndex */
+#define I3C_DeviceIndex_1                    ((uint32_t)0x00000001)
+#define I3C_DeviceIndex_2                    ((uint32_t)0x00000002)
+#define I3C_DeviceIndex_3                    ((uint32_t)0x00000003)
+#define I3C_DeviceIndex_4                    ((uint32_t)0x00000004)
+
+/* I3C_Direction */
+#define I3C_Direction_WR                     ((uint32_t)0x00000000)
+#define I3C_Direction_RD                     ((uint32_t)0x00010000)
+
+/* I3C_CONTROLLER MessageType */
+#define I3C_CONTROLLER_MTYPE_RELEASE         ((uint32_t)0x00000000)
+#define I3C_CONTROLLER_MTYPE_HEADER          I3C_CTLR_MTYPE_0
+#define I3C_CONTROLLER_MTYPE_PRIVATE         I3C_CTLR_MTYPE_1
+#define I3C_CONTROLLER_MTYPE_DIRECT          (I3C_CTLR_MTYPE_1 | I3C_CTLR_MTYPE_0)
+#define I3C_CONTROLLER_MTYPE_LEGACY_I2C      I3C_CTLR_MTYPE_2
+#define I3C_CONTROLLER_MTYPE_CCC             (I3C_CTLR_MTYPE_2 | I3C_CTLR_MTYPE_1)
+
+/* I3C_EndMode */
+#define I3C_GENERATE_STOP                    I3C_CTLR_MEND
+#define I3C_GENERATE_RESTART                 ((uint32_t)0x00000000)
+
+/* I3C_TARGET_MessageType */
+#define I3C_TARGET_MTYPE_HOT_JOIN            I3C_CTLR_MTYPE_3
+#define I3C_TARGET_MTYPE_CONTROLLER_ROLE_REQ (I3C_CTLR_MTYPE_3 | I3C_CTLR_MTYPE_0)
+#define I3C_TARGET_MTYPE_IBI                 (I3C_CTLR_MTYPE_3 | I3C_CTLR_MTYPE_1)
+
+/* I3C_PeripheralMode */
+#define PeripheralMode_CONTROLLER            ((uint32_t)0x00000000)
+#define PeripheralMode_TARGET                ((uint32_t)0x00000002)
+
+/* I3C_RX_FIFO_THRESHOLD */
+#define I3C_RXFIFO_THRESHOLD_1_4             ((uint32_t)0x00000000)
+#define I3C_RXFIFO_THRESHOLD_4_4             I3C_CFGR_RXTHRES
+
+/* I3C_TX_FIFO_THRESHOLD */
+#define I3C_TXFIFO_THRESHOLD_1_4             ((uint32_t)0x00000000)
+#define I3C_TXFIFO_THRESHOLD_4_4             I3C_CFGR_TXTHRES
+
+/* I3C_CONTROL_FIFO_STATE */
+#define I3C_CONTROLFIFO_DISABLE              ((uint32_t)0x00000000)
+#define I3C_CONTROLFIFO_ENABLE               I3C_CFGR_TMODE
+
+/* I3C_STATUS_FIFO_STATE */
+#define I3C_STATUSFIFO_DISABLE               ((uint32_t)0x00000000)
+#define I3C_STATUSFIFO_ENABLE                I3C_CFGR_SMODE
+
+/* I3C_flags_definition */
+#define I3C_FLAG_CFEF                        ((uint32_t)0x00000001)
+#define I3C_FLAG_TXFEF                       ((uint32_t)0x00000002)
+#define I3C_FLAG_CFNFF                       ((uint32_t)0x00000004)
+#define I3C_FLAG_SFNEF                       ((uint32_t)0x00000008)
+#define I3C_FLAG_TXFNFF                      ((uint32_t)0x00000010)
+#define I3C_FLAG_RXFNEF                      ((uint32_t)0x00000020)
+#define I3C_FLAG_TXLASTF                     ((uint32_t)0x00000040)
+#define I3C_FLAG_RXLASTF                     ((uint32_t)0x00000080)
+#define I3C_FLAG_FCF                         ((uint32_t)0x00000200)
+#define I3C_FLAG_RXTGTENDF                   ((uint32_t)0x00000400)
+#define I3C_FLAG_ERRF                        ((uint32_t)0x00000800)
+#define I3C_FLAG_IBIF                        ((uint32_t)0x00008000)
+#define I3C_FLAG_IBIENDF                     ((uint32_t)0x00010000)
+#define I3C_FLAG_CRF                         ((uint32_t)0x00020000)
+#define I3C_FLAG_CRUPDF                      ((uint32_t)0x00040000)
+#define I3C_FLAG_HJF                         ((uint32_t)0x00080000)
+#define I3C_FLAG_WKPF                        ((uint32_t)0x00200000)
+#define I3C_FLAG_GETF                        ((uint32_t)0x00400000)
+#define I3C_FLAG_STAF                        ((uint32_t)0x00800000)
+#define I3C_FLAG_DAUPDF                      ((uint32_t)0x01000000)
+#define I3C_FLAG_MWLUPDF                     ((uint32_t)0x02000000)
+#define I3C_FLAG_MRLUPDF                     ((uint32_t)0x04000000)
+#define I3C_FLAG_RSTF                        ((uint32_t)0x08000000)
+#define I3C_FLAG_ASUPDF                      ((uint32_t)0x10000000)
+#define I3C_FLAG_INTUPDF                     ((uint32_t)0x20000000)
+#define I3C_FLAG_DEFF                        ((uint32_t)0x40000000)
+#define I3C_FLAG_GRPF                        ((uint32_t)0x80000000)
+
+/* I3C_interrupts_definition */
+#define I3C_IT_CFNFIE                        ((uint32_t)0x00000004)
+#define I3C_IT_SFNEIE                        ((uint32_t)0x00000008)
+#define I3C_IT_TXFNEIE                       ((uint32_t)0x00000010)
+#define I3C_IT_RXFNEIE                       ((uint32_t)0x00000020)
+#define I3C_IT_FCIE                          ((uint32_t)0x00000200)
+#define I3C_IT_RXTGTENDIE                    ((uint32_t)0x00000400)
+#define I3C_IT_ERRIE                         ((uint32_t)0x00000800)
+#define I3C_IT_IBIIE                         ((uint32_t)0x00008000)
+#define I3C_IT_IBIENDIE                      ((uint32_t)0x00010000)
+#define I3C_IT_CRIE                          ((uint32_t)0x00020000)
+#define I3C_IT_HJIE                          ((uint32_t)0x00080000)
+#define I3C_IT_CRUPDIE                       ((uint32_t)0x00040000)
+#define I3C_IT_WKPIE                         ((uint32_t)0x00200000)
+#define I3C_IT_GETIE                         ((uint32_t)0x00400000)
+#define I3C_IT_STAIE                         ((uint32_t)0x00800000)
+#define I3C_IT_DAUPDIE                       ((uint32_t)0x01000000)
+#define I3C_IT_MWLUPDIE                      ((uint32_t)0x02000000)
+#define I3C_IT_MRLUPDIE                      ((uint32_t)0x04000000)
+#define I3C_IT_RSTIE                         ((uint32_t)0x08000000)
+#define I3C_IT_ASUPDIE                       ((uint32_t)0x10000000)
+#define I3C_IT_INTUPDIE                      ((uint32_t)0x20000000)
+#define I3C_IT_DEFIE                         ((uint32_t)0x40000000)
+#define I3C_IT_GRPIE                         ((uint32_t)0x80000000)
+
+/* I3C_ERROR */
+#define I3C_ERROR_CE0                        ((uint32_t)0x00000000)
+#define I3C_ERROR_CE1                        ((uint32_t)0x00000001)
+#define I3C_ERROR_CE2                        ((uint32_t)0x00000002)
+#define I3C_ERROR_CE3                        ((uint32_t)0x00000003)
+#define I3C_ERROR_TE0                        ((uint32_t)0x00000008)
+#define I3C_ERROR_TE1                        ((uint32_t)0x00000009)
+#define I3C_ERROR_TE2                        ((uint32_t)0x0000000A)
+#define I3C_ERROR_TE3                        ((uint32_t)0x0000000B)
+#define I3C_ERROR_TE4                        ((uint32_t)0x0000000C)
+#define I3C_ERROR_TE5                        ((uint32_t)0x0000000D)
+#define I3C_ERROR_TE6                        ((uint32_t)0x0000000E)
+#define I3C_ERROR_PERR                       ((uint32_t)0x00000010)
+#define I3C_ERROR_STALL                      ((uint32_t)0x00000020)
+#define I3C_ERROR_DOVR                       ((uint32_t)0x00000040)
+#define I3C_ERROR_COVR                       ((uint32_t)0x00000080)
+#define I3C_ERROR_ADDRESS_NACK               ((uint32_t)0x00000100)
+#define I3C_ERROR_DATA_NACK                  ((uint32_t)0x00000200)
+#define I3C_ERROR_DATA_HAND_OFF              ((uint32_t)0x00000400)
+
+/* ch32h417_lptim.h -----------------------------------------------------------*/
+
+/* LPTIM_Clock_Source */
+#define LPTIM_ClockSource_In                      ((uint32_t)0x00000000)
+#define LPTIM_ClockSource_Ex                      ((uint32_t)0x00000001)
+
+/* LPTIM_ClockPolarity */
+#define LPTIM_ClockPolarity_Rising                ((uint32_t)0x00000000)
+#define LPTIM_ClockPolarity_Falling               ((uint32_t)0x00000002)
+#define LPTIM_ClockPolarity_Rising_Falling        ((uint32_t)0x00000004)
+
+/* LPTIM_ClockPrescalerTime */
+#define LPTIM_ClockSampleTime_0T                  ((uint32_t)0x00000000)
+#define LPTIM_ClockSampleTime_2T                  ((uint32_t)0x00000008)
+#define LPTIM_ClockSampleTime_4T                  ((uint32_t)0x00000010)
+#define LPTIM_ClockSampleTime_8T                  ((uint32_t)0x00000018)
+
+/* LPTIM_TriggerSampleTime */
+#define LPTIM_TriggerSampleTime_0T                ((uint32_t)0x00000000)
+#define LPTIM_TriggerSampleTime_2T                ((uint32_t)0x00000040)
+#define LPTIM_TriggerSampleTime_4T                ((uint32_t)0x00000080)
+#define LPTIM_TriggerSampleTime_8T                ((uint32_t)0x000000C0)
+
+/* LPTIM_ClockPrescaler */
+#define LPTIM_TClockPrescaler_DIV1                ((uint32_t)0x00000000)
+#define LPTIM_TClockPrescaler_DIV2                ((uint32_t)0x00000200)
+#define LPTIM_TClockPrescaler_DIV4                ((uint32_t)0x00000400)
+#define LPTIM_TClockPrescaler_DIV8                ((uint32_t)0x00000600)
+#define LPTIM_TClockPrescaler_DIV16               ((uint32_t)0x00000800)
+#define LPTIM_TClockPrescaler_DIV32               ((uint32_t)0x00000A00)
+#define LPTIM_TClockPrescaler_DIV64               ((uint32_t)0x00000C00)
+#define LPTIM_TClockPrescaler_DIV128              ((uint32_t)0x00000E00)
+
+/* LPTIM_TriggerSource */
+#define LPTIM_TriggerSource_ETR                   ((uint32_t)0x00000000)
+#define LPTIM_TriggerSource_RTC_ALARM             ((uint32_t)0x00002000)
+#define LPTIM_TriggerSource_TAMP                  ((uint32_t)0x00004000)
+
+/* LPTIM_ExTriggerPolarity */
+#define LPTIM_ExTriggerPolarity_Disable           ((uint32_t)0x00000000)
+#define LPTIM_ExTriggerPolarity_Rising            ((uint32_t)0x00020000)
+#define LPTIM_ExTriggerPolarity_Falling           ((uint32_t)0x00040000)
+#define LPTIM_ExTriggerPolarity_Rising_Falling    ((uint32_t)0x00060000)
+
+/* LPTIM_OutputPolarity */
+#define LPTIM_OutputPolarity_High                 ((uint32_t)0x00000000)
+#define LPTIM_OutputPolarity_Low                  ((uint32_t)0x00200000)
+
+/* LPTIM_UpdateMode */
+#define LPTIM_UpdateMode0                         ((uint32_t)0x00000000)
+#define LPTIM_UpdateMode1                         ((uint32_t)0x00400000)
+
+/* LPTIM_CountSource */
+#define LPTIM_CountSource_Internal                ((uint32_t)0x00000000)
+#define LPTIM_CountSource_External                ((uint32_t)0x00800000)
+
+/* LPTIM_InClockSource */
+#define LPTIM_InClockSource_PCLK1                 ((uint32_t)0x00000000)
+#define LPTIM_InClockSource_HSI                   ((uint32_t)0x02000000)
+#define LPTIM_InClockSource_LSE                   ((uint32_t)0x04000000)
+#define LPTIM_InClockSource_LSI                   ((uint32_t)0x06000000)
+
+/* LPTIM_Flag_Definition */
+#define LPTIM_FLAG_DIR_SYNC                       ((uint32_t)0x00000080)
+#define LPTIM_FLAG_DOWN                           ((uint32_t)0x00000040)
+#define LPTIM_FLAG_UP                             ((uint32_t)0x00000020)
+#define LPTIM_FLAG_ARROK                          ((uint32_t)0x00000010)
+#define LPTIM_FLAG_CMPOK                          ((uint32_t)0x00000008)
+#define LPTIM_FLAG_EXTTRIG                        ((uint32_t)0x00000004)
+#define LPTIM_FLAG_ARRM                           ((uint32_t)0x00000002)
+#define LPTIM_FLAG_CMPM                           ((uint32_t)0x00000001)
+
+/* LPTIM_Interrupts_Definition */
+#define LPTIM_IT_DOWN                             ((uint32_t)0x00000040)
+#define LPTIM_IT_UP                               ((uint32_t)0x00000020)
+#define LPTIM_IT_ARROK                            ((uint32_t)0x00000010)
+#define LPTIM_IT_CMPOK                            ((uint32_t)0x00000008)
+#define LPTIM_IT_EXTTRIG                          ((uint32_t)0x00000004)
+#define LPTIM_IT_ARRM                             ((uint32_t)0x00000002)
+#define LPTIM_IT_CMPM                             ((uint32_t)0x00000001)
+
+/* ch32h417_ltdc.h -----------------------------------------------------------*/
+
+/* LTDC_HSPolarity */
+#define LTDC_HSPolarity_AL         ((uint32_t)0x00000000)
+#define LTDC_HSPolarity_AH         LTDC_GCR_HSPOL
+
+/* LTDC_VSPolarity */
+#define LTDC_VSPolarity_AL         ((uint32_t)0x00000000)
+#define LTDC_VSPolarity_AH         LTDC_GCR_VSPOL
+
+/* LTDC_DEPolarity */
+#define LTDC_DEPolarity_AL         ((uint32_t)0x00000000)
+#define LTDC_DEPolarity_AH         LTDC_GCR_DEPOL
+
+/* LTDC_PCPolarity */
+#define LTDC_PCPolarity_IPC        ((uint32_t)0x00000000)
+#define LTDC_PCPolarity_IIPC       LTDC_GCR_PCPOL
+
+/* LTDC_Reload */
+#define LTDC_IMReload              LTDC_SRCR_IMR
+#define LTDC_VBReload              LTDC_SRCR_VBR
+
+
+/* LTDC_Position */
+#define LTDC_POS_CY                LTDC_CPSR_CYPOS
+#define LTDC_POS_CX                LTDC_CPSR_CXPOS
+
+
+/* LTDC_CurrentStatus */
+#define LTDC_CD_VDES               LTDC_CDSR_VDES
+#define LTDC_CD_HDES               LTDC_CDSR_HDES
+#define LTDC_CD_VSYNC              LTDC_CDSR_VSYNCS
+#define LTDC_CD_HSYNC              LTDC_CDSR_HSYNCS
+
+/* LTDC_Interrupts_definition */
+#define LTDC_IT_LI                 LTDC_IER_LIE
+#define LTDC_IT_FU                 LTDC_IER_FUIE
+#define LTDC_IT_RR                 LTDC_IER_RRIE
+
+/* LTDC_Flag_definition */
+#define LTDC_FLAG_LI               LTDC_ISR_LIF
+#define LTDC_FLAG_FU               LTDC_ISR_FUIF
+#define LTDC_FLAG_RR               LTDC_ISR_RRIF
+
+/* LTDC_Pixelformat */
+#define LTDC_Pixelformat_ARGB8888  ((uint32_t)0x00000000)
+#define LTDC_Pixelformat_RGB888    ((uint32_t)0x00000001)
+#define LTDC_Pixelformat_RGB565    ((uint32_t)0x00000002)
+#define LTDC_Pixelformat_ARGB1555  ((uint32_t)0x00000003)
+#define LTDC_Pixelformat_ARGB4444  ((uint32_t)0x00000004)
+#define LTDC_Pixelformat_L8        ((uint32_t)0x00000005)
+#define LTDC_Pixelformat_AL44      ((uint32_t)0x00000006)
+#define LTDC_Pixelformat_AL88      ((uint32_t)0x00000007)
+
+/* LTDC_BlendingFactor1 */
+#define LTDC_BlendingFactor1_CA    ((uint32_t)0x00000400)
+#define LTDC_BlendingFactor1_PAxCA ((uint32_t)0x00000600)
+
+/* LTDC_BlendingFactor2 */
+#define LTDC_BlendingFactor2_CA    ((uint32_t)0x00000005)
+#define LTDC_BlendingFactor2_PAxCA ((uint32_t)0x00000007)
+
+/* ch32h417_pioc.h -----------------------------------------------------------*/
+
+// Register Bit Attribute / Bit Access Type
+//   RO:    Read Only (internal change)
+//   RW:    Read / Write
+// Attribute: master/PIOC
+
+/* Register name rule:
+   R32_* for 32 bits register (UINT32,ULONG)
+   R16_* for 16 bits register (UINT16,USHORT)
+   R8_*  for  8 bits register (UINT8,UCHAR)
+   RB_*  for bit or bit mask of 8 bit register */
+
+/* ********************************************************************************************************************* */
+
+#define PIOC_SRAM_BASE      (0x50040000)        // PIOC code RAM base address
+
+#define PIOC_SFR_BASE       PIOC_BASE                 // PIOC SFR base address
+
+#define R32_PIOC_SFR        (*((volatile unsigned long *)(PIOC_SFR_BASE+0x04))) // RO/RW, PIOC SFR
+
+#define R8_INDIR_ADDR       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x04))) // RO/RW, PIOC indirect address
+
+#define R8_TMR0_COUNT       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x05))) // RO/RW, PIOC timer count
+
+#define R8_TMR0_CTRL        (*((volatile unsigned char *)(PIOC_SFR_BASE+0x06))) // RO/RW, PIOC timer control and GP bit
+#define  RB_EN_LEVEL1       0x80                      // RO/RW, enable IO1 level change to wakeup & action interrupt flag
+#define  RB_EN_LEVEL0       0x40                      // RO/RW, enable IO0 level change to wakeup & action interrupt flag
+#define  RB_GP_BIT_Y        0x20                      // RO/RW, general-purpose bit 1, reset by power on, no effect if system reset or RB_MST_RESET reset
+#define  RB_GP_BIT_X        0x10                      // RO/RW, general-purpose bit 0, reset by power on, no effect if system reset or RB_MST_RESET reset
+#define  RB_TMR0_MODE       0x08                      // RO/RW, timer mode: 0-timer, 1-PWM
+#define  RB_TMR0_FREQ2      0x04                      // RO/RW, timer clock frequency selection 2
+#define  RB_TMR0_FREQ1      0x02                      // RO/RW, timer clock frequency selection 1
+#define  RB_TMR0_FREQ0      0x01                      // RO/RW, timer clock frequency selection 0
+
+#define R8_TMR0_INIT        (*((volatile unsigned char *)(PIOC_SFR_BASE+0x07))) // RO/RW, PIOC timer initial value
+
+
+#define R32_PORT_CFG        (*((volatile unsigned long *)(PIOC_SFR_BASE+0x08))) // RO/RW, port status and config
+
+#define R8_BIT_CYCLE        (*((volatile unsigned char *)(PIOC_SFR_BASE+0x08))) // RO/RW, encode bit cycle
+#define  RB_BIT_TX_O0       0x80                      // RO/RW, bit data for IO0 port encode output
+#define  RB_BIT_CYCLE       0x7F                      // RO/RW, IO0 port bit data cycle -1
+
+#define R8_INDIR_ADDR2      (*((volatile unsigned char *)(PIOC_SFR_BASE+0x09))) // RO/RW, PIOC indirect address 2
+
+#define R8_PORT_DIR         (*((volatile unsigned char *)(PIOC_SFR_BASE+0x0A))) // RO/RW, IO port direction and mode
+//#define  RB_PORT_MOD3       0x80                      // RO/RW, IO port mode 3
+//#define  RB_PORT_MOD2       0x40                      // RO/RW, IO port mode 2
+//#define  RB_PORT_MOD1       0x20                      // RO/RW, IO port mode 1
+//#define  RB_PORT_MOD0       0x10                      // RO/RW, IO port mode 0
+//#define  RB_PORT_PU1        0x08                      // RO/RW, IO1 port pullup enable
+//#define  RB_PORT_PU0        0x04                      // RO/RW, IO0 port pullup enable
+#define  RB_PORT_DIR1       0x02                      // RO/RW, IO1 port direction
+#define  RB_PORT_DIR0       0x01                      // RO/RW, IO0 port direction
+
+#define R8_PORT_IO          (*((volatile unsigned char *)(PIOC_SFR_BASE+0x0B))) // RO/RW, IO port input and output
+#define  RB_PORT_IN_XOR     0x80                      // RO/RO, IO0 XOR IO1 port input
+#define  RB_BIT_RX_I0       0x40                      // RO/RO, decoced bit data for IO0 port received
+#define  RB_PORT_IN1        0x20                      // RO/RO, IO1 port input
+#define  RB_PORT_IN0        0x10                      // RO/RO, IO0 port input
+#define  RB_PORT_XOR1       0x08                      // RO/RO, IO1 port output XOR input
+#define  RB_PORT_XOR0       0x04                      // RO/RO, IO0 port output XOR input
+#define  RB_PORT_OUT1       0x02                      // RO/RW, IO1 port output
+#define  RB_PORT_OUT0       0x01                      // RO/RW, IO0 port output
+
+
+#define R32_DATA_CTRL       (*((volatile unsigned long *)(PIOC_SFR_BASE+0x1C))) // RW/RW, data control
+
+#define R8_SYS_CFG          (*((volatile unsigned char *)(PIOC_SFR_BASE+0x1C))) // RW/RW, port config
+#define  RB_INT_REQ         0x80                      // RO/RW, PIOC interrupt request action, set 1/0 by PIOC, clear 0 by master write R8_CTRL_RD (no effect)
+#define  RB_DATA_SW_MR      0x40                      // RO/RO, R8_CTRL_RD wait for read status, set 1 by PIOC write R8_CTRL_RD, clear 0 by master read R8_CTRL_RD
+#define  RB_DATA_MW_SR      0x20                      // RO/RO, R8_CTRL_WR wait for read status, set 1 by master write R8_CTRL_WR, clear 0 by PIOC read R8_CTRL_WR
+#define  RB_MST_CFG_B4      0x10                      // RW/RO, config inform bit, default 0
+#define  RB_MST_IO_EN1      0x08                      // RW/RO, IO1 switch enable, default 0
+#define  RB_MST_IO_EN0      0x04                      // RW/RO, IO0 switch enable, default 0
+#define  RB_MST_RESET       0x02                      // RW/RO, force PIOC reset, high action, default 0
+#define  RB_MST_CLK_GATE    0x01                      // RW/RO, PIOC global clock enable, high action, default 0
+
+#define R8_CTRL_RD          (*((volatile unsigned char *)(PIOC_SFR_BASE+0x1D))) // RO/RW, data for master read only and PIOC write only
+
+#define R8_CTRL_WR          (*((volatile unsigned char *)(PIOC_SFR_BASE+0x1E))) // RW/RO, data for master write only and PIOC read only
+
+#define R8_DATA_EXCH        (*((volatile unsigned char *)(PIOC_SFR_BASE+0x1F))) // RW/RW, data exchange
+
+
+#define R32_DATA_REG0_3     (*((volatile unsigned long *)(PIOC_SFR_BASE+0x20))) // RW/RW, data buffer 0~3
+#define R8_DATA_REG0        (*((volatile unsigned char *)(PIOC_SFR_BASE+0x20))) // RW/RW, data buffer 0
+#define R8_DATA_REG1        (*((volatile unsigned char *)(PIOC_SFR_BASE+0x21))) // RW/RW, data buffer 1
+#define R8_DATA_REG2        (*((volatile unsigned char *)(PIOC_SFR_BASE+0x22))) // RW/RW, data buffer 2
+#define R8_DATA_REG3        (*((volatile unsigned char *)(PIOC_SFR_BASE+0x23))) // RW/RW, data buffer 3
+
+#define R32_DATA_REG4_7     (*((volatile unsigned long *)(PIOC_SFR_BASE+0x24))) // RW/RW, data buffer 4~7
+#define R8_DATA_REG4        (*((volatile unsigned char *)(PIOC_SFR_BASE+0x24))) // RW/RW, data buffer 4
+#define R8_DATA_REG5        (*((volatile unsigned char *)(PIOC_SFR_BASE+0x25))) // RW/RW, data buffer 5
+#define R8_DATA_REG6        (*((volatile unsigned char *)(PIOC_SFR_BASE+0x26))) // RW/RW, data buffer 6
+#define R8_DATA_REG7        (*((volatile unsigned char *)(PIOC_SFR_BASE+0x27))) // RW/RW, data buffer 7
+
+#define R32_DATA_REG8_11    (*((volatile unsigned long *)(PIOC_SFR_BASE+0x28))) // RW/RW, data buffer 8~11
+#define R8_DATA_REG8        (*((volatile unsigned char *)(PIOC_SFR_BASE+0x28))) // RW/RW, data buffer 8
+#define R8_DATA_REG9        (*((volatile unsigned char *)(PIOC_SFR_BASE+0x29))) // RW/RW, data buffer 9
+#define R8_DATA_REG10       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x2A))) // RW/RW, data buffer 10
+#define R8_DATA_REG11       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x2B))) // RW/RW, data buffer 11
+
+#define R32_DATA_REG12_15   (*((volatile unsigned long *)(PIOC_SFR_BASE+0x2C))) // RW/RW, data buffer 12~15
+#define R8_DATA_REG12       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x2C))) // RW/RW, data buffer 12
+#define R8_DATA_REG13       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x2D))) // RW/RW, data buffer 13
+#define R8_DATA_REG14       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x2E))) // RW/RW, data buffer 14
+#define R8_DATA_REG15       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x2F))) // RW/RW, data buffer 15
+
+#define R32_DATA_REG16_19   (*((volatile unsigned long *)(PIOC_SFR_BASE+0x30))) // RW/RW, data buffer 16~19
+#define R8_DATA_REG16       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x30))) // RW/RW, data buffer 16
+#define R8_DATA_REG17       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x31))) // RW/RW, data buffer 17
+#define R8_DATA_REG18       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x32))) // RW/RW, data buffer 18
+#define R8_DATA_REG19       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x33))) // RW/RW, data buffer 19
+
+#define R32_DATA_REG20_23   (*((volatile unsigned long *)(PIOC_SFR_BASE+0x34))) // RW/RW, data buffer 20~23
+#define R8_DATA_REG20       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x34))) // RW/RW, data buffer 20
+#define R8_DATA_REG21       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x35))) // RW/RW, data buffer 21
+#define R8_DATA_REG22       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x36))) // RW/RW, data buffer 22
+#define R8_DATA_REG23       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x37))) // RW/RW, data buffer 23
+
+#define R32_DATA_REG24_27   (*((volatile unsigned long *)(PIOC_SFR_BASE+0x38))) // RW/RW, data buffer 24~27
+#define R8_DATA_REG24       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x38))) // RW/RW, data buffer 24
+#define R8_DATA_REG25       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x39))) // RW/RW, data buffer 25
+#define R8_DATA_REG26       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x3A))) // RW/RW, data buffer 26
+#define R8_DATA_REG27       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x3B))) // RW/RW, data buffer 27
+
+#define R32_DATA_REG28_31   (*((volatile unsigned long *)(PIOC_SFR_BASE+0x3C))) // RW/RW, data buffer 28~31
+#define R8_DATA_REG28       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x3C))) // RW/RW, data buffer 28
+#define R8_DATA_REG29       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x3D))) // RW/RW, data buffer 29
+#define R8_DATA_REG30       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x3E))) // RW/RW, data buffer 30
+#define R8_DATA_REG31       (*((volatile unsigned char *)(PIOC_SFR_BASE+0x3F))) // RW/RW, data buffer 31
+
+/* ******************************************************************************************************* */
+
+/* PIOC Registers */
+typedef struct
+{
+	uint32_t          RESERVED00;
+	union {
+		__IO uint32_t   D32_PIOC_SFR ; // RO/RW, PIOC SFR
+		struct {
+		__IO uint8_t  D8_INDIR_ADDR; // RO/RW, PIOC indirect address
+		__IO uint8_t  D8_TMR0_COUNT; // RO/RW, PIOC timer count
+		__IO uint8_t  D8_TMR0_CTRL; // RO/RW, PIOC timer control and GP bit
+		__IO uint8_t  D8_TMR0_INIT; // RO/RW, PIOC timer initial value
+		} ;
+	} ;
+	union {
+		__IO uint32_t   D32_PORT_CFG ; // RO/RW, port status and config
+		struct {
+		__IO uint8_t  D8_BIT_CYCLE; // RO/RW, encode bit cycle
+		__IO uint8_t  D8_INDIR_ADDR2; // RO/RW, PIOC indirect address 2
+		__IO uint8_t  D8_PORT_DIR; // RO/RW, IO port direction and mode
+		__IO uint8_t  D8_PORT_IO; // RO/RW, IO port input and output
+		} ;
+	} ;
+	uint32_t          RESERVED0C;
+	uint32_t          RESERVED10;
+	uint32_t          RESERVED14;
+	uint32_t          RESERVED18;
+	union {
+		__IO uint32_t   D32_DATA_CTRL ; // RW/RW, data control
+		struct {
+		__IO uint8_t  D8_SYS_CFG; // RW/RW, port config
+		__IO uint8_t  D8_CTRL_RD; // RO/RW, data for master read only and PIOC write only
+		__IO uint8_t  D8_CTRL_WR; // RW/RO, data for master write only and PIOC read only
+		__IO uint8_t  D8_DATA_EXCH; // RW/RW, data exchange
+		} ;
+	} ;
+	union {
+		__IO uint32_t   D32_DATA_REG0_3 ; // RW/RW, data buffer 0~3
+		struct {
+		__IO uint8_t  D8_DATA_REG0; // RW/RW, data buffer 0
+		__IO uint8_t  D8_DATA_REG1; // RW/RW, data buffer 1
+		__IO uint8_t  D8_DATA_REG2; // RW/RW, data buffer 2
+		__IO uint8_t  D8_DATA_REG3; // RW/RW, data buffer 3
+		} ;
+		__IO uint16_t   D16_DATA_REG0_1 ; // RW/RW, data buffer 0~1
+	} ;
+	union {
+		__IO uint32_t   D32_DATA_REG4_7 ; // RW/RW, data buffer 4~7
+		struct {
+		__IO uint8_t  D8_DATA_REG4; // RW/RW, data buffer 4
+		__IO uint8_t  D8_DATA_REG5; // RW/RW, data buffer 5
+		__IO uint8_t  D8_DATA_REG6; // RW/RW, data buffer 6
+		__IO uint8_t  D8_DATA_REG7; // RW/RW, data buffer 7
+		} ;
+	} ;
+	union {
+		__IO uint32_t   D32_DATA_REG8_11 ; // RW/RW, data buffer 8~11
+		struct {
+		__IO uint8_t  D8_DATA_REG8; // RW/RW, data buffer 8
+		__IO uint8_t  D8_DATA_REG9; // RW/RW, data buffer 9
+		__IO uint8_t  D8_DATA_REG10; // RW/RW, data buffer 10
+		__IO uint8_t  D8_DATA_REG11; // RW/RW, data buffer 11
+		} ;
+	} ;
+	union {
+		__IO uint32_t   D32_DATA_REG12_15 ; // RW/RW, data buffer 12~15
+		struct {
+		__IO uint8_t  D8_DATA_REG12; // RW/RW, data buffer 12
+		__IO uint8_t  D8_DATA_REG13; // RW/RW, data buffer 13
+		__IO uint8_t  D8_DATA_REG14; // RW/RW, data buffer 14
+		__IO uint8_t  D8_DATA_REG15; // RW/RW, data buffer 15
+		} ;
+	} ;
+	union {
+		__IO uint32_t   D32_DATA_REG16_19 ; // RW/RW, data buffer 16~19
+		struct {
+		__IO uint8_t  D8_DATA_REG16; // RW/RW, data buffer 16
+		__IO uint8_t  D8_DATA_REG17; // RW/RW, data buffer 17
+		__IO uint8_t  D8_DATA_REG18; // RW/RW, data buffer 18
+		__IO uint8_t  D8_DATA_REG19; // RW/RW, data buffer 19
+		} ;
+	} ;
+	union {
+		__IO uint32_t   D32_DATA_REG20_23 ; // RW/RW, data buffer 20~23
+		struct {
+		__IO uint8_t  D8_DATA_REG20; // RW/RW, data buffer 20
+		__IO uint8_t  D8_DATA_REG21; // RW/RW, data buffer 21
+		__IO uint8_t  D8_DATA_REG22; // RW/RW, data buffer 22
+		__IO uint8_t  D8_DATA_REG23; // RW/RW, data buffer 23
+		} ;
+	} ;
+	union {
+		__IO uint32_t   D32_DATA_REG24_27 ; // RW/RW, data buffer 24~27
+		struct {
+		__IO uint8_t  D8_DATA_REG24; // RW/RW, data buffer 24
+		__IO uint8_t  D8_DATA_REG25; // RW/RW, data buffer 25
+		__IO uint8_t  D8_DATA_REG26; // RW/RW, data buffer 26
+		__IO uint8_t  D8_DATA_REG27; // RW/RW, data buffer 27
+		} ;
+	} ;
+	union {
+		__IO uint32_t   D32_DATA_REG28_31 ; // RW/RW, data buffer 28~31
+		struct {
+		__IO uint8_t  D8_DATA_REG28; // RW/RW, data buffer 28
+		__IO uint8_t  D8_DATA_REG29; // RW/RW, data buffer 29
+		__IO uint8_t  D8_DATA_REG30; // RW/RW, data buffer 30
+		__IO uint8_t  D8_DATA_REG31; // RW/RW, data buffer 31
+		} ;
+	} ;
+} PIOC_TypeDef;
+
+#define PIOC          ((PIOC_TypeDef *)PIOC_BASE)
+
+/* ch32h417_qspi.h -----------------------------------------------------------*/
+
+/* QSPI_Clock_Mode */
+#define QSPI_CKMode_Mode0                     ((uint32_t)0x00000000)
+#define QSPI_CKMode_Mode3                     ((uint32_t)QSPI_DCR_CKMODE)
+
+/* QSPI_ChipSelectHighTime */
+#define QSPI_CSHTime_1Cycle                   ((uint32_t)0x00000000)
+#define QSPI_CSHTime_2Cycle                   ((uint32_t)QSPI_DCR_CSHT_0)
+#define QSPI_CSHTime_3Cycle                   ((uint32_t)QSPI_DCR_CSHT_1)
+#define QSPI_CSHTime_4Cycle                   ((uint32_t)QSPI_DCR_CSHT_0 | QSPI_DCR_CSHT_1)
+#define QSPI_CSHTime_5Cycle                   ((uint32_t)QSPI_DCR_CSHT_2)
+#define QSPI_CSHTime_6Cycle                   ((uint32_t)QSPI_DCR_CSHT_2 | QSPI_DCR_CSHT_0)
+#define QSPI_CSHTime_7Cycle                   ((uint32_t)QSPI_DCR_CSHT_2 | QSPI_DCR_CSHT_1)
+#define QSPI_CSHTime_8Cycle                   ((uint32_t)QSPI_DCR_CSHT)
+
+/* QSPI_Fash_Select */
+#define QSPI_FSelect_1                        ((uint32_t)0x00000000)
+#define QSPI_FSelect_2                        ((uint32_t)QSPI_CR_FSEL)
+
+/* QSPI_Dual_Flash */
+#define QSPI_DFlash_Disable                   ((uint32_t)0x00000000)
+#define QSPI_DFlash_Enable                    ((uint32_t)QSPI_CR_DFM)
+
+/* QSPI_ComConfig_Functional_Mode */
+#define QSPI_ComConfig_FMode_Indirect_Write   ((uint32_t)0x00000000)
+#define QSPI_ComConfig_FMode_Indirect_Read    ((uint32_t)QSPI_CCR_FMODE_0)
+#define QSPI_ComConfig_FMode_Auto_Polling     ((uint32_t)QSPI_CCR_FMODE_1)
+#define QSPI_ComConfig_FMode_Memory_Mapped    ((uint32_t)QSPI_CCR_FMODE)
+
+
+/* QSPI_ComConfig_SendInstructionOnlyOnceMode */
+#define QSPI_ComConfig_SIOOMode_Disable       ((uint32_t)0x00000000)
+#define QSPI_ComConfig_SIOOMode_Enable        ((uint32_t)QSPI_CCR_SIOO)
+
+/* QSPI_ComConfig_DataMode */
+#define QSPI_ComConfig_DMode_NoData           ((uint32_t)0x00000000)
+#define QSPI_ComConfig_DMode_1Line            ((uint32_t)QSPI_CCR_DMODE_0)
+#define QSPI_ComConfig_DMode_2Line            ((uint32_t)QSPI_CCR_DMODE_1)
+#define QSPI_ComConfig_DMode_4Line            ((uint32_t)QSPI_CCR_DMODE)
+
+/* QSPI_ComConfig_AlternateBytesSize */
+#define QSPI_ComConfig_ABSize_8bit            ((uint32_t)0x00000000)
+#define QSPI_ComConfig_ABSize_16bit           ((uint32_t)QSPI_CCR_ABSIZE_0)
+#define QSPI_ComConfig_ABSize_24bit           ((uint32_t)QSPI_CCR_ABSIZE_1)
+#define QSPI_ComConfig_ABSize_32bit           ((uint32_t)QSPI_CCR_ABSIZE)
+
+/* QSPI_ComConfig_AlternateBytesMode */
+#define QSPI_ComConfig_ABMode_NoAlternateByte ((uint32_t)0x00000000)
+#define QSPI_ComConfig_ABMode_1Line           ((uint32_t)QSPI_CCR_ABMODE_0)
+#define QSPI_ComConfig_ABMode_2Line           ((uint32_t)QSPI_CCR_ABMODE_1)
+#define QSPI_ComConfig_ABMode_4Line           ((uint32_t)QSPI_CCR_ABMODE)
+
+/* QSPI_ComConfig_AddressSize */
+#define QSPI_ComConfig_ADSize_8bit            ((uint32_t)0x00000000)
+#define QSPI_ComConfig_ADSize_16bit           ((uint32_t)QSPI_CCR_ADSIZE_0)
+#define QSPI_ComConfig_ADSize_24bit           ((uint32_t)QSPI_CCR_ADSIZE_1)
+#define QSPI_ComConfig_ADSize_32bit           ((uint32_t)QSPI_CCR_ADSIZE)
+
+/* QSPI_ComConfig_AddressMode */
+#define QSPI_ComConfig_ADMode_NoAddress       ((uint32_t)0x00000000)
+#define QSPI_ComConfig_ADMode_1Line           ((uint32_t)QSPI_CCR_ADMODE_0)
+#define QSPI_ComConfig_ADMode_2Line           ((uint32_t)QSPI_CCR_ADMODE_1)
+#define QSPI_ComConfig_ADMode_4Line           ((uint32_t)QSPI_CCR_ADMODE)
+
+/* QSPI_ComConfig_InstructionMode */
+#define QSPI_ComConfig_IMode_NoInstruction    ((uint32_t)0x00000000)
+#define QSPI_ComConfig_IMode_1Line            ((uint32_t)QSPI_CCR_IMODE_0)
+#define QSPI_ComConfig_IMode_2Line            ((uint32_t)QSPI_CCR_IMODE_1)
+#define QSPI_ComConfig_IMode_4Line            ((uint32_t)QSPI_CCR_IMODE)
+
+
+/* QSPI_Interrupts_definition */
+#define QSPI_IT_TO                            (uint32_t)(QSPI_CR_TOIE | QSPI_SR_TOF)
+#define QSPI_IT_SM                            (uint32_t)(QSPI_CR_SMIE | QSPI_SR_SMF)
+#define QSPI_IT_FT                            (uint32_t)(QSPI_CR_FTIE | QSPI_SR_FTF)
+#define QSPI_IT_TC                            (uint32_t)(QSPI_CR_TCIE | QSPI_SR_TCF)
+#define QSPI_IT_TE                            (uint32_t)(QSPI_CR_TEIE | QSPI_SR_TEF)
+
+/* QSPI_Flags_definition */
+#define QSPI_FLAG_TO                          QSPI_SR_TOF
+#define QSPI_FLAG_SM                          QSPI_SR_SMF
+#define QSPI_FLAG_FT                          QSPI_SR_FTF
+#define QSPI_FLAG_TC                          QSPI_SR_TCF
+#define QSPI_FLAG_TE                          QSPI_SR_TEF
+#define QSPI_FLAG_BUSY                        QSPI_SR_BUSY
+#define QSPI_FLAG_IDLE                        QSPI_SR_IDLEF
+
+/* QSPI_Polling_Match_Mode */
+#define QSPI_PMM_AND                          ((uint32_t)0x00000000)
+#define QSPI_PMM_OR                           ((uint32_t)QSPI_CR_PMM)
+
+/* QSPI_SIOXEN  */
+#define QSPI_SIOXEN                           ((uint32_t)0x00002000)
+
+/* ch32h417_sai.h -----------------------------------------------------------*/
+
+/* SAI_Block_Mode */
+#define SAI_Mode_MasterTx               ((uint32_t)0x00000000)
+#define SAI_Mode_MasterRx               ((uint32_t)0x00000001)
+#define SAI_Mode_SlaveTx                ((uint32_t)0x00000002)
+#define SAI_Mode_SlaveRx                ((uint32_t)0x00000003)
+
+/* SAI_Block_Protocol */
+#define SAI_Free_Protocol               ((uint32_t)0x00000000)
+#define SAI_SPDIF_Protocol              ((uint32_t)SAI_CFGR1_PRTCFG_0)
+#define SAI_AC97_Protocol               ((uint32_t)SAI_CFGR1_PRTCFG_1)
+
+/* SAI_Block_Data_Size */
+#define SAI_DataSize_8b                 ((uint32_t)0x00000040)
+#define SAI_DataSize_10b                ((uint32_t)0x00000060)
+#define SAI_DataSize_16b                ((uint32_t)0x00000080)
+#define SAI_DataSize_20b                ((uint32_t)0x000000A0)
+#define SAI_DataSize_24b                ((uint32_t)0x000000C0)
+#define SAI_DataSize_32b                ((uint32_t)0x000000E0)
+
+/* SAI_Block_MSB_LSB_transmission */
+#define SAI_FirstBit_MSB                ((uint32_t)0x00000000)
+#define SAI_FirstBit_LSB                ((uint32_t)SAI_CFGR1_LSBFIRST)
+
+/* SAI_Block_Clock_Strobing */
+#define SAI_ClockStrobing_FallingEdge   ((uint32_t)0x00000000)
+#define SAI_ClockStrobing_RisingEdge    ((uint32_t)SAI_CFGR1_CKSTR)
+
+/* SAI_Block_Synchronization */
+#define SAI_Asynchronous                ((uint32_t)0x00000000)
+#define SAI_Synchronous                 ((uint32_t)SAI_CFGR1_SYNCEN_0)
+
+/* SAI_Block_NoDivider */
+#define SAI_MasterDivider_Enabled       ((uint32_t)0x00000000)
+#define SAI_MasterDivider_Disabled      ((uint32_t)SAI_CFGR1_NODIV)
+
+/* SAI_Block_FS_Definition */
+#define SAI_FS_StartFrame               ((uint32_t)0x00000000)
+#define I2S_FS_ChannelIdentification    ((uint32_t)SAI_FRCR_FSDEF)
+
+/* SAI_Block_FS_Polarity */
+#define SAI_FS_ActiveLow                ((uint32_t)0x00000000)
+#define SAI_FS_ActiveHigh               ((uint32_t)SAI_FRCR_FSPOL)
+
+/* SAI_Block_FS_Offset */
+#define SAI_FS_FirstBit                 ((uint32_t)0x00000000)
+#define SAI_FS_BeforeFirstBit           ((uint32_t)SAI_FRCR_FSOFF)
+
+/* SAI_Block_Slot_Size */
+#define SAI_SlotSize_DataSize           ((uint32_t)0x00000000)
+#define SAI_SlotSize_16b                ((uint32_t)0x00000040)
+#define SAI_SlotSize_32b                ((uint32_t)0x00000080)
+
+/* SAI_Block_Slot_Active */
+#define SAI_Slot_NotActive              ((uint32_t)0x00000000)
+#define SAI_SlotActive_0                ((uint32_t)0x00010000)
+#define SAI_SlotActive_1                ((uint32_t)0x00020000)
+#define SAI_SlotActive_2                ((uint32_t)0x00040000)
+#define SAI_SlotActive_3                ((uint32_t)0x00080000)
+#define SAI_SlotActive_4                ((uint32_t)0x00100000)
+#define SAI_SlotActive_5                ((uint32_t)0x00200000)
+#define SAI_SlotActive_6                ((uint32_t)0x00400000)
+#define SAI_SlotActive_7                ((uint32_t)0x00800000)
+#define SAI_SlotActive_8                ((uint32_t)0x01000000)
+#define SAI_SlotActive_9                ((uint32_t)0x02000000)
+#define SAI_SlotActive_10               ((uint32_t)0x04000000)
+#define SAI_SlotActive_11               ((uint32_t)0x08000000)
+#define SAI_SlotActive_12               ((uint32_t)0x10000000)
+#define SAI_SlotActive_13               ((uint32_t)0x20000000)
+#define SAI_SlotActive_14               ((uint32_t)0x40000000)
+#define SAI_SlotActive_15               ((uint32_t)0x80000000)
+#define SAI_SlotActive_ALL              ((uint32_t)0xFFFF0000)
+
+/* SAI_Mono_Streo_Mode */
+#define SAI_MonoMode                    ((uint32_t)SAI_CFGR1_MONO)
+#define SAI_StreoMode                   ((uint32_t)0x00000000)
+
+/* SAI_TRIState_Management */
+#define SAI_Output_NotReleased          ((uint32_t)0x00000000)
+#define SAI_Output_Released             ((uint32_t)SAI_CFGR2_TRIS)
+
+/* SAI_Block_Fifo_Threshold */
+#define SAI_Threshold_FIFOEmpty         ((uint32_t)0x00000000)
+#define SAI_FIFOThreshold_1QuarterFull  ((uint32_t)0x00000001)
+#define SAI_FIFOThreshold_HalfFull      ((uint32_t)0x00000002)
+#define SAI_FIFOThreshold_3QuartersFull ((uint32_t)0x00000003)
+#define SAI_FIFOThreshold_Full          ((uint32_t)0x00000004)
+
+/* SAI_Block_Companding_Mode */
+#define SAI_NoCompanding                ((uint32_t)0x00000000)
+#define SAI_ULaw_1CPL_Companding        ((uint32_t)0x00008000)
+#define SAI_ALaw_1CPL_Companding        ((uint32_t)0x0000C000)
+#define SAI_ULaw_2CPL_Companding        ((uint32_t)0x0000A000)
+#define SAI_ALaw_2CPL_Companding        ((uint32_t)0x0000E000)
+
+/* SAI_Block_Mute_Value */
+#define SAI_ZeroValue                   ((uint32_t)0x00000000)
+#define SAI_LastSentValue               ((uint32_t)SAI_CFGR2_MUTEVAL)
+
+/* SAI_Block_Interrupts_Definition */
+#define SAI_IT_OVRUDR                   ((uint32_t)SAI_INTENR_OVRUDRIE)
+#define SAI_IT_MUTEDET                  ((uint32_t)SAI_INTENR_MUTEDETIE)
+#define SAI_IT_WCKCFG                   ((uint32_t)SAI_INTENR_WCKCFGIE)
+#define SAI_IT_FREQ                     ((uint32_t)SAI_INTENR_FREQIE)
+#define SAI_IT_CNRDY                    ((uint32_t)SAI_INTENR_CNRDYIE)
+#define SAI_IT_AFSDET                   ((uint32_t)SAI_INTENR_AFSDETIE)
+#define SAI_IT_LFSDET                   ((uint32_t)SAI_INTENR_LFSDETIE)
+
+/* SAI_Block_Flags_Definition */
+#define SAI_FLAG_OVRUDR                 ((uint32_t)SAI_SR_OVRUDR)
+#define SAI_FLAG_MUTEDET                ((uint32_t)SAI_SR_MUTEDET)
+#define SAI_FLAG_WCKCFG                 ((uint32_t)SAI_SR_WCKCFG)
+#define SAI_FLAG_FREQ                   ((uint32_t)SAI_SR_FREQ)
+#define SAI_FLAG_CNRDY                  ((uint32_t)SAI_SR_CNRDY)
+#define SAI_FLAG_AFSDET                 ((uint32_t)SAI_SR_AFSDET)
+#define SAI_FLAG_LFSDET                 ((uint32_t)SAI_SR_LFSDET)
+
+/* SAI_Block_Fifo_Status_Level */
+#define SAI_FIFOStatus_Empty            ((uint32_t)0x00000000)
+#define SAI_FIFOStatus_Less1QuarterFull ((uint32_t)0x00010000)
+#define SAI_FIFOStatus_1QuarterFull     ((uint32_t)0x00020000)
+#define SAI_FIFOStatus_HalfFull         ((uint32_t)0x00030000)
+#define SAI_FIFOStatus_3QuartersFull    ((uint32_t)0x00040000)
+#define SAI_FIFOStatus_Full             ((uint32_t)0x00050000)
+
+/* ch32h417_sdmmc.h -----------------------------------------------------------*/
+
+/* SDMMC_Mode */
+#define SDMMC_Mode_Host                             ((uint16_t)0x00000000)
+#define SDMMC_Mode_Slave                            ((uint16_t)SDMMC_SLV_MODE)
+
+/* SDMMC_PhaseInv */
+#define SDMMC_Phase_No_Inverse                      ((uint16_t)0x00000000)
+#define SDMMC_Phase_Inverse                         ((uint16_t)SDMMC_PHASEINV)
+
+/* SDMMC_ClockSpeed */
+#define SDMMC_ClockSpeed_Low                        ((uint16_t)0x00000000)
+#define SDMMC_ClockSpeed_High                       ((uint16_t)(SDMMC_CLKMode))
+
+/* SDMMC_BusWidth */
+#define SDMMC_BusWidth_1                            ((uint32_t)0x00000000)
+#define SDMMC_BusWidth_4                            ((uint32_t)0x00000001)
+#define SDMMC_BusWidth_8                            ((uint32_t)0x00000002)
+
+/* SDMMC_ClockEdge */
+#define SDMMC_SampleClock_Rising                    ((uint8_t)0x00000000)
+#define SDMMC_SampleClock_Falling                   ((uint8_t)SDMMC_NEGSMP)
+
+/* SDMMC_RespExpect */
+#define SDMMC_Resp_NONE                             ((uint16_t)0x0000)
+#define SDMMC_Resp_136                              ((uint16_t)0x00100)
+#define SDMMC_Resp_48                               ((uint16_t)0x00200)
+#define SDMMC_Resp_R1b                              ((uint16_t)0x00300)
+
+/* TranMode_Direction */
+#define SDMMC_TranDir_Receive                       ((uint32_t)0x00000000)
+#define SDMMC_TranDir_Send                          ((uint32_t)SDMMC_DMA_DIR)
+
+/* DDR_ClockSW_Mode */
+#define SDMMC_DDR_ClockSW_Mode_In                   ((uint32_t)0x00000000)
+#define SDMMC_DDR_ClockSW_Mode_Auto                 ((uint32_t)0x00080000)
+#define SDMMC_DDR_ClockSW_Mode_Force                ((uint32_t)0x00100000)
+
+/* SDMMC_Flags */
+#define SDMMC_FLAG_SLV_BUF_RELEASE                  ((uint16_t)0x0400)
+#define SDMMC_FLAG_SDIOINT                          ((uint16_t)0x0200)
+#define SDMMC_FLAG_FIFO_OV                          ((uint16_t)0x0100)
+#define SDMMC_FLAG_BKGAP                            ((uint16_t)0x0080)
+#define SDMMC_FLAG_TRANDONE                         ((uint16_t)0x0040)
+#define SDMMC_FLAG_TRANERR                          ((uint16_t)0x0020)
+#define SDMMC_FLAG_DATTMO                           ((uint16_t)0x0010)
+#define SDMMC_FLAG_CMDDONE                          ((uint16_t)0x0008)
+#define SDMMC_FLAG_REIDX_ER                         ((uint16_t)0x0004)
+#define SDMMC_FLAG_RECRC_WR                         ((uint16_t)0x0002)
+#define SDMMC_FLAG_RE_TMOUT                         ((uint16_t)0x0001)
+
+/* SDMMC_Interrupt_Sources */
+#define SDMMC_IT_SDIOINT                            ((uint16_t)0x0200)
+#define SDMMC_IT_FIFO_OV                            ((uint16_t)0x0100)
+#define SDMMC_IT_BKGAP                              ((uint16_t)0x0080)
+#define SDMMC_IT_TRANDONE                           ((uint16_t)0x0040)
+#define SDMMC_IT_TRANERR                            ((uint16_t)0x0020)
+#define SDMMC_IT_DATTMO                             ((uint16_t)0x0010)
+#define SDMMC_IT_CMDDONE                            ((uint16_t)0x0008)
+#define SDMMC_IT_REIDX_ER                           ((uint16_t)0x0004)
+#define SDMMC_IT_RECRC_WR                           ((uint16_t)0x0002)
+#define SDMMC_IT_RE_TMOUT                           ((uint16_t)0x0001)
+
+/* ch32h417_swpmi.h -----------------------------------------------------------*/
+
+/* Tx_Buffering_Mode */
+#define SWPMI_TxMode_Buffering_None                 ((uint32_t)0x0)
+#define SWPMI_TxMode_Buffering_Single               ((uint32_t)0x2)
+#define SWPMI_TxMode_Buffering_Multi                ((uint32_t)0xA)
+
+/* Rx_Buffering_Mode */
+#define SWPMI_RxMode_Buffering_None                 ((uint32_t)0x0)
+#define SWPMI_RxMode_Buffering_Single               ((uint32_t)0x1)
+#define SWPMI_RxMode_Buffering_Multi                ((uint32_t)0x5)
+
+/* SWPMI interrupts definition */
+#define SWPMI_IT_RXBF                               ((uint16_t)0x0001)
+#define SWPMI_IT_TXBE                               ((uint16_t)0x0002)
+#define SWPMI_IT_RXBER                              ((uint16_t)0x0004)
+#define SWPMI_IT_RXOVR                              ((uint16_t)0x0008)
+#define SWPMI_IT_TXUNR                              ((uint16_t)0x0010)
+#define SWPMI_IT_RXNE                               ((uint16_t)0x0020)
+#define SWPMI_IT_TXE                                ((uint16_t)0x0040)
+#define SWPMI_IT_TC                                 ((uint16_t)0x0080)
+#define SWPMI_IT_SR                                 ((uint16_t)0x0100)
+#define SWPMI_IT_RDY                                ((uint16_t)0x0800)
+
+/* SWPMI flags definition */
+#define SWPMI_FLAG_RXBF                             ((uint16_t)0x0001)
+#define SWPMI_FLAG_TXBE                             ((uint16_t)0x0002)
+#define SWPMI_FLAG_RXBER                            ((uint16_t)0x0004)
+#define SWPMI_FLAG_RXOVR                            ((uint16_t)0x0008)
+#define SWPMI_FLAG_TXUNR                            ((uint16_t)0x0010)
+#define SWPMI_FLAG_RXNE                             ((uint16_t)0x0020)
+#define SWPMI_FLAG_TXE                              ((uint16_t)0x0040)
+#define SWPMI_FLAG_TC                               ((uint16_t)0x0080)
+#define SWPMI_FLAG_SR                               ((uint16_t)0x0100)
+#define SWPMI_FLAG_SUSP                             ((uint16_t)0x0200)
+#define SWPMI_FLAG_DEACT                            ((uint16_t)0x0400)
+#define SWPMI_FLAG_RDY                              ((uint16_t)0x0800)
+
+/* ch32h417_usbpd.h -----------------------------------------------------------*/
+
+/* Register Bit Definition */
+/* USBPD->CONFIG */
+#define PD_FILT_ED          (1<<0)             /* PD pin input filter enable */
+#define PD_ALL_CLR          (1<<1)             /* Clear all interrupt flags */
+#define CC_SEL              (1<<2)             /* Select PD communication port */
+#define PD_DMA_EN           (1<<3)             /* Enable DMA for USBPD */
+#define PD_RST_EN           (1<<4)             /* PD mode reset command enable */
+#define WAKE_POLAR          (1<<5)             /* PD port wake-up level */
+#define IE_PD_IO            (1<<10)            /* PD IO interrupt enable */
+#define IE_RX_BIT           (1<<11)            /* Receive bit interrupt enable */
+#define IE_RX_BYTE          (1<<12)            /* Receive byte interrupt enable */
+#define IE_RX_ACT           (1<<13)            /* Receive completion interrupt enable */
+#define IE_RX_RESET         (1<<14)            /* Reset interrupt enable */
+#define IE_TX_END           (1<<15)            /* Transfer completion interrupt enable */
+
+/* USBPD->CONTROL */
+#define PD_TX_EN            (1<<0)             /* USBPD transceiver mode and transmit enable */
+#define BMC_START           (1<<1)             /* BMC send start signal */
+#define RX_STATE_0          (1<<2)             /* PD received state bit 0 */
+#define RX_STATE_1          (1<<3)             /* PD received state bit 1 */
+#define RX_STATE_2          (1<<4)             /* PD received state bit 2 */
+#define DATA_FLAG           (1<<5)             /* Cache data valid flag bit */
+#define TX_BIT_BACK         (1<<6)             /* Indicates the current bit status of the BMC when sending the code */
+#define BMC_BYTE_HI         (1<<7)             /* Indicates the current half-byte status of the PD data being sent and received */
+
+/* USBPD->TX_SEL */
+#define TX_SEL1             (0<<0)
+#define TX_SEL1_SYNC1       (0<<0)             /* 0-SYNC1 */
+#define TX_SEL1_RST1        (1<<0)             /* 1-RST1 */
+#define TX_SEL2_Mask        (3<<2)
+#define TX_SEL2_SYNC1       (0<<2)             /* 00-SYNC1 */
+#define TX_SEL2_SYNC3       (1<<2)             /* 01-SYNC3 */
+#define TX_SEL2_RST1        (2<<2)             /* 1x-RST1 */
+#define TX_SEL3_Mask        (3<<4)
+#define TX_SEL3_SYNC1       (0<<4)             /* 00-SYNC1 */
+#define TX_SEL3_SYNC3       (1<<4)             /* 01-SYNC3 */
+#define TX_SEL3_RST1        (2<<4)             /* 1x-RST1 */
+#define TX_SEL4_Mask        (3<<6)
+#define TX_SEL4_SYNC2       (0<<6)             /* 00-SYNC2 */
+#define TX_SEL4_SYNC3       (1<<6)             /* 01-SYNC3 */
+#define TX_SEL4_RST2        (2<<6)             /* 1x-RST2 */
+
+/* USBPD->STATUS */
+#define BMC_AUX_Mask        (3<<0)              /* Clear BMC auxiliary information */
+#define BMC_AUX_INVALID     (0<<0)              /* 00-Invalid */
+#define BMC_AUX_SOP0        (1<<0)              /* 01-SOP0 */
+#define BMC_AUX_SOP1_HRST   (2<<0)              /* 10-SOP1 hard reset */
+#define BMC_AUX_SOP2_CRST   (3<<0)              /* 11-SOP2 cable reset */
+#define BUF_ERR             (1<<2)              /* BUFFER or DMA error interrupt flag */
+#define IF_RX_BIT           (1<<3)              /* Receive bit or 5bit interrupt flag */
+#define IF_RX_BYTE          (1<<4)              /* Receive byte or SOP interrupt flag */
+#define IF_RX_ACT           (1<<5)              /* Receive completion interrupt flag */
+#define IF_RX_RESET         (1<<6)              /* Receive reset interrupt flag */
+#define IF_TX_END           (1<<7)              /* Transfer completion interrupt flag */
+
+/* USBPD->PORT_CC1 */
+/* USBPD->PORT_CC2 */
+#define PA_CC_AI            (1<<0)               /* CC port comparator analogue input */
+#define CC_PD               (1<<1)               /* CC port pull-down resistor enable */
+#define CC_PU_Mask          (3<<2)               /* Clear CC port pull-up current */
+#define CC_NO_PU            (0<<2)               /* 00-Prohibit pull-up current */
+#define CC_PU_330           (1<<2)               /* 01-330uA */
+#define CC_PU_180           (2<<2)               /* 10-180uA */
+#define CC_PU_80            (3<<2)               /* 11-80uA */
+#define CC_LVE              (1<<4)               /* CC port output low voltage enable */
+#define CC_CMP_Mask         (7<<5)               /* Clear CC_CMP*/
+#define CC_NO_CMP           (0<<5)               /* 000-closed */
+#define CC_CMP_22           (2<<5)               /* 010-0.22V */
+#define CC_CMP_45           (3<<5)               /* 011-0.45V */
+#define CC_CMP_55           (4<<5)               /* 100-0.55V */
+#define CC_CMP_66           (5<<5)               /* 101-0.66V */
+#define CC_CMP_95           (6<<5)               /* 110-0.95V */
+#define CC_CMP_123          (7<<5)               /* 111-1.23V */
+#define USBPD_IN_HVT        (1<<9)
+/*********************************************************
+ * PD pin PC14/PC15 high threshold input mode:
+ * 1-High threshold input (2.2V typical), to reduce the I/O power consumption during PD communication
+ * 0-Normal GPIO threshold input
+ * *******************************************************/
+#define USBPD_PHY_V33       (1<<8)
+/**********************************************************
+* PD transceiver PHY pull-up limit configuration bits:
+* 1-Direct use of VDD for GPIO applications or PD applications with VDD voltage of 3.3V
+* 0-LDO buck enabled, limited to approx 3.3V, for PD applications with VDD more than 4V
+* ********************************************************/
+
+/* Control Message Types */
+#define DEF_TYPE_RESERVED          0x00
+#define DEF_TYPE_GOODCRC           0x01                                         /* Send By: Source,Sink,Cable Plug */
+#define DEF_TYPE_GOTOMIN           0x02                                         /* Send By: Source */
+#define DEF_TYPE_ACCEPT            0x03                                         /* Send By: Source,Sink,Cable Plug */
+#define DEF_TYPE_REJECT            0x04                                         /* Send By: Source,Sink,Cable Plug */
+#define DEF_TYPE_PING              0x05                                         /* Send By: Source */
+#define DEF_TYPE_PS_RDY            0x06                                         /* Send By: Source,Sink */
+#define DEF_TYPE_GET_SRC_CAP       0x07                                         /* Send By: Sink,DRP */
+#define DEF_TYPE_GET_SNK_CAP       0x08                                         /* Send By: Source,DRP */
+#define DEF_TYPE_DR_SWAP           0x09                                         /* Send By: Source,Sink */
+#define DEF_TYPE_PR_SWAP           0x0A                                         /* Send By: Source,Sink */
+#define DEF_TYPE_VCONN_SWAP        0x0B                                         /* Send By: Source,Sink */
+#define DEF_TYPE_WAIT              0x0C                                         /* Send By: Source,Sink */
+#define DEF_TYPE_SOFT_RESET        0x0D                                         /* Send By: Source,Sink */
+#define DEF_TYPE_DATA_RESET        0x0E                                         /* Send By: Source,Sink */
+#define DEF_TYPE_DATA_RESET_CMP    0x0F                                         /* Send By: Source,Sink */
+#define DEF_TYPE_NOT_SUPPORT       0x10                                         /* Send By: Source,Sink,Cable Plug */
+#define DEF_TYPE_GET_SRC_CAP_EX    0x11                                         /* Send By: Sink,DRP */
+#define DEF_TYPE_GET_STATUS        0x12                                         /* Send By: Source,Sink */
+#define DEF_TYPE_GET_STATUS_R      0X02                                         /* ext=1 */
+#define DEF_TYPE_FR_SWAP           0x13                                         /* Send By: Sink */
+#define DEF_TYPE_GET_PPS_STATUS    0x14                                         /* Send By: Sink */
+#define DEF_TYPE_GET_CTY_CODES     0x15                                         /* Send By: Source,Sink */
+#define DEF_TYPE_GET_SNK_CAP_EX    0x16                                         /* Send By: Source,DRP */
+#define DEF_TYPE_GET_SRC_INFO      0x17                                         /* Send By: Sink,DRP */
+#define DEF_TYPE_GET_REVISION      0x18                                         /* Send By: Source,Sink */
+
+/* Data Message Types */
+#define DEF_TYPE_SRC_CAP           0x01                                         /* Send By: Source,Dual-Role Power */
+#define DEF_TYPE_REQUEST           0x02                                         /* Send By: Sink */
+#define DEF_TYPE_BIST              0x03                                         /* Send By: Tester,Source,Sink */
+#define DEF_TYPE_SNK_CAP           0x04                                         /* Send By: Sink,Dual-Role Power */
+#define DEF_TYPE_BAT_STATUS        0x05                                         /* Send By: Source,Sink */
+#define DEF_TYPE_ALERT             0x06                                         /* Send By: Source,Sink */
+#define DEF_TYPE_GET_CTY_INFO      0x07                                         /* Send By: Source,Sink */
+#define DEF_TYPE_ENTER_USB         0x08                                         /* Send By: DFP */
+#define DEF_TYPE_EPR_REQUEST       0x09                                         /* Send By: Sink */
+#define DEF_TYPE_EPR_MODE          0x0A                                         /* Send By: Source,Sink */
+#define DEF_TYPE_SRC_INFO          0x0B                                         /* Send By: Source */
+#define DEF_TYPE_REVISION          0x0C                                         /* Send By: Source,Sink,Cable Plug */
+#define DEF_TYPE_VENDOR_DEFINED    0x0F                                         /* Send By: Source,Sink,Cable Plug */
+
+/* Vendor Define Message Command */
+#define DEF_VDM_DISC_IDENT         0x01
+#define DEF_VDM_DISC_SVID          0x02
+#define DEF_VDM_DISC_MODE          0x03
+#define DEF_VDM_ENTER_MODE         0x04
+#define DEF_VDM_EXIT_MODE          0x05
+#define DEF_VDM_ATTENTION          0x06
+#define DEF_VDM_DP_S_UPDATE        0x10
+#define DEF_VDM_DP_CONFIG          0x11
+
+/* PD Revision */
+#define DEF_PD_REVISION_10         0x00
+#define DEF_PD_REVISION_20         0x01
+#define DEF_PD_REVISION_30         0x02
+
+
+/* PD PHY Channel */
+#define DEF_PD_CC1                 0x00
+#define DEF_PD_CC2                 0x01
+
+#define PIN_CC1                    GPIO_Pin_3
+#define PIN_CC2                    GPIO_Pin_4
+
+/* PD Tx Status */
+#define DEF_PD_TX_OK               0x00
+#define DEF_PD_TX_FAIL             0x01
+
+/* PDO INDEX */
+#define PDO_INDEX_1                1
+#define PDO_INDEX_2                2
+#define PDO_INDEX_3                3
+#define PDO_INDEX_4                4
+#define PDO_INDEX_5                5
+
+/******************************************************************************/
+#define UPD_TMR_TX_120M   (200-1)                                             /* timer value for USB PD BMC transmittal @Fsys=120MHz */
+#define UPD_TMR_RX_120M   (300-1)                                            /* timer value for USB PD BMC receiving @Fsys=120MHz */
+#define UPD_TMR_TX_96M    (160-1)                                             /* timer value for USB PD BMC transmittal @Fsys=96MHz */
+#define UPD_TMR_RX_96M    (240-1)                                            /* timer value for USB PD BMC receiving @Fsys=96MHz */
+#define UPD_TMR_TX_48M    (80-1)                                             /* timer value for USB PD BMC transmittal @Fsys=48MHz */
+#define UPD_TMR_RX_48M    (120-1)                                            /* timer value for USB PD BMC receiving @Fsys=48MHz */
+#define UPD_TMR_TX_24M    (40-1)                                             /* timer value for USB PD BMC transmittal @Fsys=24MHz */
+#define UPD_TMR_RX_24M    (60-1)                                             /* timer value for USB PD BMC receiving @Fsys=24MHz */
+#define UPD_TMR_TX_12M    (20-1)                                             /* timer value for USB PD BMC transmittal @Fsys=12MHz */
+#define UPD_TMR_RX_12M    (30-1)                                             /* timer value for USB PD BMC receiving @Fsys=12MHz */
+
+#define MASK_PD_STAT      0x03                                               /* Bit mask for current PD status */
+#define PD_RX_SOP0        0x01                                               /* SOP0 received */
+#define PD_RX_SOP1_HRST   0x02                                               /* SOP1 or Hard Reset received */
+#define PD_RX_SOP2_CRST   0x03                                               /* SOP2 or Cable Reset received */
+
+#define UPD_SOP0          ( TX_SEL1_SYNC1 | TX_SEL2_SYNC1 | TX_SEL3_SYNC1 | TX_SEL4_SYNC2 )     /* SOP1 */
+#define UPD_SOP1          ( TX_SEL1_SYNC1 | TX_SEL2_SYNC1 | TX_SEL3_SYNC3 | TX_SEL4_SYNC3 )     /* SOP2 */
+#define UPD_SOP2          ( TX_SEL1_SYNC1 | TX_SEL2_SYNC3 | TX_SEL3_SYNC1 | TX_SEL4_SYNC3 )     /* SOP3 */
+#define UPD_HARD_RESET    ( TX_SEL1_RST1  | TX_SEL2_RST1  | TX_SEL3_RST1  | TX_SEL4_RST2  )     /* Hard Reset*/
+#define UPD_CABLE_RESET   ( TX_SEL1_RST1  | TX_SEL2_SYNC1 | TX_SEL3_RST1  | TX_SEL4_SYNC3 )     /* Cable Reset*/
+
+/* ch32h417_hsem.c -----------------------------------------------------------*/
+
+/* HSEM Key */
+#define HSEM_KEY   (0x5AA50000)
 
 #ifdef __cplusplus
 };

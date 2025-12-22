@@ -2,7 +2,7 @@
 // Copyright (c) 2025 UniTheCat
 // Tested with Ch32X03x and CH32V30x
 
-#define I2C_TIMEOUT_DEFAULT 100000
+#define I2C_DEFAULT_TIMEOUT 100000
 
 //! ####################################
 //! I2C INIT FUNCTIONS
@@ -35,7 +35,7 @@ void i2c_init(I2C_TypeDef* I2Cx, u32 PCLK, u32 i2cSpeed_Hz) {
 
 u8 i2c_start(I2C_TypeDef* I2Cx, u8 i2cAddress, u8 isRead) {
 	//# Wait while BUSY, when BUSY is set to 0 then continue
-	u32 timeout = I2C_TIMEOUT_DEFAULT;
+	u32 timeout = I2C_DEFAULT_TIMEOUT;
 	while((I2Cx->STAR2 & I2C_STAR2_BUSY) && --timeout);
 	// if (timeout == 0) { I2Cx->CTLR1 |= I2C_CTLR1_STOP; return 0x11; }
 
@@ -43,19 +43,19 @@ u8 i2c_start(I2C_TypeDef* I2Cx, u8 i2cAddress, u8 isRead) {
 	I2Cx->CTLR1 |= I2C_CTLR1_START;
 
 	//# Wait while SB is 0, when SB is set to 1 then continue
-	timeout = I2C_TIMEOUT_DEFAULT;
+	timeout = I2C_DEFAULT_TIMEOUT;
 	while(!(I2Cx->STAR1 & I2C_STAR1_SB) && --timeout);
 	if (timeout == 0) { I2Cx->CTLR1 |= I2C_CTLR1_STOP; return 0x12; }
-	// printf("timeoutB: %d\n", I2C_TIMEOUT_DEFAULT - timeout);
+	// printf("timeoutB: %d\n", I2C_DEFAULT_TIMEOUT - timeout);
 
 	//# Send address + read/write. Write = 0, Read = 1
 	I2Cx->DATAR = (i2cAddress << 1) | isRead;
 
 	//# Wait while ADDR is 0, if ADDR is set to 1 then continue
-	timeout = I2C_TIMEOUT_DEFAULT;
+	timeout = I2C_DEFAULT_TIMEOUT;
 	while(!(I2Cx->STAR1 & I2C_STAR1_ADDR) && --timeout);
 	if (timeout == 0) { I2Cx->CTLR1 |= I2C_CTLR1_STOP; return 0x13; }
-	// printf("timeoutC: %d\n", I2C_TIMEOUT_DEFAULT - timeout);
+	// printf("timeoutC: %d\n", I2C_DEFAULT_TIMEOUT - timeout);
 
 	//! REQUIRED. Clear ADDR by reading STAR1 then STAR2
 	(void)I2Cx->STAR1;
@@ -85,14 +85,14 @@ u8 i2c_sendBytes_noStop(I2C_TypeDef* I2Cx, u8 i2cAddress, u8* buffer, u8 len) {
 
 	for(u8 i = 0; i < len; i++) {
 		//# Wait for register empty
-		timeout = I2C_TIMEOUT_DEFAULT;
+		timeout = I2C_DEFAULT_TIMEOUT;
 		while(!(I2Cx->STAR1 & I2C_STAR1_TXE) && --timeout);
 		if (timeout == 0) { I2Cx->CTLR1 |= I2C_CTLR1_STOP; return 0x21; }
 		I2Cx->DATAR = buffer[i];		// Send data
 	}
 
 	//# Wait for transmission complete. Wait while BTF is 0, when set to 1 continue
-	timeout = I2C_TIMEOUT_DEFAULT;
+	timeout = I2C_DEFAULT_TIMEOUT;
 	while(!(I2Cx->STAR1 & I2C_STAR1_BTF) && --timeout);
 	if (timeout == 0) { I2Cx->CTLR1 |= I2C_CTLR1_STOP; return 0x22; }
 	
@@ -127,7 +127,7 @@ u8 i2c_readBytes(I2C_TypeDef* I2Cx, u8 i2cAddress, u8* buffer, u8 len) {
 		if(i == len-1) I2Cx->CTLR1 &= ~I2C_CTLR1_ACK;
 		
 		//# Wait for data. Wait while RxNE is 0, when set to 1 continue
-		u32 timeout = I2C_TIMEOUT_DEFAULT;
+		u32 timeout = I2C_DEFAULT_TIMEOUT;
 		while(!(I2Cx->STAR1 & I2C_STAR1_RXNE) && --timeout);
 		if (timeout == 0) { I2Cx->CTLR1 |= I2C_CTLR1_STOP; return 0x31; }
 

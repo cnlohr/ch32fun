@@ -14,13 +14,15 @@
 #else
 #define LED PA8
 #endif
-#define PHY_MODE   PHY_1M
+#define PHY_MODE       PHY_1M
+#define ACCESS_ADDRESS 0x8E89BED6 // the "BED6" address for BLE advertisements
 
 #define REPORT_ALL 1 // if 0 only report received Find My advertisements
 
-uint8_t adv[] = {0x66, 0x55, 0x44, 0x33, 0x22, 0x11, // MAC (reversed)
-				 0x03, 0x19, 0x00, 0x00, // 0x19: "Appearance", 0x00, 0x00: "Unknown"
-				 0x06, 0x09, 'R', 'X', ':', '?', '?'}; // 0x09: "Complete Local Name"
+__attribute__((aligned(4))) uint8_t adv[] = {
+		0x02, 0x0d, // header for LL: PDU + frame length
+		0x66, 0x55, 0x44, 0x33, 0x22, 0x11, // MAC (reversed)
+		0x06, 0x09, 'R', 'X', ':', '?', '?'}; // 0x09: "Complete Local Name"
 
 // BLE advertisements are sent on channels 37, 38 and 39
 uint8_t adv_channels[] = {37,38,39};
@@ -39,9 +41,10 @@ void blink(int n) {
 void incoming_frame_handler() {
 	// The chip stores the incoming frame in LLE_BUF, defined in extralibs/iSLER.h
 	uint8_t *frame = (uint8_t*)LLE_BUF;
+	int rssi = ReadRSSI();
 
-	// The first two bytes of the frame are metadata with RSSI and length
-	printf("RSSI:%d len:%d MAC:", frame[0], frame[1]);
+	// The first two bytes of the frame are metadata with PDU and length
+	printf("RSSI:%d PDU:%d len:%d MAC:", rssi, frame[0], frame[1]);
 	
 	for(int i = 7; i > 2; i--) {
 		printf("%02x:", frame[i]);
@@ -57,7 +60,7 @@ void incoming_frame_handler() {
 		adv[sizeof(adv) -2] = hex_lut[(frame[7] >> 4)];
 		adv[sizeof(adv) -1] = hex_lut[(frame[7] & 0xf)];
 		for(int c = 0; c < sizeof(adv_channels); c++) {
-			Frame_TX(adv, sizeof(adv), adv_channels[c], PHY_MODE);
+			Frame_TX(ACCESS_ADDRESS, adv, sizeof(adv), adv_channels[c], PHY_MODE);
 		}
 	}
 }
@@ -70,20 +73,19 @@ int main()
 	funPinMode( LED, GPIO_CFGLR_OUT_2Mhz_PP );
 
 	RFCoreInit(LL_TX_POWER_0_DBM);
-	uint8_t frame_info[] = {0xff, 0x10}; // PDU, len, (maybe not?) needed in RX mode
 
 	blink(5);
 	printf(".~ ch32fun iSLER ~.\n");
 
 	// send out a first RX:?? advertisement to show we are alive
 	for(int c = 0; c < sizeof(adv_channels); c++) {
-		Frame_TX(adv, sizeof(adv), adv_channels[c], PHY_MODE);
+		Frame_TX(ACCESS_ADDRESS, adv, sizeof(adv), adv_channels[c], PHY_MODE);
 	}
 
 	while(1) {
-		// now listen for frames on channel 37. When the RF subsystem
+		// now listen for frames on channel 37 on bed6. When the RF subsystem
 		// detects and finalizes one, "rx_ready" in iSLER.h is set true
-		Frame_RX(frame_info, 37, PHY_MODE);
+		Frame_RX(ACCESS_ADDRESS, 37, PHY_MODE);
 		while(!rx_ready);
 
 		// we stepped over !rx_ready so we got a frame

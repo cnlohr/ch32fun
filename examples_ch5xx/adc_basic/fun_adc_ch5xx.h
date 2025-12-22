@@ -187,16 +187,20 @@ s32 adc_to_mV(u16 raw, ADC_PGA_GAIN_t pa_gain) {
 		case ADC_PGA_GAIN_1_4:
 			// -12dB: vref * (raw/512 - 3)
 			res = vref_mV * raw / 512 - vref_mV * 3;
+			break;
 		case ADC_PGA_GAIN_1_2:
 			// -6dB: vref * (raw/1024 - 1)
 			res = vref_mV * raw / 1024 - vref_mV;
+			break;
 		case ADC_PGA_GAIN_1:
 			// 0dB: vref * (raw/2048)
 			res = vref_mV * raw / 2048;
+			break;
 		case ADC_PGA_GAIN_2:
 			// 6dB: vref * (raw/4096 + 0.5)
 			// vref_mv * raw/4090 + vref_mV/2;
             res = vref_mV * raw / 4096 + vref_mV / 2;
+			break;
 	}
 	return res;
 }

@@ -1212,7 +1212,7 @@ void handle_reset( void )
 	addi a0, a0, 4\n\
 	bltu a0, a1, 1b\n\
 2:\n"
-#if (defined(CH571_CH573) || defined(CH582_CH583) || defined(CH584_CH585) || defined(CH591_CH592))
+#ifdef CH5xx
 	/* Load highcode code section from FLASH to HIGHRAM */
 "	la a0, _highcode_lma\n\
 	la a1, _highcode_vma_start\n\
