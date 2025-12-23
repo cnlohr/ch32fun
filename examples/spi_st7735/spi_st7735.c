@@ -1,9 +1,4 @@
 #include "ch32fun.h"
-
-
-#define CH32V003_SPI_SPEED_HZ 1000000
-// #include "fun_st77352.h"
-
 #include "../../examples_ch5xx/spi_st7735_test/lib_st7735.h"
 
 #define TARGETED_SPI SPI1
@@ -29,10 +24,11 @@ int main() {
 	printf("~SPI ST7735 TEST~\n");
 	// clock div = 16, mode: 1 = slave, 0 = master
 	SPI_Init(&spi_device, 16, 0);
-	SPI_DMA_init2(DMA1_Channel3);
+	SPI_DMA_init(DMA1_Channel3);
 
 	ST7735_init(&spi_device, 160, 80);
 	ST7735_fill_all(ST_PURPLE);
+	// ST7735_fill_all(ST_GREEN);
 
 	char str[25] = {0};
 	int counter = 0;

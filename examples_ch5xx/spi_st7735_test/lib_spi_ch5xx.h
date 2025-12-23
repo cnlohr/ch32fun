@@ -3,8 +3,6 @@
 #ifdef CH5xx
 	typedef SPI_Typedef SPI_Type;
 #else
-	#define CH32V003_SPI_SPEED_HZ 1000000
-	#include "ch32v003_SPI.h"
 	typedef SPI_TypeDef SPI_Type;
 #endif
 
@@ -23,10 +21,6 @@
 
 #define SPI_TIMEOUT_DEFAULT 1000
 
-//###########################################
-//# INIT FUNCTIONS
-//###########################################
-
 typedef struct {
 	SPI_Type *SPIx;
 	int mosi_pin;
@@ -37,17 +31,67 @@ typedef struct {
 	int cs_pin;
 } SPI_Device_t;
 
+//###########################################
+//# INIT FUNCTIONS
+//###########################################
+
 void SPI_Init(SPI_Device_t *dev, int divider, int slave_mode) {
-	//# Setup SPI pins
-	if (dev->mosi_pin >= 0) {
-		funPinMode(dev->mosi_pin, GPIO_CFGLR_OUT_10Mhz_PP);		// MOSI
-	}
-	if (dev->miso_pin >= 0) {
-		funPinMode(dev->miso_pin, GPIO_CFGLR_IN_FLOAT);		// MISO
-	}
-	if (dev->sck_pin >= 0) {
-		funPinMode(dev->sck_pin, GPIO_CFGLR_OUT_10Mhz_PP);		// SCK
-	}
+	#ifdef CH5xx
+		if (divider < 2) divider = 2;
+		dev->SPIx->CLOCK_DIV = divider;
+		dev->SPIx->CTRL_MOD = RB_SPI_ALL_CLEAR;
+		dev->SPIx->CTRL_MOD = RB_SPI_SCK_OE | RB_SPI_MOSI_OE | RB_SPI_MISO_OE;
+
+		if (slave_mode) {
+			// 1 for slave Mode
+			dev->SPIx->CTRL_MOD |= RB_SPI_MODE_SLAVE;
+		} else {
+			// 0 for master Mode
+			dev->SPIx->CTRL_MOD &= ~RB_SPI_MODE_SLAVE;
+		}
+
+		// Enable auto clear flag when accessing buffer
+		dev->SPIx->CTRL_CFG |= RB_SPI_AUTO_IF;
+
+
+		//# Setup SPI pins
+		if (dev->miso_pin >= 0) {
+			funPinMode(dev->miso_pin, GPIO_CFGLR_IN_FLOAT);		// MISO
+		}
+		if (dev->mosi_pin >= 0) {
+			funPinMode(dev->mosi_pin, GPIO_CFGLR_OUT_10Mhz_PP);		// MOSI
+		}
+		if (dev->sck_pin >= 0) {
+			funPinMode(dev->sck_pin, GPIO_CFGLR_OUT_10Mhz_PP);		// SCK
+		}
+		
+	#else
+		// reset control register
+		SPI1->CTLR1 = 0;
+
+		// Enable GPIO Port C and SPI peripheral
+		RCC->APB2PCENR |= RCC_APB2Periph_SPI1;
+
+		// Configure SPI
+		SPI1->CTLR1 |= SPI_CPHA_1Edge | SPI_CPOL_Low
+					| SPI_Mode_Master| SPI_BaudRatePrescaler_4
+					| SPI_NSS_Soft | SPI_DataSize_8b;
+		SPI1->CTLR1 |= SPI_Direction_2Lines_FullDuplex;
+		// SPI1->CTLR1 |= SPI_Direction_1Line_Tx;
+		SPI1->CTLR1 |= CTLR1_SPE_Set;            // Enable SPI Port
+
+		//# Setup SPI pins
+		if (dev->miso_pin >= 0) {
+			funPinMode(dev->miso_pin, GPIO_CFGLR_IN_FLOAT);		// MISO
+		}
+		if (dev->mosi_pin >= 0) {
+			funPinMode(dev->mosi_pin, GPIO_CFGLR_OUT_50Mhz_AF_PP);		// MOSI
+		}
+		if (dev->sck_pin >= 0) {
+			funPinMode(dev->sck_pin, GPIO_CFGLR_OUT_50Mhz_AF_PP);		// SCK
+		}
+	#endif
+	
 
 	//# Setup cs pin
 	if (dev->cs_pin >= 0) {
@@ -69,68 +113,6 @@ void SPI_Init(SPI_Device_t *dev, int divider, int slave_mode) {
 		funDigitalWrite(dev->rst_pin, 1);
 		Delay_Ms(100);	
 	}
-
-	#ifdef CH5xx
-		if (divider < 2) divider = 2;
-		dev->SPIx->CLOCK_DIV = divider;
-		dev->SPIx->CTRL_MOD = RB_SPI_ALL_CLEAR;
-		dev->SPIx->CTRL_MOD = RB_SPI_SCK_OE | RB_SPI_MOSI_OE | RB_SPI_MISO_OE;
-
-		if (slave_mode) {
-			// 1 for slave Mode
-			dev->SPIx->CTRL_MOD |= RB_SPI_MODE_SLAVE;
-		} else {
-			// 0 for master Mode
-			dev->SPIx->CTRL_MOD &= ~RB_SPI_MODE_SLAVE;
-		}
-
-		// Enable auto clear flag when accessing buffer
-		dev->SPIx->CTRL_CFG |= RB_SPI_AUTO_IF;
-	#else
-		// reset control register
-		SPI1->CTLR1 = 0;
-
-		// Enable GPIO Port C and SPI peripheral
-		RCC->APB2PCENR |= RCC_APB2Periph_GPIOC | RCC_APB2Periph_SPI1;
-
-		// PC5 is SCLK
-		GPIOC->CFGLR &= ~(0xf << (4*5));
-		GPIOC->CFGLR |= (GPIO_Speed_50MHz | GPIO_CNF_OUT_PP_AF) << (4*5);
-
-		// PC6 is MOSI
-		GPIOC->CFGLR &= ~(0xf << (4*6));
-		GPIOC->CFGLR |= (GPIO_Speed_50MHz | GPIO_CNF_OUT_PP_AF) << (4*6);
-
-		// PC7 is MISO
-		GPIOC->CFGLR &= ~(0xf << (4 * 7));
-		GPIOC->CFGLR |= GPIO_CNF_IN_FLOATING << (4 * 7);
-
-		// Configure SPI
-		SPI1->CTLR1 |= SPI_CPHA_1Edge | SPI_CPOL_Low
-					| SPI_Mode_Master| SPI_BaudRatePrescaler_4
-					| SPI_NSS_Soft | SPI_DataSize_8b;
-		
-		SPI1->CTLR1 |= SPI_Direction_2Lines_FullDuplex;
-		// SPI1->CTLR1 |= SPI_Direction_1Line_Tx;
-
-		SPI1->CTLR1 |= CTLR1_SPE_Set;            // Enable SPI Port
-
-		//# Reset SPI Devices
-		if (dev->rst_pin != -1) {
-			funPinMode(dev->rst_pin, GPIO_Speed_10MHz | GPIO_CNF_OUT_PP);
-			funDigitalWrite(dev->rst_pin, 1);
-			
-			// Reset Spi Devices
-			funDigitalWrite(dev->rst_pin, 0);
-			Delay_Ms(100);
-			funDigitalWrite(dev->rst_pin, 1);
-			Delay_Ms(100);
-		}
-		
-		if (dev->dc_pin != -1) {
-			funPinMode(dev->dc_pin, GPIO_Speed_10MHz | GPIO_CNF_OUT_PP);
-		}
-	#endif
 }
 
 #ifdef CH5xx
@@ -221,21 +203,30 @@ void SPI_Init(SPI_Device_t *dev, int divider, int slave_mode) {
 		// Disable DMA
 		SPI0->CTRL_CFG &= ~RB_SPI_DMA_ENABLE;
 	}
+	
 #else
 
 	//###########################################
 	//# SEND & RECEIVE FUNCTIONS
 	//###########################################
 	u8 SPI_send8(SPI_Type *SPIx, u8 val) {
-		return SPI_transfer_8(val);
+		SPIx->DATAR = val;
+
+		u32 timeout = SPI_TIMEOUT_DEFAULT;
+		while(!(SPIx->STATR & SPI_STATR_TXE) && --timeout);
+		asm volatile("nop");
+
+		timeout = SPI_TIMEOUT_DEFAULT;
+		while(!(SPIx->STATR & SPI_STATR_RXNE) && --timeout);
+		return SPIx->DATAR;
 	}
 
 	u8 SPI_send16(SPI_Type *SPIx, u16 val) {
-		SPI_transfer_8((u8)((val >> 8) & 0xFF));	// trasfer MSB
-		return SPI_transfer_8((u8)(val & 0xFF));	// transfer LSB
+		SPI_send8(SPIx, (u8)((val >> 8) & 0xFF));	// trasfer MSB
+		return SPI_send8(SPIx, (u8)(val & 0xFF));	// transfer LSB
 	}
 
-	static void SPI_DMA_init2(DMA_Channel_TypeDef* DMA_Channel) {
+	static void SPI_DMA_init(DMA_Channel_TypeDef* DMA_Channel) {
 		// Enable Tx DMA
 		SPI1->CTLR2 |= SPI_I2S_DMAReq_Tx;
 

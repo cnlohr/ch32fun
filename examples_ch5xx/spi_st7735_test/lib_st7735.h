@@ -8,8 +8,7 @@
 
 
 //# TODO: Improve DMA effiency by get rid of SWAP BYTES some how.
-
-// #define ST7735_USE_DMA
+#define ST7735_USE_DMA
 
 #define ST7735_RGB(r, g, b) ((r >> 3) | ((g & 0xFC) << 3) | ((b & 0xF8) << 8))
 
