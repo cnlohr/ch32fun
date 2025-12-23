@@ -9,7 +9,7 @@
 
 //# TODO: Improve DMA effiency by get rid of SWAP BYTES some how.
 
-#define ST7735_USE_DMA
+// #define ST7735_USE_DMA
 
 #define ST7735_RGB(r, g, b) ((r >> 3) | ((g & 0xFC) << 3) | ((b & 0xF8) << 8))
 
@@ -48,16 +48,16 @@ void TFT_CS_LOW() {
 #define ST7735_RASET 0x2B	// Row Address Set
 #define ST7735_RAMWR 0x2C	// RAM Write
 
-int ST7735_XOFFSET = 0;
-int ST7735_YOFFSET = 0;
+int ST7735_XOFFSET2 = 0;
+int ST7735_YOFFSET2 = 0;
 
 void TFT_SET_WINDOW(int x0, int y0, int x1, int y1) {
 	SPI_Cmd_Reg8(SELECTED_SPI_DEV, ST7735_CASET);
-	SPI_Cmd_Data16(SELECTED_SPI_DEV, x0 + ST7735_XOFFSET);
-	SPI_Cmd_Data16(SELECTED_SPI_DEV, x1 + ST7735_XOFFSET);
+	SPI_Cmd_Data16(SELECTED_SPI_DEV, x0 + ST7735_XOFFSET2);
+	SPI_Cmd_Data16(SELECTED_SPI_DEV, x1 + ST7735_XOFFSET2);
 	SPI_Cmd_Reg8(SELECTED_SPI_DEV, ST7735_RASET);
-	SPI_Cmd_Data16(SELECTED_SPI_DEV, y0 + ST7735_YOFFSET);
-	SPI_Cmd_Data16(SELECTED_SPI_DEV, y1 + ST7735_YOFFSET);
+	SPI_Cmd_Data16(SELECTED_SPI_DEV, y0 + ST7735_YOFFSET2);
+	SPI_Cmd_Data16(SELECTED_SPI_DEV, y1 + ST7735_YOFFSET2);
 	SPI_Cmd_Reg8(SELECTED_SPI_DEV, ST7735_RAMWR);
 }
 
@@ -107,23 +107,23 @@ void TFT_SEND_PIXEL(u16 color) {
 #define ST7735_GAMCTRP 0xE0		// Gamma Control Positive
 #define ST7735_GAMCTRN 0xE1		// Gamma Control Neigative
 
-u8 ST7735_WIDTH = 160;
-u8 ST7735_HEIGHT = 80;
+u8 ST7735_WIDTH2 = 160;
+u8 ST7735_HEIGHT2 = 80;
 
 void ST7735_fill_all(u16 color) {
-	tft_fill_rect(0, 0, ST7735_WIDTH, ST7735_HEIGHT, color);
+	tft_fill_rect(0, 0, ST7735_WIDTH2, ST7735_HEIGHT2, color);
 }
 
 void ST7735_init(SPI_Device_t *dev, int width, int height) {
 	TFT_SELECT_SPI_DEV(dev);
 
-	ST7735_WIDTH = width;
-	ST7735_HEIGHT = height;
+	ST7735_WIDTH2 = width;
+	ST7735_HEIGHT2 = height;
 
 	// adjust offset base on different screen size
 	if (height == 80) {
-		ST7735_XOFFSET = 1;
-		ST7735_YOFFSET = 26;
+		ST7735_XOFFSET2 = 1;
+		ST7735_YOFFSET2 = 26;
 	}
 
 	TFT_CS_LOW();

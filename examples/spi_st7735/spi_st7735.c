@@ -1,25 +1,16 @@
-// Simple example to test SPI ST7735 display
-// This example uses SPI0, wire the display as follows:
-// PA13:	SCK
-// PA14:	MOSI
-// PA10:	RST
-// PA11:	DC
-
-// The display should be filled with a purple color
-// and display a text string with a counter
-
 #include "ch32fun.h"
-#include "lib_st7735.h"
 
-// R32_SPI0_CONTROL
-// PA13:	SCK
-// PA14:	MOSI, TX0_
 
-// R32_SPI1_CONTROL
-// PA0: 	SCK1
-// PA1: 	MOSI1
+#define CH32V003_SPI_SPEED_HZ 1000000
+// #include "fun_st77352.h"
 
-#define TARGETED_SPI SPI0
+#include "../../examples_ch5xx/spi_st7735_test/lib_st7735.h"
+
+#define TARGETED_SPI SPI1
+
+#define SPI_RST_PIN		PD4
+#define SPI_DC_PIN		PD2
+#define ST7735_CS_PIN	PD0
 
 int main() {
 	SystemInit();
@@ -28,16 +19,18 @@ int main() {
 
 	SPI_Device_t spi_device = {
 		.SPIx = TARGETED_SPI,
-		.mosi_pin = PA14,
-		.sck_pin = PA13,
-		.rst_pin = PA12, 
-		.dc_pin = PA11, 
-		.cs_pin = PA10
+		.mosi_pin = PC6,
+		.sck_pin = PC5,
+		.rst_pin = PD4, 
+		.dc_pin = PD2, 
+		.cs_pin = -1
 	};
 
 	printf("~SPI ST7735 TEST~\n");
 	// clock div = 16, mode: 1 = slave, 0 = master
 	SPI_Init(&spi_device, 16, 0);
+	SPI_DMA_init2(DMA1_Channel3);
+
 	ST7735_init(&spi_device, 160, 80);
 	ST7735_fill_all(ST_PURPLE);
 
