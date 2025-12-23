@@ -35,11 +35,12 @@ int main() {
 		.cs_pin = PA10
 	};
 
-	printf("~SPI ST7735 TEST~\n");
-	// clock div = 16, mode: 1 = slave, 0 = master
-	SPI_Init(&spi_device, 16, 0);
+	printf("~SPI CH5xx ST7735 TEST~\n");
+	//mode: 1 = slave, 0 = master
+	SPI_Init(&spi_device, 0);
 	ST7735_init(&spi_device, 160, 80);
 	ST7735_fill_all(ST_PURPLE);
+	// ST7735_fill_all(ST_GREEN);
 
 	char str[25] = {0};
 	int counter = 0;

@@ -35,10 +35,9 @@ typedef struct {
 //# INIT FUNCTIONS
 //###########################################
 
-void SPI_Init(SPI_Device_t *dev, int divider, int slave_mode) {
+void SPI_Init(SPI_Device_t *dev, int slave_mode) {
 	#ifdef CH5xx
-		if (divider < 2) divider = 2;
-		dev->SPIx->CLOCK_DIV = divider;
+		dev->SPIx->CLOCK_DIV = 16;		// Minimum value is 2
 		dev->SPIx->CTRL_MOD = RB_SPI_ALL_CLEAR;
 		dev->SPIx->CTRL_MOD = RB_SPI_SCK_OE | RB_SPI_MOSI_OE | RB_SPI_MISO_OE;
 
@@ -203,7 +202,7 @@ void SPI_Init(SPI_Device_t *dev, int divider, int slave_mode) {
 		// Disable DMA
 		SPI0->CTRL_CFG &= ~RB_SPI_DMA_ENABLE;
 	}
-	
+
 #else
 
 	//###########################################
