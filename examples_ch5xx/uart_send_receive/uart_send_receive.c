@@ -16,7 +16,7 @@ int main() {
 	uart_init_ch5xx(TARGET_UART, FUNCONF_UART_PRINTF_BAUD);
 
 	u8 i = 0;
-	char msg[] = "hello bee 1234\r\n";
+	char send_msg[] = "hello bee 1234\r\n";
 	char recv_msg[32] = {0};
 
 	u32 time_ref = 0;
@@ -24,11 +24,12 @@ int main() {
 	while(1) {
 		if (TimeElapsed32(SysTick->CNT, time_ref) > DELAY_MSEC_COUNT(1000)) {
 			time_ref = SysTick->CNT;
-			printf("send: %s\r\n", msg);
-			uart_send_ch5xx(TARGET_UART, msg, sizeof(msg));
+			printf("send: %s\r\n", send_msg);
+			sprintf(send_msg, "hello bee %d\r\n", i++);
+			uart_send_ch5xx(TARGET_UART, send_msg, sizeof(send_msg));
 		}
 
-		u16 receiv_len = uart_receive_ch5xx(SysTick->CNT, TARGET_UART, &recv_msg, sizeof(recv_msg));
+		u16 receiv_len = uart_receive_ch5xx(TARGET_UART, &recv_msg, sizeof(recv_msg));
 		if (receiv_len > 0) {
 			printf("received: %s\r\n", recv_msg);
 			memset(recv_msg, 0, sizeof(recv_msg));
