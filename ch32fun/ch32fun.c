@@ -1755,6 +1755,7 @@ WEAK int _write(int fd, const char *buf, int size)
 	return size;
 }
 
+#undef putchar
 // single to debug intf
 WEAK int putchar(int c)
 {
