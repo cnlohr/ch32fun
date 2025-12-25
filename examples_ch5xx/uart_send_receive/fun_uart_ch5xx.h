@@ -60,16 +60,16 @@ void uart_send_ch5xx(UART_Typedef *UARTx, u8 *buf, u16 len) {
 //! NOTE: if you are debugging with printf, note that it introduces a delay   
 u16 uart_receive_ch5xx( UART_Typedef *UARTx, u8 *buf, u16 max_len) {
 	u16 len = 0;
-    u32 start_time = SysTick->CNT;
+	u32 start_time = SysTick->CNT;
 
-    while (len < max_len -1) {
-        while (UARTx->RFC && len < max_len - 1) {
-            buf[len++] = UARTx->THR_RBR;
-            start_time = SysTick->CNT;
-        }
+	while (len < max_len -1) {
+		while (UARTx->RFC && len < max_len - 1) {
+			buf[len++] = UARTx->THR_RBR;
+			start_time = SysTick->CNT;
+		}
 
-        if (SysTick->CNT - start_time > 1000) break;
-    }
+		if (SysTick->CNT - start_time > 1000) break;
+	}
 
 	buf[len] = '\0';
 	return len;
