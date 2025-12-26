@@ -41,7 +41,7 @@ void blink(int n) {
 void incoming_frame_handler() {
 	// The chip stores the incoming frame in LLE_BUF, defined in extralibs/iSLER.h
 	uint8_t *frame = (uint8_t*)LLE_BUF;
-	int rssi = ReadRSSI();
+	int rssi = iSLERRSSI();
 
 	// The first two bytes of the frame are metadata with PDU and length
 	printf("RSSI:%d PDU:%d len:%d MAC:", rssi, frame[0], frame[1]);
@@ -72,20 +72,20 @@ int main()
 	funGpioInitAll();
 	funPinMode( LED, GPIO_CFGLR_OUT_2Mhz_PP );
 
-	RFCoreInit(LL_TX_POWER_0_DBM);
+	iSLERInit(LL_TX_POWER_0_DBM);
 
 	blink(5);
 	printf(".~ ch32fun iSLER ~.\n");
 
 	// send out a first RX:?? advertisement to show we are alive
 	for(int c = 0; c < sizeof(adv_channels); c++) {
-		Frame_TX(ACCESS_ADDRESS, adv, sizeof(adv), adv_channels[c], PHY_MODE);
+		iSLERTX(ACCESS_ADDRESS, adv, sizeof(adv), adv_channels[c], PHY_MODE);
 	}
 
 	while(1) {
 		// now listen for frames on channel 37 on bed6. When the RF subsystem
 		// detects and finalizes one, "rx_ready" in iSLER.h is set true
-		Frame_RX(ACCESS_ADDRESS, 37, PHY_MODE);
+		iSLERRX(ACCESS_ADDRESS, 37, PHY_MODE);
 		while(!rx_ready);
 
 		// we stepped over !rx_ready so we got a frame
