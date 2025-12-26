@@ -1,3 +1,44 @@
+/* 
+	iSLER header for the CH570, 571, 572, 573, 582, 583, 584, 585, 591, 592
+
+	For basic RF functionality on supported WCH chips.
+
+		#define ACCESS_ADDRESS 0x8E89BED6 // the "BED6" address for BLE advertisements
+
+		// Initialize the iSLER engine, with the TX power.
+		iSLERInit(LL_TX_POWER_0_DBM);
+
+		// TX packets
+		iSLERTX(ACCESS_ADDRESS, adv, sizeof(adv), adv_channels[c], PHY_1M);
+
+	To receive packets, you can either:
+
+		#define ISLER_CALLBACK iSLERRXCallback
+
+		void iSLERRXCallback()
+		{
+			if( !iSLERCRCOK() ) return;
+
+			uint8_t *frame = (uint8_t*)LLE_BUF;
+			int rssi = iSLERRSSI();
+
+			// Do stuff
+		}
+
+	Or, just poll on rx_ready, whenever it's set you can read the packet.
+
+		iSLERRX(ACCESS_ADDRESS, 37, PHY_1M);
+		while(!rx_ready);
+		// Receive packet code.
+
+*/
+
+// 2025-12-25 function rename.
+#define RFCoreInit iSLERInit
+#define Frame_TX   iSLERTX
+#define Frame_RX   iSLERRX
+#define ReadRSSI   iSLERRSSI
+
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -286,8 +327,9 @@ __attribute__((aligned(4))) uint32_t LLE_BUF2[0x110];
 #endif
 volatile uint32_t tuneFilter;
 volatile uint32_t tuneFilter2M;
+#ifndef ISLER_CALLBACK
 volatile uint32_t rx_ready;
-
+#endif
 
 
 #ifdef CH571_CH573
@@ -310,22 +352,25 @@ void BB_IRQHandler() {
 
 __attribute__((interrupt))
 void LLE_IRQHandler() {
-	// printf("LL\n");
+	int rx_flag = 0;
 #ifdef CH571_CH573
 	if(LL->STATUS & (1<<9)) {
 		LL->TMR = 400;
 		BB->CTRL_TX = (BB->CTRL_TX & 0xfffffffc) | 2;
 		BB->CTRL_CFG |= 0x10000000;
+		rx_flag = 1; // XXX TODO: Figure out which bit is the RX bit.
 	}
 	LL->STATUS = 0;
 #elif defined(CH582_CH583)
 	if((LL->STATUS & (1<<14)) && (LL->INT_EN & (1<<14))) {
 		LL->LL26 = 0xffffffff;
 		LL->STATUS = 0x4000;
+		rx_flag = 1; // XXX TODO: Figure out which bit is the RX bit.
 	}
 	else
 #endif
 	{
+		rx_flag = LL->STATUS & 1;
 		LL->STATUS &= LL->INT_EN;
 		BB->CTRL_TX = (BB->CTRL_TX & 0xfffffffc) | 1;
 	}
@@ -333,11 +378,14 @@ void LLE_IRQHandler() {
 	LL->CTRL_MOD &= CTRL_MOD_RFSTOP;
 	LL->LL0 |= 0x08;
 
+	if( rx_flag )
+	{
 #ifdef ISLER_CALLBACK
-	ISLER_CALLBACK();
+		ISLER_CALLBACK();
 #else
-	rx_ready = 1;
+		rx_ready = 1;
 #endif
+	}
 }
 
 void RFEND_Reset() {
@@ -690,7 +738,7 @@ void RegInit() {
 	DevSetMode(0);
 }
 
-void RFCoreInit(uint8_t TxPower) {
+void iSLERInit(uint8_t TxPower) {
 #if defined(CH571_CH573) || defined(CH584_CH585) // maybe all?
 	NVIC->IENR[0] = 0x1000;
 	NVIC->IRER[0] = 0x1000;
@@ -711,7 +759,7 @@ void DevSetChannel(uint8_t channel) {
 }
 
 __HIGH_CODE
-int8_t ReadRSSI() {
+int iSLERRSSI() {
 #ifdef CH570_CH572
 	uint8_t *tx_buf = (uint8_t*)LLE_BUF;
 	int len = tx_buf[1];
@@ -722,7 +770,19 @@ int8_t ReadRSSI() {
 }
 
 __HIGH_CODE
-void Frame_TX(uint32_t access_address, uint8_t adv[], size_t len, uint8_t channel, uint8_t phy_mode) {
+int iSLERCRCOK() {
+#ifdef CH570_CH572
+	uint8_t *tx_buf = (uint8_t*)LLE_BUF;
+	int len = tx_buf[1];
+	return (int8_t)!(tx_buf[len + 5] & 0x10);
+#else
+	// Unimplemented!
+	return -1;
+#endif
+}
+
+__HIGH_CODE
+void iSLERTX(uint32_t access_address, uint8_t adv[], size_t len, uint8_t channel, uint8_t phy_mode) {
 	BB->CTRL_TX = (BB->CTRL_TX & 0xfffffffc) | 1;
 
 	DevSetChannel(channel);
@@ -794,7 +854,7 @@ void Frame_TX(uint32_t access_address, uint8_t adv[], size_t len, uint8_t channe
 }
 
 __HIGH_CODE
-void Frame_RX(uint32_t access_address, uint8_t channel, uint8_t phy_mode) {
+void iSLERRX(uint32_t access_address, uint8_t channel, uint8_t phy_mode) {
 	DevSetMode(0);
 	if(LL->LL0 & 3) {
 		LL->CTRL_MOD &= CTRL_MOD_RFSTOP;
@@ -853,5 +913,7 @@ void Frame_RX(uint32_t access_address, uint8_t channel, uint8_t phy_mode) {
 #endif
 
 	LL->LL0 = 1; // Not sure what this does, but on TX it's 2
+#ifndef ISLER_CALLBACK
 	rx_ready = 0;
+#endif
 }
