@@ -365,6 +365,10 @@ typedef enum
 #endif
 } SYS_CLKTypeDef;
 
+#if (defined(CH570_CH572))
+#define ROM_CFG_MAC_ADDR		((const u32*)0x0003f018)
+#endif
+
 // For debug writing to the debug interface, and USB ISP.
 #if (defined(CH570_CH572) || defined(CH584_CH585))
 #define DMDATA0 			((vu32*)0xe0000340)
