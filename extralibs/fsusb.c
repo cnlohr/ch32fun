@@ -45,6 +45,10 @@ static inline void copyBufferComplete() { while( DMA1_Channel7->CNTR ); }
 #define USBFS_IRQHandler USB_IRQHandler
 #endif
 
+#define ANYPRINTF	(defined( FUNCONF_USE_DEBUGPRINTF ) && FUNCONF_USE_DEBUGPRINTF) || \
+					(defined( FUNCONF_USE_UARTPRINTF ) && FUNCONF_USE_UARTPRINTF) || \
+					(defined( FUNCONF_USE_USBPRINTF ) && FUNCONF_USE_USBPRINTF)
+
 #if FUSB_USE_HPE
 // There is an issue with some registers apparently getting lost with HPE, just do it the slow way.
 void USBFS_IRQHandler() __attribute__((section(".text.vector_handler")))  __attribute((interrupt));
@@ -77,7 +81,9 @@ void USBFS_IRQHandler()
 		
 		int token = ( intfgst & CMASK_UIS_TOKEN) >> 12;
 		int ep = ( intfgst & CMASK_UIS_ENDP ) >> 8;
+#if ANYPRINTF
 		if( usb_debug ) printf("[USB] TRANSFER, token = %02x, ep = %d, bmRequestType = %02x, bRequest = %02x\n", token, ep, pUSBFS_SetupReqPak->bmRequestType, pUSBFS_SetupReqPak->bRequest);
+#endif
 		switch ( token )
 		{
 		case CUIS_TOKEN_IN:
@@ -271,7 +277,9 @@ void USBFS_IRQHandler()
 			int USBFS_SetupReqLen = USBFSCTX.USBFS_SetupReqLen    = pUSBFS_SetupReqPak->wLength;
 			int USBFS_SetupReqIndex = pUSBFS_SetupReqPak->wIndex;
 			int USBFS_IndexValue = USBFSCTX.USBFS_IndexValue = ( pUSBFS_SetupReqPak->wIndex << 16 ) | pUSBFS_SetupReqPak->wValue;
+#if ANYPRINTF
 			if( usb_debug ) printf( "[USB] SETUP: %02x %02x %02d %02x %04x\n", USBFS_SetupReqType, USBFS_SetupReqCode, USBFS_SetupReqLen, USBFS_SetupReqIndex, USBFS_IndexValue );
+#endif
 			len = 0;
 
 			if( ( USBFS_SetupReqType & USB_REQ_TYP_MASK ) != USB_REQ_TYP_STANDARD )
@@ -635,7 +643,9 @@ void USBFS_IRQHandler()
 	}
 	else if( intfgst & CRB_UIF_BUS_RST )
 	{
+#if ANYPRINTF
 		if( usb_debug ) printf("[USB] RESET\n");
+#endif
 		/* usb reset interrupt processing */
 		ctx->USBFS_DevConfig = 0;
 		ctx->USBFS_DevAddr = 0;
@@ -648,7 +658,9 @@ void USBFS_IRQHandler()
 	}
 	else if( intfgst & CRB_UIF_SUSPEND )
 	{
+#if ANYPRINTF
 		if( usb_debug ) printf("[USB] SUSPEND\n");
+#endif
 		USBFS->INT_FG = USBFS_UMS_SUSPEND;
 		Delay_Us(10);
 		/* usb suspend interrupt processing */
@@ -671,7 +683,9 @@ void USBFS_IRQHandler()
 	{
 			/* other interrupts */
 			USBFS->INT_FG = intfgst & 0xff;
+#if ANYPRINTF
 			if( usb_debug) printf("[USB] intfgst = %04x\n",intfgst);
+#endif
 	}
 
 #if FUSB_IO_PROFILE
