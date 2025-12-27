@@ -14,7 +14,7 @@ u8 read_state = 0;
 
 void print_ch32_readings(I2C_TypeDef* I2Cx, u8 i2_addr) {
 	u8 rx_buf[8];
-	u8 read, err;
+	u8 err;
 
 	switch (read_state) {
 		case 0:
@@ -59,7 +59,7 @@ void print_ch32_readings(I2C_TypeDef* I2Cx, u8 i2_addr) {
 			{
 				// write command 0x31. write buffer
 				u8 write_request[] = { 0x31, 29, 0xAA, 0xBB, 0xCC, 0xDD };
-				err = i2c_sendBytes(I2Cx, i2_addr, &write_request, sizeof(write_request));
+				err = i2c_sendBytes(I2Cx, i2_addr, write_request, sizeof(write_request));
 
 				if (!err) {
 					printf("\nwrite buffer (cmd 0x%02X): successful", 0x31);
@@ -74,7 +74,7 @@ void print_ch32_readings(I2C_TypeDef* I2Cx, u8 i2_addr) {
 			{
 				// read command 0x30: read buffer
 				u8 read_request[] = { 0x30, 29 };
-				err = i2c_readRegTx_buffer(I2Cx, i2_addr, &read_request, sizeof(read_request), &rx_buf, 5);
+				err = i2c_readRegTx_buffer(I2Cx, i2_addr, read_request, sizeof(read_request), rx_buf, 5);
 
 				if (!err) {
 					printf("\nRead buffer (cmd 0x30): ");
