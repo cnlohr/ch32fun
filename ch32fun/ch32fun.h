@@ -85,6 +85,7 @@
 #define FUNCONF_ISR_IN_RAM 0            // Put the interrupt vector in RAM.
 #define FUNCONF_SUPPORT_CONSTRUCTORS 0	// Call functions with __attribute__((constructor)) in SystemInit()
 #define FUNCONF_ICACHE_EN 1				// Enables ICache on cores that support it, may require power-down + power up to work properly at flash time.
+#define FUNCONF_OVERRIDE_STARTUP 0      // User code will have its own `handle_reset` and `InterruptVector`
 */
 
 // Sanity check for when porting old code.
@@ -276,6 +277,10 @@
 	//#define CH32V30x_D8              /* CH32V303x */
 	#define CH32V30x_D8C             /* CH32V307x-CH32V305x */
 	#endif
+#endif
+
+#ifndef FUNCONF_OVERRIDE_STARTUP
+#define FUNCONF_OVERRIDE_STARTUP 0
 #endif
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
