@@ -1067,6 +1067,7 @@ void USART_WKUP_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTIO
 
 void handle_reset( void ) __attribute__((section(".text.handle_reset")));
 
+#if !FUNCONF_OVERRIDE_STARTUP
 #if FUNCONF_ISR_IN_RAM
 	void Init()         __attribute__((naked)) __attribute((section(".init"))) __attribute((weak,alias("InitDefault"))) __attribute((naked));
 	void InitDefault()  __attribute__((naked)) __attribute((section(".init"))) __attribute((naked));
@@ -1103,7 +1104,7 @@ void handle_reset( void ) __attribute__((section(".text.handle_reset")));
 		#endif
 	}
 #endif
-
+#endif
 
 #if FUNCONF_ISR_IN_RAM
 	#define VECTOR_HANDLER_SECTION ".data.vector_handler"
@@ -1112,6 +1113,7 @@ void handle_reset( void ) __attribute__((section(".text.handle_reset")));
 #endif
 
 
+#if !FUNCONF_OVERRIDE_STARTUP
 
 #if defined( CH32V003 ) || defined( CH32X03x ) || defined(CH32V00x)
 
@@ -1430,6 +1432,7 @@ void handle_reset( void )
 	mret\n"
 	: : [main]"r"(main), [start_v5f]"r"(start_v5f) );
 }
+#endif
 #endif
 
 #if defined( __riscv_float_abi_double )
