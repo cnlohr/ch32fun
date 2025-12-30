@@ -16,8 +16,7 @@
 
 	I2CPREFIX   -> #define to be the prefix, i.e. BOB will cause BOBConfigI2C
 		to be generated.
-	I2CNOSTATIC -> #define if you want the functions to be generated as
-		not-static code.
+	I2CCODE -> decorate functions with this, otherwise assume it's static.
 
 	NOTE: You must initially configure the port to be outputs on both DSDA
 		and DSCL and set them both to be driven high.
@@ -46,10 +45,8 @@
     #define I2CPREFIX
 #endif
 
-#ifndef I2CNOSTATIC
-    #define I2CSTATICODE
-#else
-    #define I2CSTATICODE static
+#ifndef I2CCODE
+    #define I2CCODE static
 #endif
 
 #ifndef I2CFNCOLLAPSE
@@ -69,13 +66,13 @@
     #define DSDA_IHIGH DSDA_INPUT
 #endif
 
-I2CSTATICODE void I2CFNCOLLAPSE(I2CPREFIX, ConfigI2C)()
+I2CCODE void I2CFNCOLLAPSE(I2CPREFIX, ConfigI2C)()
 {
 	DSDA_IHIGH
 	DSCL_IHIGH
 }
 
-I2CSTATICODE void I2CFNCOLLAPSE(I2CPREFIX, SendStart)()
+I2CCODE void I2CFNCOLLAPSE(I2CPREFIX, SendStart)()
 {
 	DELAY1
 	DSCL_IHIGH
@@ -86,7 +83,7 @@ I2CSTATICODE void I2CFNCOLLAPSE(I2CPREFIX, SendStart)()
 	DELAY1
 }
 
-I2CSTATICODE void I2CFNCOLLAPSE(I2CPREFIX, SendStop)()
+I2CCODE void I2CFNCOLLAPSE(I2CPREFIX, SendStop)()
 {
 	DELAY1
 	DSDA_OUTPUT
@@ -98,7 +95,7 @@ I2CSTATICODE void I2CFNCOLLAPSE(I2CPREFIX, SendStop)()
 }
 
 // Return nonzero on failure.
-I2CSTATICODE unsigned char I2CFNCOLLAPSE(I2CPREFIX, SendByte)(unsigned char data)
+I2CCODE unsigned char I2CFNCOLLAPSE(I2CPREFIX, SendByte)(unsigned char data)
 {
     unsigned int i;
     // Assume we are in a started state (DSCL = 0 & DSDA = 0)
@@ -136,7 +133,7 @@ I2CSTATICODE unsigned char I2CFNCOLLAPSE(I2CPREFIX, SendByte)(unsigned char data
 
 #if I2CNEEDGETBYTE
 
-I2CSTATICODE unsigned char I2CFNCOLLAPSE(I2CPREFIX, GetByte)(uint8_t send_nak)
+I2CCODE unsigned char I2CFNCOLLAPSE(I2CPREFIX, GetByte)(uint8_t send_nak)
 {
     unsigned char i;
     unsigned char ret = 0;
@@ -179,7 +176,7 @@ I2CSTATICODE unsigned char I2CFNCOLLAPSE(I2CPREFIX, GetByte)(uint8_t send_nak)
 
 #if I2CNEEDSCAN
 
-I2CSTATICODE void I2CFNCOLLAPSE(I2CPREFIX, Scan)()
+I2CCODE void I2CFNCOLLAPSE(I2CPREFIX, Scan)()
 {
 	int i;
 	printf( "  " );
