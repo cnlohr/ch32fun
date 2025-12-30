@@ -7,14 +7,52 @@ UART_config_t uart;
 CDC_config_t cdc;
 volatile uint8_t uart_debug = 0;
 
+void uart_reset() {
+	// Reset UART state
+#if defined(CH570_CH572)
+	// Manually clearing FIFO, because CH570 doesn't have reset UART function
+	for(int i = 0; i <= UART(cdc.uart->number)->RFC; i++)
+	{
+		UART(cdc.uart->number)->THR;
+	}
+#endif
+#ifndef CH5xx
+	UART(cdc.uart->number)->CTLR1 &= ~CTLR1_UE_Set;
+	UART_TX_DMA->MADDR = (uintptr_t)uart_tx_buffer;
+	UART_RX_DMA->CFGR &= ~DMA_CFGR1_EN;
+	UART_RX_DMA->MADDR = (uintptr_t)uart_rx_buffer;
+	UART_RX_DMA->CFGR |= DMA_CFGR1_EN;
+#endif
+	memset(uart_tx_buffer, 0, UART_TX_BUF_SIZE);
+	memset(uart_rx_buffer, 0, UART_RX_BUF_SIZE);
+	cdc.rx_remain = 0;
+	cdc.rx_pos = 0;
+	cdc.rxing = 0;
+	cdc.tx_pos = 0;
+	cdc.tx_remain = 0;
+	cdc.txing = 0;
+	cdc.rx_dma_cnt = 0;
+	cdc.tx_stop = 1;
+	USBFS->UEP2_DMA = (uintptr_t)(uart_tx_buffer);
+
+	// UEP_CTRL_RX(2) &= ~USBFS_UEP_R_RES_MASK;
+  // UEP_CTRL_RX(2) |= USBFS_UEP_R_RES_ACK;
+}
+
 void uart_config(UART_config_t * uart) {
 	uint8_t i = uart->number;
-#if CH5xx
+#ifdef CH5xx
+#if defined(CH570_CH572)
+	UART(i)->FCR = RB_FCR_FIFO_EN;
+#else
+	UART(i)->IER = RB_IER_RESET; // Reset UART
+	UART(i)->FCR = RB_FCR_TX_FIFO_CLR | RB_FCR_RX_FIFO_CLR | RB_FCR_FIFO_EN;
+#endif
+	UART(i)->LCR = uart->word_length | uart->parity | uart->stop_bits;
+	UART(i)->DIV = 1;
 	UART(i)->IER = RB_IER_TXD_EN;
-	UART(i)->FCR = (2 << 6) | RB_FCR_TX_FIFO_CLR | RB_FCR_RX_FIFO_CLR | RB_FCR_FIFO_EN;
-	UART(i)->LCR = uart->word_length | uart->parity | uart->tx_stop_bits;
-	UART(i)->_DL = ((10 * (FUNCONF_SYSTEM_CORE_CLOCK) / 8 / uart->baud) + 5) / 10 ;
-	UART(i)->_DIV = 1;
+	UART(i)->DL = ((10 * FUNCONF_SYSTEM_CORE_CLOCK / 8 / uart->baud) + 5) / 10 ;
+	Delay_Ms(1);
 #else
 	UART(i)->CTLR1 = uart->word_length | uart->parity | USART_Mode_Rx | USART_Mode_Tx;
 	UART(i)->CTLR2 = uart->stop_bits;
@@ -51,7 +89,11 @@ void cdc_init(CDC_config_t * ctx) {
 	uart.word_length = UART_DEFAULT_WORDL;
 	uart.stop_bits = UART_DEFAULT_STOPB;
 	uart.parity = UART_DEFAULT_PARITY;
+#if defined(UART_DEFAULT_FLOW)
 	uart.flow_control = UART_DEFAULT_FLOW;
+#else
+	uart.flow_control = 0;
+#endif
 
 	cdc.uart = &uart;
 	cdc.tx_wrap_pos = UART_TX_BUF_SIZE;
@@ -87,12 +129,14 @@ void cdc_init(CDC_config_t * ctx) {
 }
 
 void uart_process_rx(CDC_config_t * ctx) {
-	uint32_t transferred;
+	
 	uint32_t packlen = 0;
-	uint32_t current_rx_dma_cnt;
 	int ret;
-
 	NVIC_DisableIRQ(USB_IRQn);
+#ifndef CH5xx
+	uint32_t transferred;
+	uint32_t current_rx_dma_cnt;
+	
 	current_rx_dma_cnt = UART_RX_DMA->CNTR;
 	if (ctx->rx_dma_cnt != current_rx_dma_cnt) {
 		if (uart_debug) printf("uart rx, current_rx_dma_cnt = %ld, rx_dma_cnt= %ld\n", current_rx_dma_cnt, ctx->rx_dma_cnt);
@@ -104,13 +148,34 @@ void uart_process_rx(CDC_config_t * ctx) {
 		}
 		ctx->rx_dma_cnt = current_rx_dma_cnt;
 
-		if ((ctx->rx_remain + transferred) > UART_RX_BUF_SIZE) printf("[RX buffer overflow]: %ld\n", ctx->rx_remain);
-		else ctx->rx_remain += transferred;
+		if ((ctx->rx_remain += transferred) > UART_RX_BUF_SIZE) {
+			printf("[RX buffer overflow]: %ld\n", ctx->rx_remain);
+			ctx->rx_remain = UART_RX_BUF_SIZE;
+		}
+		// else ctx->rx_remain += transferred;
 
 		ctx->rx_timeout = 0;
 	}
+#else
+	if (UART(ctx->uart->number)->RFC) {
+		if (uart_debug) printf("\nuart rxing = %d, rx_remain = %ld, RFC = %d\n", ctx->rxing, ctx->rx_remain, UART(ctx->uart->number)->RFC);
+		
+		int i;
+		uint32_t pos = ctx->rx_pos+ctx->rx_remain;
+		
+		for (i = 0; i <= UART(ctx->uart->number)->RFC; i++) {
+			if ((pos + i) >= UART_RX_BUF_SIZE) pos -= UART_RX_BUF_SIZE;
+			uart_rx_buffer[pos+i] = UART(ctx->uart->number)->THR;
+		}
+		
+		if ((ctx->rx_remain += i) > UART_RX_BUF_SIZE) {
+			printf("[RX buffer overflow]: %ld\n", ctx->rx_remain);
+			ctx->rx_remain = UART_RX_BUF_SIZE;
+		}
+		ctx->rx_timeout = 0;
+	}
+#endif
 	NVIC_EnableIRQ(USB_IRQn);
-
 	if (ctx->rx_remain) {
 		if (ctx->rxing == 0) {
 
@@ -147,13 +212,13 @@ void uart_process_rx(CDC_config_t * ctx) {
 		ctx->usb_timeout = 0;
 		ctx->rxing = 1;
 		USBFS_SendACK(3, 1);
-		// USBFS_SendEndpointNEW(3, (uint8_t*)(uart_rx_buffer + ctx->rx_pos), 0, 0);
 		ctx->zero_packet_pending = 0;
 		NVIC_EnableIRQ( USB_IRQn );
 	}
 }
 
 void uart_process_tx(CDC_config_t * ctx) {
+#ifndef CH5xx
 	if (ctx->txing) {
 		// Check for UART Transmission Completed flag
 		if (USART2->STATR & USART_FLAG_TC) {
@@ -183,11 +248,11 @@ void uart_process_tx(CDC_config_t * ctx) {
 			NVIC_DisableIRQ(USB_IRQn);
 
 			if (ctx->tx_wrap_pos <= ctx->tx_pos) {
-				ctx->tx_pos = 0; 
+				ctx->tx_pos = 0;
 				ctx->tx_wrap_pos = UART_TX_BUF_SIZE;
 			}
 
-			UART_TX_DMA->MADDR = (uint32_t)(uart_tx_buffer + ctx->tx_pos);; // Set address for DMA to read from
+			UART_TX_DMA->MADDR = (uint32_t)(uart_tx_buffer + ctx->tx_pos); // Set address for DMA to read from
 			uint32_t to_send = (ctx->tx_pos + ctx->tx_remain < ctx->tx_wrap_pos)?ctx->tx_remain:(ctx->tx_wrap_pos - ctx->tx_pos);
 			
 			if (to_send == 0) return;
@@ -201,10 +266,36 @@ void uart_process_tx(CDC_config_t * ctx) {
 			
 			NVIC_EnableIRQ(USB_IRQn);
 	}
+#else
+	
+	int local_pos = ctx->tx_pos;
+	// ctx->txing = 1;
+	while (ctx->tx_remain && UART(ctx->uart->number)->TFC != UART_FIFO_SIZE) {
+		UART(ctx->uart->number)->THR = uart_tx_buffer[local_pos++];
+		if (ctx->tx_wrap_pos <= local_pos) {
+			local_pos = 0;
+			ctx->tx_wrap_pos = UART_TX_BUF_SIZE;
+		}
+		ctx->tx_remain--;
+	}
+
+	if (ctx->tx_stop && !ctx->tx_remain && UART(ctx->uart->number)->TFC == 0) {
+		NVIC_DisableIRQ(USB_IRQn);
+		if( ctx->tx_pos & 0x3 ) ctx->tx_pos = (ctx->tx_pos + 4) & ~0x3;
+		ctx->txing = 0;
+		USBFS_SendACK(2, 0);
+		ctx->tx_stop = 0;
+		NVIC_EnableIRQ(USB_IRQn);
+	} else {
+		ctx->tx_pos = local_pos;
+	}
+	// ctx->txing = 0;
+	
+#endif
 }
 
 void uart_send_break(uint8_t n) {
 #ifndef CH5xx
-		UART(n)->CTLR1 |= CTLR1_SBK_Set;
+	UART(n)->CTLR1 |= CTLR1_SBK_Set;
 #endif
 }
