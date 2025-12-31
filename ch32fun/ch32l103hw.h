@@ -7490,6 +7490,16 @@ typedef enum
 #define RTC_FLAG_ALR      ((uint16_t)0x0002) /* Alarm flag */
 #define RTC_FLAG_SEC      ((uint16_t)0x0001) /* Second flag */
 
+// Wait for last write operation to complete, enter configuration mode
+// perform configuration
+// wait for last write operation to complete,exit configuration mode
+#define RTC_CONFIG_CHANGE(a) do { \
+	while (!(RTC->CTLRL & RTC_FLAG_RTOFF)); \
+	RTC->CTLRL |= RTC_CTLRL_CNF; \
+	{a} \
+	while (!(RTC->CTLRL & RTC_FLAG_RTOFF)); \
+	RTC->CTLRL &= ~RTC_CTLRL_CNF; \
+} while (0)
 
 /* ch32v00x_spi.h ------------------------------------------------------------*/
 

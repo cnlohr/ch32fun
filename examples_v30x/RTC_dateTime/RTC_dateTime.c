@@ -1,6 +1,6 @@
 #include "ch32fun.h"
 #include "register_debug_utilities.h"
-#include "v2xx_v3xx_rtc.h"
+#include "rtc.h"
 
 int main() {
 	SystemInit();
@@ -50,17 +50,15 @@ int main() {
 
 	rtc_date_t date = {2025, 11, 18};
 	rtc_time_t time = {7, 10, 5};
-	RTC_setDateTime(date, time);
+	rtc_datetime_t datetime = {date, time};
+	RTC_setDateTime(&datetime);
 
 	while(1) {
-		u32 seconds = RTC_GetCounter();
-		rtc_date_t date = RTC_get_date(seconds, 1970);
-		rtc_time_t time = RTC_get_time(seconds, 0);
-
+		datetime = RTC_getDateTime();
 		printf("\n");
-		RTC_print_date(date, "/");
+		RTC_print_date(datetime.date, "/");
 		printf(" ");
-		RTC_print_time(time);
+		RTC_print_time(datetime.time);
 		Delay_Ms(1000);
 	}
 }
