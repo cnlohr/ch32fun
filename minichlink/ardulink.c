@@ -77,10 +77,11 @@ int ArdulinkControl3v3(void * dev, int power_on) {
 	if (serial_dev_read(&((ardulink_ctx_t*)dev)->serial, &c, 1) == -1)
 		return -errno;
 
-	if (c != '+')
+	if (c != '+'){
+		fprintf(stderr, "Ardulink: error turnin power on\n");
 		return -71; // EPROTO
+	}
 
-	MCF.DelayUS(dev, 20000);
 	return 0;
 }
 

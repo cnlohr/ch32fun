@@ -5,6 +5,7 @@
 //   gdb-multiarch -ex "target extended-remote :3333" ./blink.elf 
 
 #include "minichlink.h"
+#include "chips.h"
 
 #define MICROGDBSTUB_IMPLEMENTATION
 #define MICROGDBSTUB_SOCKETS
@@ -460,9 +461,11 @@ int RVWriteRAM(void * dev, uint32_t memaddy, uint32_t length, uint8_t * payload 
 
 int RVWriteFlash(void * dev, uint32_t memaddy, uint32_t length, uint8_t * payload )
 {
-	if( (memaddy & 0xff000000 ) == 0 )
+	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
+
+	if( iss->target_chip && (iss->target_chip->protocol == PROTOCOL_DEFAULT) && (( memaddy & 0xff000000 ) == 0) )
 	{
-		memaddy |= 0x08000000;
+		memaddy |= 0x08000000; // Only applies to CH32 chips
 	}
 	return RVWriteRAM( dev, memaddy, length, payload );
 }

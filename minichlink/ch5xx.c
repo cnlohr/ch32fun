@@ -46,10 +46,13 @@ unsigned int ch5xx_blink_bin_len = 24;
 // Also we still need to do that every time we use other programmers.
 int CH5xxSetClock(void * dev, uint32_t clock) {
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
+	if (iss->debugger) return 0;
 	if (clock == 0) {
 		uint32_t rr = 0;
 		MCF.ReadWord(dev, 0x40001008, &rr);
+#if DEBUG_CH5xx_MINICHLINK
 		fprintf(stderr, "Setting clock, current = %08x\n", rr);
+#endif
 		switch (iss->target_chip_type)
 		{
 		case CHIP_CH585:
@@ -93,9 +96,6 @@ int CH5xxSetClock(void * dev, uint32_t clock) {
 		default:
 			return 0;
 		}
-#if DEBUG_CH5xx_MINICHLINK
-		fprintf(stderr, "Setting reliable clock\n");
-#endif
 	}
 	return 0;
 }
@@ -552,6 +552,37 @@ int ch5xx_read_secret_uuid(void * dev, uint8_t * buffer) {
 
 // All CH5xx have UUID which is also used to produce unique MAC address for BLE
 int CH5xxReadUUID(void * dev, uint8_t * buffer) {
+	if (sizeof(buffer) < 8) return -2;
+
+	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
+	if(!iss->target_chip) {
+		MCF.DetermineChipType(dev);
+	}
+
+	enum RiscVChip chip = iss->target_chip_type;
+	uint32_t addr = 0x7F018;
+
+	if (chip == CHIP_CH570) {
+		addr = 0x3F018;
+	}
+
+	int r = MCF.ReadWord(dev, addr, (uint32_t*)(buffer));
+	if (r) {
+		fprintf(stderr, "Error reading UUID\n");
+		return r;
+	}
+	r = MCF.ReadWord(dev, addr+4, (uint32_t*)(buffer+4));
+	if (r) {
+		fprintf(stderr, "Error reading UUID\n");
+		return r;
+	}
+
+	return 0;
+}
+
+// Earlier I thought that you need special read operation to correctly read UUID (you don't)
+// Leaving this for now as a reminder just in case
+int CH5xxReadUUID_old(void * dev, uint8_t * buffer) {
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
 	if(!iss->target_chip) {
 		MCF.DetermineChipType(dev);
@@ -951,7 +982,7 @@ int CH5xxErase(void* dev, uint32_t addr, uint32_t len, int type) {
 		len = iss->target_chip->flash_size;
 	}
 #if DEBUG_CH5xx_MINICHLINK	
-	printf( "len = %d, addr = %d\n", len, addr);
+	printf( "Erasing len = %d, addr = %08x\n", len, addr);
 #endif
 
 	uint32_t left = len;
@@ -1000,13 +1031,17 @@ int CH5xxErase(void* dev, uint32_t addr, uint32_t len, int type) {
 int CH5xxWriteBinaryBlob(void * dev, uint32_t address_to_write, uint32_t blob_size, const uint8_t * blob) {
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
 
+#if DEBUG_CH5xx_MINICHLINK
+	fprintf(stderr, "Write blob to %08x, len %d\n", address_to_write, blob_size);
+#endif
+
 	int (*write_function)(void * dev, uint32_t start_addr, uint8_t* data, uint32_t len);
 
 	int ret = 0;
 
 	if (blob_size == 0) return 0;
 
-	if (!iss->current_area) DetectMemoryArea(dev, address_to_write);
+	if (!iss->current_area || iss->debugger) DetectMemoryArea(dev, address_to_write);
 	if (!CheckMemoryLocation(dev, 0, address_to_write, blob_size)) {
 		fprintf(stderr, "Data doesn't fit into memory location\n");
 		return -1;
@@ -1019,9 +1054,9 @@ int CH5xxWriteBinaryBlob(void * dev, uint32_t address_to_write, uint32_t blob_si
 	uint8_t* start_pad = malloc(sector_size);
 	uint8_t* end_pad = malloc(sector_size);
 	
-	uint32_t spad = address_to_write - ((address_to_write / sector_size) * sector_size);
-	uint32_t epad = (address_to_write + blob_size) - ((address_to_write + blob_size) / sector_size) * sector_size;
-	uint32_t new_blob_size = blob_size;
+	uint32_t spad = address_to_write - ((address_to_write / sector_size) * sector_size); // Size of data in the sector before the the adddress we are writing to
+	uint32_t epad = (address_to_write + blob_size) - (((address_to_write + blob_size) / sector_size) * sector_size); // Size of the data in the start of the last sector we will be writing to
+	uint32_t new_blob_size = blob_size; // This will be a new blob size divisable by sector size
 #if DEBUG_CH5xx_MINICHLINK
 	fprintf(stderr, "spad = %d, epad = %d, blob_size = %d\n", spad, epad, blob_size);
 #endif
@@ -1046,7 +1081,7 @@ int CH5xxWriteBinaryBlob(void * dev, uint32_t address_to_write, uint32_t blob_si
 				write_function = &ch5xx_write_flash;
 			}
 		} else {
-			if (blob_size > 4096) write_function = &ch5xx_write_flash_using_microblob2;
+			if (!iss->debugger) write_function = &ch5xx_write_flash_using_microblob2;
 			else write_function = &ch5xx_write_flash;
 		}
 		if (spad) {
@@ -1068,13 +1103,12 @@ int CH5xxWriteBinaryBlob(void * dev, uint32_t address_to_write, uint32_t blob_si
 			else new_blob_size = 0;
 		}
 
+		CH5xxErase(dev, address_to_write, blob_size, 0);
 		if (spad) {
-			CH5xxErase(dev, ((address_to_write + spad) - sector_size), new_blob_size + spad + epad, 0);
 			write_function(dev, address_to_write - spad, start_pad, sector_size);
 			if (spad + blob_size > sector_size)
 				write_function(dev, address_to_write + (sector_size - spad), (uint8_t*)(blob + (sector_size - spad)), new_blob_size);
 		} else {
-			CH5xxErase(dev, address_to_write, new_blob_size + epad, 0);
 			write_function(dev, address_to_write, (uint8_t*)(blob), new_blob_size);
 		}
 		if (epad) write_function(dev, (address_to_write + blob_size) - epad, end_pad, sector_size);
@@ -1102,13 +1136,12 @@ int CH5xxWriteBinaryBlob(void * dev, uint32_t address_to_write, uint32_t blob_si
 			else new_blob_size = 0;
 		}
 
+		CH5xxErase(dev, address_to_write, blob_size, 0);
 		if (spad) {
-			CH5xxErase(dev, ((address_to_write + spad) - sector_size), new_blob_size + spad + epad, 0);
 			write_function(dev, address_to_write - spad, start_pad, sector_size);
 			if (spad + blob_size > sector_size)
 				write_function(dev, address_to_write + (sector_size - spad), (uint8_t*)(blob + (sector_size - spad)), new_blob_size);
 		} else {
-			CH5xxErase(dev, address_to_write, new_blob_size + epad, 0);
 			write_function(dev, address_to_write, (uint8_t*)(blob), new_blob_size);
 		}
 		if (epad) write_function(dev, (address_to_write + blob_size) - epad, end_pad, sector_size);
@@ -1135,13 +1168,12 @@ int CH5xxWriteBinaryBlob(void * dev, uint32_t address_to_write, uint32_t blob_si
 			else new_blob_size = 0;
 		}
 
+		CH5xxErase(dev, address_to_write, blob_size, 0);
 		if (spad) {
-			CH5xxErase(dev, ((address_to_write + spad) - sector_size), new_blob_size + spad + epad, 0);
 			write_function(dev, address_to_write - spad, start_pad, sector_size);
 			if (spad + blob_size > sector_size)
 				write_function(dev, address_to_write + (sector_size - spad), (uint8_t*)(blob + (sector_size - spad)), new_blob_size);
 		} else {
-			CH5xxErase(dev, address_to_write, new_blob_size + epad, 0);
 			write_function(dev, address_to_write, (uint8_t*)(blob), new_blob_size);
 		}
 		if (epad) write_function(dev, (address_to_write + blob_size) - epad, end_pad, sector_size);
@@ -1191,11 +1223,14 @@ end:
 // Other memory areas, like EEPROM or options require special procedure.
 extern int DefaultReadBinaryBlob( void * dev, uint32_t address_to_read_from, uint32_t read_size, uint8_t * blob );
 int CH5xxReadBinaryBlob(void* dev, uint32_t address_to_read_from, uint32_t read_size, uint8_t* blob) {
+#if DEBUG_CH5xx_MINICHLINK
+	fprintf(stderr, "Read from %08x, len %d\n", address_to_read_from, read_size);
+#endif
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
 
 	int ret = 0;
 
-	if (!iss->current_area) DetectMemoryArea(dev, address_to_read_from);
+	if (!iss->current_area || iss->debugger) DetectMemoryArea(dev, address_to_read_from);
 	if (!CheckMemoryLocation(dev, 0, address_to_read_from, read_size)) {
 		fprintf(stderr, "Requested location should be within one memory area. Aborting\n");
 		ret = -1;

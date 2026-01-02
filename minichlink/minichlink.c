@@ -428,6 +428,7 @@ keep_going:
 				}
 				if( argchar[1] == 'G' )
 				{
+					iss->debugger = 1;
 					fprintf( stderr, "GDBServer Running\n" );
 				}
 				else if( argchar[1] == 'T' )
@@ -1220,8 +1221,10 @@ static int DefaultWaitForDoneOp( void * dev, int ignore )
 int DefaultSetupInterface( void * dev )
 {
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
+	int retries = MINICHLINK_SETUP_MAX_RETRIES;
 
 	if( MCF.Control3v3 ) MCF.Control3v3( dev, 1 );
+retry:
 	MCF.DelayUS( dev, 16000 );
 	MCF.WriteReg32( dev, DMSHDWCFGR, 0x5aa50000 | (1<<10) ); // Shadow Config Reg
 	MCF.WriteReg32( dev, DMCFGR, 0x5aa50000 | (1<<10) ); // CFGR (1<<10 == Allow output from slave)
@@ -1242,6 +1245,7 @@ int DefaultSetupInterface( void * dev )
 		if( reg == 0x00000000 || reg == 0xffffffff )
 		{
 			fprintf( stderr, "Error: Setup chip failed. Got code %08x\n", reg );
+			if (retries--) goto retry;
 			return -9;
 		}
 	}
@@ -3362,7 +3366,7 @@ int DetectMemoryArea( void * dev, uint32_t address )
 		if( ret ) return ret;
 	}
 	const struct RiscVChip_s * chip = iss->target_chip;
-	fprintf( stderr, "Detecting Memory Area\n" );
+	if( !iss->debugger ) fprintf( stderr, "Detecting Memory Area\n" );
 	if( address < chip->flash_offset)
 	{
 		fprintf( stderr, "The starting address is lower than FLASH start. Aborting\n" );

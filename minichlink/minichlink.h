@@ -195,6 +195,7 @@ struct InternalState
 	enum MemoryArea current_area;
 	uint32_t clock_set;
 	uint8_t init_skip;
+	uint8_t debugger;
 };
 
 
@@ -253,6 +254,8 @@ struct InternalState
 #define TERMINAL_CLEAR_PREV "\x1b[1F\x1b[2K"
 #define TERMINAL_CLEAR_CUR "\x1b[2K\x1b[F"
 #define TERMINAL_DIM "\x1b[2m"
+
+#define MINICHLINK_SETUP_MAX_RETRIES 3
 
 /* initialization hints for init functions */
 /* could be expanded with more in the future (e.g., PID/VID hints, priorities, ...)*/
