@@ -262,6 +262,11 @@ void USBHS_IRQHandler()
 				case USB_SET_CONFIGURATION:
 					ctx->USBHS_DevConfig = (uint8_t)( ctx->USBHS_IndexValue & 0xFF );
 					ctx->USBHS_DevEnumStatus = 0x01;
+					for(int ep = 1; ep < FUSB_CONFIG_EPS; ep++) {
+						// reset all DATAx
+						UEP_CTRL_RX(ep) &= ~USBHS_UEP_R_TOG_DATA1;
+						UEP_CTRL_TX(ep) &= ~USBHS_UEP_T_TOG_DATA1;
+					}
 					break;
 
 				/* Clear or disable one usb feature */
