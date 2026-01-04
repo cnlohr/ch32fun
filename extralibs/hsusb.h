@@ -374,7 +374,7 @@ struct _USBState;
 
 // Provided functions:
 int USBHSSetup();
-static inline int USBHS_SendEndpointNEW( int endp, uint8_t* data, int len, int copy);
+static inline int USBHS_SendEndpointNEW( int endp, const uint8_t* data, int len, int copy);
 static inline uint8_t * USBHS_GetEPBufferIfAvailable( int endp );
 static inline int USBHS_SendEndpoint( int endp, int len );
 static inline int USBHS_SendACK( int endp, int tx );
@@ -393,6 +393,10 @@ void HandleHidUserReportOutComplete( struct _USBState * ctx );
 __HIGH_CODE int HandleInRequest( struct _USBState * ctx, int endp, uint8_t * data, int len );
 __HIGH_CODE void HandleDataOut( struct _USBState * ctx, int endp, uint8_t * data, int len );
 __HIGH_CODE int HandleSetupCustom( struct _USBState * ctx, int setup_code);
+#endif
+
+#if FUSB_OUT_FLOW_CONTROL > 0
+void USBHS_RxReady(int endp);
 #endif
 
 typedef enum

@@ -893,14 +893,20 @@ extern "C" {
 #define FUN_HIGH 0x1
 #define FUN_LOW 0x0
 #if defined(CH57x) || defined(CH58x) || defined(CH59x)
+
 #if defined( PB ) && defined( R32_PB_PIN )
 #define OFFSET_FOR_GPIOB(pin)         (((pin & PB) >> 31) * (&R32_PB_PIN - &R32_PA_PIN)) // 0 if GPIOA, 0x20 if GPIOB
 #else
 #define PB                            0
 #define OFFSET_FOR_GPIOB(pin)         0
 #endif
-#define GPIO_ResetBits(pin)           (*(&R32_PA_CLR + OFFSET_FOR_GPIOB(pin)) |= (pin & ~PB))
+
+#if defined(CH571_CH573) || defined(CH582_CH583) // 582/3 doesn't have _SET
 #define GPIO_SetBits(pin)             (*(&R32_PA_OUT + OFFSET_FOR_GPIOB(pin)) |= (pin & ~PB))
+#else
+#define GPIO_SetBits(pin)             (*(&R32_PA_SET + OFFSET_FOR_GPIOB(pin)) =  (pin & ~PB))
+#endif
+#define GPIO_ResetBits(pin)           (*(&R32_PA_CLR + OFFSET_FOR_GPIOB(pin)) =  (pin & ~PB))
 #define GPIO_InverseBits(pin)         (*(&R32_PA_OUT + OFFSET_FOR_GPIOB(pin)) ^= (pin & ~PB))
 #define GPIO_ReadPortPin(pin)         (*(&R32_PA_PIN + OFFSET_FOR_GPIOB(pin)) &  (pin & ~PB))
 #define funDigitalRead(pin)           GPIO_ReadPortPin(pin)
