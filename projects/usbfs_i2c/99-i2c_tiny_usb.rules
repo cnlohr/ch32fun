@@ -1,0 +1,2 @@
+# give user access to i2c-tiny-usb
+BUS=="usb", ACTION=="add", SUBSYSTEM=="usb_device", SYSFS{idVendor}=="0403", SYSFS{idProduct}=="c631", GROUP="users", OWNER="user"

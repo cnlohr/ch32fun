@@ -277,7 +277,7 @@ void USBFS_IRQHandler()
 			if( ( USBFS_SetupReqType & USB_REQ_TYP_MASK ) != USB_REQ_TYP_STANDARD )
 			{
 #if FUSB_HID_INTERFACES > 0  || FUSB_USER_HANDLERS
-				if( ( USBFS_SetupReqType & USB_REQ_TYP_MASK ) == USB_REQ_TYP_CLASS )
+				if( ( USBFS_SetupReqType & USB_REQ_TYP_MASK ) == USB_REQ_TYP_CLASS || ( USBFS_SetupReqType & USB_REQ_TYP_MASK ) == USB_REQ_TYP_VENDOR )
 				{
 					/* Class Request */
 					switch( USBFS_SetupReqCode )
@@ -372,9 +372,9 @@ void USBFS_IRQHandler()
 								}
 #if defined (CH5xx) || defined (CH32X03x) || defined (CH32V10x)
 								else UEP_CTRL_TX(0)= USBFS_UEP_R_TOG|USBFS_UEP_R_RES_ACK;
-#else                
+#else
 								else UEP_CTRL_RX(0)= USBFS_UEP_R_TOG|USBFS_UEP_R_RES_ACK;
-#endif                
+#endif
 								// UEP_CTRL_LEN(0) = len;
 								// UEP_CTRL_TX(0) = CHECK_USBFS_UEP_T_AUTO_TOG | USBFS_UEP_T_RES_ACK | USBFS_UEP_T_TOG;
 								// ctx->USBFS_SetupReqLen -= len;
@@ -383,8 +383,8 @@ void USBFS_IRQHandler()
 							}
 							else
 #endif
-							{                
-								goto sendstall; 
+							{
+								goto sendstall;
 							}
 							break;
 					}
