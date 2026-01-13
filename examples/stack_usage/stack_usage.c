@@ -61,7 +61,7 @@ void fill_canary( uint32_t canary )
 void *get_stack_watermark( uint32_t canary )
 {
 	const uint32_t *const top = get_stack_pointer();
-	uint32_t *p = (uint32_t *)end;
+	uint32_t *p = &end;
 	while ( ++p < top )
 	{
 		if ( *p != canary )
