@@ -17,6 +17,11 @@ else
 	ifeq ($(OS_NAME),linux)
 		LDFLAGS:=-lpthread -lusb-1.0 -ludev
 	endif
+	ifeq ($(OS_NAME),freebsd)
+		# TODO: The FreeBSD hidapi port doesn't expose hidapi_thread_pthread.h which is required by esp32 and b003
+		C_S:=minichlink.c pgm-wch-linke.c pgm-wch-isp.c nhc-link042.c ardulink.c serial_dev.c minichgdb.c chips.c ch5xx.c
+		LDFLAGS:=-lpthread -lusb
+	endif
 	ifeq ($(OS_NAME),darwin)
 		# Use ARCH flag (e.g. x86_64 or arm64) if given externally, otherwise empty
 		ifdef ARCH
@@ -44,10 +49,10 @@ minichlink.exe : $(C_S) $(H_S) Makefile
 	x86_64-w64-mingw32-gcc -o $@ $(C_S) $(LDFLAGS_WINDOWS) $(CFLAGS_WINDOWS)
 
 minichlink : $(C_S) $(H_S) Makefile
-	gcc -o $@ $(C_S) $(LDFLAGS) $(CFLAGS) $(INCS)
+	cc -o $@ $(C_S) $(LDFLAGS) $(CFLAGS) $(INCS)
 
 minichlink.so : $(C_S) $(H_S) Makefile
-	gcc -o $@ $(C_S) $(LDFLAGS) $(CFLAGS) $(INCS) -shared -fPIC
+	cc -o $@ $(C_S) $(LDFLAGS) $(CFLAGS) $(INCS) -shared -fPIC
 
 minichlink.dll : $(C_S) $(H_S) Makefile
 	x86_64-w64-mingw32-gcc -o $@ $(C_S) $(LDFLAGS_WINDOWS) $(CFLAGS_WINDOWS) $(INCS) -shared -DMINICHLINK_AS_LIBRARY

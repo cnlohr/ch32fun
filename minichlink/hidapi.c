@@ -4822,7 +4822,11 @@ HID_API_EXPORT const wchar_t * HID_API_CALL  hid_error(hid_device *dev)
 #endif
 #endif
 
+#ifdef __FreeBSD__
+#include <hidapi.h>
+#else
 #include "hidapi_libusb.h"
+#endif
 
 #ifndef HIDAPI_THREAD_MODEL_INCLUDE
 #define HIDAPI_THREAD_MODEL_INCLUDE "hidapi_thread_pthread.h"
