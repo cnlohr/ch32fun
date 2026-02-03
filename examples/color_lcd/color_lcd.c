@@ -22,8 +22,8 @@
 //#define BL_PIN 0xd2
 //#define CS_PIN 0xff
 #define BL_PIN 0xd5
-#define CS_PIN 0xd2
-#define DC_PIN 0xd3
+#define CS_PIN 0xd6
+#define DC_PIN 0xd2
 #define RST_PIN 0xd4
 
 static uint16_t usPal[8] = {COLOR_BLACK, COLOR_WHITE, COLOR_RED, COLOR_GREEN,
