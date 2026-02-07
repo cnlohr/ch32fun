@@ -401,27 +401,32 @@ void USBD_InternalFinishSetup() {
 	USBDCTX.endpoint_mode[7] = FUSB_EP7_MODE;
 #endif
 
-	uint16_t pma_ptr = 64; // start packet buffers after btable (8 endpoint with 16 bytes each, but 8 bytes logical)
+	uint16_t pma_ptr = 128; // start packet buffers after btable (8 endpoint with 16 bytes each)
 	for (int i = 0; i < FUSB_CONFIG_EPS; i++) {
 		// Calculate offsets
 		uint32_t* btable_entry = (uint32_t*)(USBD_PMA_BASE + (i*16)); // 4 entries = 16 bytes per ep in btable
 
+		// USBD RAM is 512 bytes
+		if (pma_ptr > 512 -DEF_USBD_UEP0_SIZE) {
+			printf("CRITICAL: USBD PMA OVERFLOW (%d)\n", pma_ptr);
+			pma_ptr -= DEF_USBD_UEP0_SIZE;
+		}
+
 		if (USBDCTX.endpoint_mode[i] == USBD_EP_TX || USBDCTX.endpoint_mode[i] == USBD_EP_RTX) {
-			USBDCTX.pma_offset[i][0] = pma_ptr *2; // why *2??
+			USBDCTX.pma_offset[i][0] = pma_ptr *2; // *2 because this weird uint16 writes through uint32 pointers
 			btable_entry[0] = pma_ptr; // ADDRx_TX
 			btable_entry[1] = 0; // COUNTx_TX
-			pma_ptr += DEF_USBD_UEP0_SIZE;
+			if(USBDCTX.endpoint_mode[i] != USBD_EP_RTX) {
+				// bidirectional endpoints share the buffer, pma can hold only 6
+				pma_ptr += DEF_USBD_UEP0_SIZE;
+			}
 		}
+
 		if (USBDCTX.endpoint_mode[i] == USBD_EP_RX || USBDCTX.endpoint_mode[i] == USBD_EP_RTX) {
-			USBDCTX.pma_offset[i][1] = pma_ptr *2; // why *2??
+			USBDCTX.pma_offset[i][1] = pma_ptr *2; // *2 because this weird uint16 writes through uint32 pointers
 			btable_entry[2] = pma_ptr; // ADDRx_RX
 			btable_entry[3] = 0x8400; // COUNTx_RX BL_SIZE=1 (32byte), NUM_BLOCK=1 -> 64 bytes
 			pma_ptr += DEF_USBD_UEP0_SIZE;
-		}
-
-		// USBD RAM is 512 bytes
-		if (pma_ptr > 512) {
-			printf("CRITICAL: USBD PMA OVERFLOW (%d)\n", pma_ptr);
 		}
 	}
 }
@@ -429,7 +434,17 @@ void USBD_InternalFinishSetup() {
 int USBDSetup() {
 	// Enable Clocks
 #ifdef CH32V20x
-	RCC->CFGR0 = (RCC->CFGR0 & ~0xff0000) | (0b10101000 << 16); // what's this now??
+#if FUNCONF_SYSTEM_CORE_CLOCK == 144000000
+	RCC->CFGR0 = (RCC->CFGR0 & ~(3<<22)) | (2<<22);
+#elif FUNCONF_SYSTEM_CORE_CLOCK == 96000000
+	RCC->CFGR0 = (RCC->CFGR0 & ~(3<<22)) | (1<<22);
+#elif FUNCONF_SYSTEM_CORE_CLOCK == 48000000
+	RCC->CFGR0 = (RCC->CFGR0 & ~(3<<22));
+#elif FUNCONF_SYSTEM_CORE_CLOCK == 240000000
+#error CH32V20x/30x is unstable at 240MHz
+#else
+#error CH32V20x/30x need 144/96/48MHz main clock for USB to work
+#endif
 
 	// As recommended in the manual, output low on these pins before enabling USB
 	RCC->APB2PCENR |= (1 << 2);
@@ -439,6 +454,8 @@ int USBDSetup() {
 	RCC->APB2PCENR |= RCC_AFIOEN | RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA;
 	RCC->AHBPCENR = RCC_AHBPeriph_SRAM;
 	RCC->APB1PCENR |= RCC_USBEN;
+#else
+#warning USBD is only tested on CH32V20x, on anything else you are trailblazing
 #endif
 
 	// Power On
