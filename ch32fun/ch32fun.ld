@@ -1,140 +1,20 @@
 ENTRY( InterruptVector )
 
+#define KB_HELPER(X) X ## K
+#define KB(X) KB_HELPER(X)
+
 MEMORY
 {
-#if TARGET_MCU_LD == 0 /* v00x */
-	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 16K
-	RAM (xrw)  : ORIGIN = 0x20000000, LENGTH = 2K
-#elif TARGET_MCU_LD == 1 /* v10x */
-	#if MCU_PACKAGE == 1
-		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 64K
-		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 20K
-	#elif MCU_PACKAGE == 2
-		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 32K
-		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 10K
-	#else
-		#error "Unknown MCU package"
-	#endif
-#elif TARGET_MCU_LD == 2 /* v20x */
-	#if MCU_PACKAGE == 1
-		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 64K
-		EXT (rx) : ORIGIN = 0x08010000, LENGTH = 160K
-		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 20K
-	#elif MCU_PACKAGE == 2
-		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 32K
-		EXT (rx) : ORIGIN = 0x08008000, LENGTH = 192K
-		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 10K
-	#elif MCU_PACKAGE == 3
-		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 128K
-		EXT (rx) : ORIGIN = 0x08020000, LENGTH = 352K
-		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 64K
-	#else
-		#error "Unknown MCU package"
-	#endif
-#elif TARGET_MCU_LD == 3 /* v30x */
-	#if MCU_PACKAGE == 1
-		#if TARGET_MCU_MEMORY_SPLIT == 1
-			FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 224K
-			RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 96K
-		#elif TARGET_MCU_MEMORY_SPLIT == 2
-			FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 256K
-			RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 64K
-		#elif TARGET_MCU_MEMORY_SPLIT == 3
-			FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 288K
-			RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 32K
-		#else
-			FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 192K
-			RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 128K
-		#endif
-	#elif MCU_PACKAGE == 2
-		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 128K
-		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 32K
-	#else
-		#error "Unknown MCU package"
-	#endif
-#elif TARGET_MCU_LD == 4 /* x03x */
-	#if MCU_PACKAGE == 1
-		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 62K
-		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 20K
-	#else
-		#error "Unknown MCU package"
-	#endif
-#elif TARGET_MCU_LD == 5
-	/* CH32V002 */
-	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 16K
-	RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 4K
-#elif TARGET_MCU_LD == 6
-	/* CH32V005, CH32V004 */
-	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 32K
-	RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 6K
-#elif TARGET_MCU_LD == 7
-	/* CH32V006, CH32V007 */
-	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 62K
-	RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 8K
-#elif TARGET_MCU_LD == 8
-	/* CH582/3/4/5 */
-	#if MCU_PACKAGE == 2 || MCU_PACKAGE == 3
-		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 448K
-		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 32K
-	#elif MCU_PACKAGE == 4
-		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 448K
-		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 96K
-	#elif MCU_PACKAGE == 5
-		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 448K
-		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 128K
-	#else
-		#error "Unknown MCU package"
-	#endif
-#elif TARGET_MCU_LD == 9
-	/* CH591/2 */
-	#if MCU_PACKAGE == 1
-		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 192K
-		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 26K
-	#elif MCU_PACKAGE == 2
-		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 448K
-		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 26K
-	#else
-		#error "Unknown MCU package"
-	#endif
-#elif TARGET_MCU_LD == 10
-	/* CH57x */
-	#if MCU_PACKAGE == 0 || MCU_PACKAGE == 2
-		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 240K
-		RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 12K
-	#elif MCU_PACKAGE == 1
-		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 192K
-		RAM (xrw) : ORIGIN = 0x20003800, LENGTH = 18K
-	#elif MCU_PACKAGE == 3
-		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 448K
-		RAM (xrw) : ORIGIN = 0x20003800, LENGTH = 18K
-	#else
-		#error "Unknown MCU package"
-	#endif
-#elif TARGET_MCU_LD == 11
-	/* CH32H41x */
-	#if MCU_PACKAGE == 1 || MCU_PACKAGE == 3
-		/* Flash */
-		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 960K
-		/* ITCM V5F only */
-		ITCM (xrw) : ORIGIN = 0x200A0000, LENGTH = 128K
-		/* DTCM V5F only, used for V5F stack  */
-		DTCM (xrw) : ORIGIN = 0x200C0000, LENGTH = 256K
-		/* Shared RAM, end used for V3F Stack*/
-		RAM (xrw) : ORIGIN = 0x20100000, LENGTH = 512K
-	#elif MCU_PACKAGE == 2
-		/* Flash */
-		FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 480K
-		/* ITCM V5F only */
-		ITCM (xrw) : ORIGIN = 0x200A0000, LENGTH = 128K
-		/* DTCM V5F only, used for V5F stack */
-		DTCM (xrw) : ORIGIN = 0x200C0000, LENGTH = 256K
-		/* Shared RAM, end used for V3F Stack*/
-		RAM (xrw) : ORIGIN = 0x20100000, LENGTH = 512K
-	#else
-		#error "Unknown MCU package"
-	#endif
-#else
-	#error "Unknown MCU target"
+	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = KB(FLASH_SIZE_KB)
+	RAM (xrw)  : ORIGIN = 0x20000000, LENGTH = KB(RAM_SIZE_KB)
+#if EXT_ORIGIN
+	EXT (rx) : ORIGIN = EXT_ORIGIN, LENGTH = KB(EXT_SIZE_KB)
+#endif
+#if HAS_COUPLED_RAM
+	/* ITCM V5F only */
+	ITCM (xrw) : ORIGIN = 0x200A0000, LENGTH = 128K
+	/* DTCM V5F only, used for V5F stack  */
+	DTCM (xrw) : ORIGIN = 0x200C0000, LENGTH = 256K
 #endif
 }
 
@@ -149,7 +29,7 @@ SECTIONS
 			_einit = .;
 		} >FLASH AT>FLASH
 
-#if TARGET_MCU_LD == 8 || TARGET_MCU_LD == 9 || TARGET_MCU_LD == 10
+#if HAS_HIGHCODE
 		.highcodelalign : 
 		{       
 			. = ALIGN(4);
@@ -166,7 +46,7 @@ SECTIONS
 		} >RAM AT>FLASH
 #endif
 
-#if TARGET_MCU_LD == 11
+#if HAS_COUPLED_RAM
 		.itcmalign :
 		{
 			. = ALIGN(4);
@@ -317,7 +197,7 @@ SECTIONS
 			PROVIDE( _ebss = .);
 		} >RAM
 
-#if TARGET_MCU_LD == 10 && (MCU_PACKAGE == 1 || MCU_PACKAGE == 3)
+#if HAS_DMA_QUIRK
 	/* CH571/CH573 DMA quirk
 	 	DMA peripherals on the CH571/3 only use the low 14 bits of the address
 		The high 18 bits are assumed to be 0x20004000,
@@ -345,14 +225,14 @@ SECTIONS
 
 		PROVIDE( end = . );
 
-#if TARGET_MCU_LD == 11
+#if HAS_COUPLED_RAM
 		PROVIDE( _v3f_stack = ORIGIN(RAM) + LENGTH(RAM));
 		PROVIDE( _v5f_stack = ORIGIN(DTCM) + LENGTH(DTCM));
 #else
 		PROVIDE( _eusrstack = ORIGIN(RAM) + LENGTH(RAM));
 #endif
 
-#if TARGET_MCU_LD == 2 /* v20x */
+#if EXT_ORIGIN
 		.storage :
 		{
 			. = ALIGN(4);
