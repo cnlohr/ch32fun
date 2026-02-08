@@ -10,5 +10,5 @@ minichlink/minichlink
 minichlink/minichlink.so
 compile_commands.json
 .cache
-ch32fun/generated_*.ld
+ch32fun/generated_*
 **/.DS_Store
