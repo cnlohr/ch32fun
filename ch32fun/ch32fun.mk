@@ -41,7 +41,7 @@ ifeq ($(DEBUG),1)
 	EXTRA_CFLAGS+=-DFUNCONF_DEBUG=1
 endif
 
-CFLAGS?=-g -Os -flto -ffunction-sections -fdata-sections -fmessage-length=0 -msmall-data-limit=8
+CFLAGS?=-g -Os -flto -ffunction-sections -fdata-sections -fmessage-length=0 -msmall-data-limit=8 -ffreestanding
 LDFLAGS+=-Wl,--print-memory-usage -Wl,-Map=$(TARGET).map
 
 # Get GCC major version in a shell-agnostic way
