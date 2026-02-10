@@ -12,21 +12,30 @@ RAM_SIZE_KB=0
 EXT_ORIGIN=""
 EXT_SIZE_KB=0
 
+# Use colors if stderr is a terminal
+if [ -t 2 ]; then
+    RED='\033[41m'
+    RESET='\033[0m'
+else
+    RED=''
+    RESET=''
+fi
+
 unknown_mcu() {
-    echo "Unknown MCU: ${TARGET_MCU_PACKAGE%${MCU_REMAINING}}\033[41m${MCU_REMAINING}\033[0m" 1>&2
+    printf "Unknown MCU: %s%b%s%b\n" "${TARGET_MCU_PACKAGE%"${MCU_REMAINING}"}" "$RED" "$MCU_REMAINING" "$RESET" 1>&2
     exit 1
 }
 
 advance() {
     i=$1
-    while [ $i -gt 0 ]; do
+    while [ "$i" -gt 0 ]; do
         MCU_REMAINING=${MCU_REMAINING#?}
-        i=$(($i-1))
+        i=$((i-1))
     done
 }
 
 set_target_mcu() {
-    TARGET_MCU="${TARGET_MCU_PACKAGE%${MCU_REMAINING}}"
+    TARGET_MCU="${TARGET_MCU_PACKAGE%"${MCU_REMAINING}"}"
 }
 
 case $TARGET_MCU_PACKAGE in
@@ -78,14 +87,14 @@ case $TARGET_MCU_PACKAGE in
         advance 2
         set_target_mcu
         ;;
-    CH32X03[35][CFGR][678]*)
+    CH32X03[35]*)
         DEFINES="CH32X03x"
         FLASH_SIZE_KB=62
         RAM_SIZE_KB=20
         advance 8
         set_target_mcu
         ;;
-    CH32L103[CFGK]8*)
+    CH32L103*)
         DEFINES="CH32L103"
         FLASH_SIZE_KB=62
         RAM_SIZE_KB=20
@@ -153,6 +162,7 @@ case $TARGET_MCU_PACKAGE in
         esac
         advance 1
         set_target_mcu
+        advance 1
         case ${MCU_REMAINING} in
             C*)
                 case $MEMORY_SPLIT in
@@ -173,7 +183,7 @@ case $TARGET_MCU_PACKAGE in
                         RAM_SIZE_KB=32
                         ;;
                     *)
-                        echo "Unknown memory split: \033[41m${MEMORY_SPLIT}\033[0m" 1>&2
+                        printf "Unknown memory split: %s%b%s%b\n" "$MEMORY_SPLIT" "$RED" "$MEMORY_SPLIT" "$RESET" 1>&2
                         exit 1
                         ;;
                 esac
@@ -312,13 +322,13 @@ case $ARCH in
         ;;
 esac
 
-echo "TARGET_MCU=${TARGET_MCU}"
-echo "ARCH=${ARCH}"
-echo "ABI=${ABI}"
-echo "DEFINES=${DEFINES}"
-echo "FLASH_SIZE_KB=${FLASH_SIZE_KB}"
-echo "RAM_SIZE_KB=${RAM_SIZE_KB}"
-if [ -n "${EXT_ORIGIN}" ]; then
-    echo "EXT_ORIGIN=${EXT_ORIGIN}"
-    echo "EXT_SIZE_KB=${EXT_SIZE_KB}"
+printf "TARGET_MCU=%s\n" "$TARGET_MCU"
+printf "ARCH=%s\n" "$ARCH"
+printf "ABI=%s\n" "$ABI"
+printf "DEFINES=%s\n" "$DEFINES"
+printf "FLASH_SIZE_KB=%s\n" "$FLASH_SIZE_KB"
+printf "RAM_SIZE_KB=%s\n" "$RAM_SIZE_KB"
+if [ -n "$EXT_ORIGIN" ]; then
+    printf "EXT_ORIGIN=%s\n" "$EXT_ORIGIN"
+    printf "EXT_SIZE_KB=%s\n" "$EXT_SIZE_KB"
 fi
