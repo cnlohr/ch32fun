@@ -90,8 +90,12 @@ ifeq ($(IS_CH5XX),1)
 	$(MINICHLINK)/minichlink -E
 endif
 
-
-LDFLAGS+=-lgcc
+ifneq ($(filter CH32V00%, $(TARGET_MCU)),)
+	# CH32V00x needs a special version of libgcc.a
+	LDFLAGS+=-L$(CH32FUN)/../misc -lgcc
+else
+	LDFLAGS+=-lgcc
+endif
 GENERATED_LD_FILE:=$(CH32FUN)/generated_$(TARGET_MCU_PACKAGE)_$(TARGET_MCU_MEMORY_SPLIT).ld
 LINKER_SCRIPT?=$(GENERATED_LD_FILE)
 
