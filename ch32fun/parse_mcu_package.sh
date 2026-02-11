@@ -110,7 +110,7 @@ case $TARGET_MCU_PACKAGE in
         advance 8
         set_target_mcu
         ;;
-    CH32V20?[CFGKRW]*)
+    CH32V20*)
         DEFINES="CH32V20x"
         advance 7
         case ${MCU_REMAINING} in
@@ -155,7 +155,7 @@ case $TARGET_MCU_PACKAGE in
                 ;;
         esac
         ;;
-    CH32V30?[CFRVW]*)
+    CH32V30*)
         ARCH="rv32imafc"
         DEFINES="CH32V30x"
         advance 7

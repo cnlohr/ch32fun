@@ -8,7 +8,7 @@ chip_name = str(board.get("build.mcu", "")).lower()
 # retrieve needed macro values using the helper script
 config_vars = env.Execute(" ".join([
     "sh",
-    join("ch32fun", "ch32fun", "parse_mcu_package.sh"),
+    join("ch32fun", "parse_mcu_package.sh"),
     chip_name
 ])).strip().splitlines()
 config_dict = dict(var.split("=", 1) for var in config_vars)
