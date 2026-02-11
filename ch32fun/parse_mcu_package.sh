@@ -251,10 +251,10 @@ case $TARGET_MCU_PACKAGE in
                         DEFINES="${DEFINES} CH584_CH585"
                         case ${MCU_REMAINING} in
                             4*)
-                                FLASH_SIZE_KB=96
+                                RAM_SIZE_KB=96
                                 ;;
                             5*)
-                                FLASH_SIZE_KB=128
+                                RAM_SIZE_KB=128
                                 ;;
                         esac
                         ;;
