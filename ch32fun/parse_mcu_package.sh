@@ -1,7 +1,7 @@
 #!/bin/sh
 TARGET_MCU_PACKAGE=${1:-empty}
 TARGET_MCU=""
-MEMORY_SPLIT=${2:-empty}
+MEMORY_SPLIT=$2
 ENABLE_FPU=$3
 MCU_REMAINING=${TARGET_MCU_PACKAGE}
 DEFINES=""
@@ -177,10 +177,6 @@ case $TARGET_MCU_PACKAGE in
         case ${MCU_REMAINING} in
             C*)
                 case $MEMORY_SPLIT in
-                    0)
-                        FLASH_SIZE_KB=192
-                        RAM_SIZE_KB=128
-                        ;;
                     1)
                         FLASH_SIZE_KB=224
                         RAM_SIZE_KB=96
@@ -194,8 +190,8 @@ case $TARGET_MCU_PACKAGE in
                         RAM_SIZE_KB=32
                         ;;
                     *)
-                        printf "Unknown memory split: %s%b%s%b\n" "$MEMORY_SPLIT" "$RED" "$MEMORY_SPLIT" "$RESET" 1>&2
-                        exit 1
+                        FLASH_SIZE_KB=192
+                        RAM_SIZE_KB=128
                         ;;
                 esac
                 ;;
