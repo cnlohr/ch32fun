@@ -1,16 +1,17 @@
 from os.path import join
 import sys
+from subprocess import check_output
 Import("env")
 
 # Retrieve MCU name from selected board info
 board = env.BoardConfig()
 chip_name = str(board.get("build.mcu", "")).lower()
 # retrieve needed macro values using the helper script
-config_vars = env.Execute(" ".join([
+config_vars = check_output([
     "sh",
     join("ch32fun", "parse_mcu_package.sh"),
-    chip_name
-])).strip().splitlines()
+    chip_name.upper()
+], text=True).strip().splitlines()
 config_dict = dict(var.split("=", 1) for var in config_vars)
 
 defines_list = [
