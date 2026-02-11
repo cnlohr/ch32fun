@@ -32,8 +32,6 @@ CH32FUN?=$(dir $(lastword $(MAKEFILE_LIST)))
 #TARGET_MCU?=CH32V003 # Because we are now opening up to more processors, don't assume this.
 
 TARGET_EXT?=c
-
-CH32FUN?=$(dir $(lastword $(MAKEFILE_LIST)))
 MINICHLINK?=$(CH32FUN)/../minichlink
 
 WRITE_SECTION?=flash
@@ -55,12 +53,13 @@ GCCVERSION13 := $(if $(filter 1 2 3 4 5 6 7 8 9 10 11 12,$(GCCMAJOR)),0,1)
 TARGET_MCU_PACKAGE?=$(TARGET_MCU)
 TARGET_MCU_MEMORY_SPLIT?=3
 ENABLE_FPU?=1
-	
-_:= $(shell sh $(CH32FUN)/parse_mcu_package.sh $(TARGET_MCU_PACKAGE) $(TARGET_MCU_MEMORY_SPLIT) $(ENABLE_FPU) > $(CH32FUN)/generated_config.mk)
+
+CONFIG_MK:=$(CH32FUN)/generated_$(TARGET).mk # Use the TARGET as part of the filename in case multiple targets are built in parallel
+_:= $(shell sh $(CH32FUN)/parse_mcu_package.sh $(TARGET_MCU_PACKAGE) $(TARGET_MCU_MEMORY_SPLIT) $(ENABLE_FPU) > $(CONFIG_MK))
 ifneq ($(.SHELLSTATUS),0)
 $(error "Configuration script failed with exit code $(.SHELLSTATUS). Please check the error message above.")
 endif
-include $(CH32FUN)/generated_config.mk
+include $(CONFIG_MK)
 
 CFLAGS_CONFIG:=-D$(TARGET_MCU)=1 -DFLASH_SIZE_KB=$(FLASH_SIZE_KB) -DRAM_SIZE_KB=$(RAM_SIZE_KB)
 ifneq ($(EXT_ORIGIN),)
