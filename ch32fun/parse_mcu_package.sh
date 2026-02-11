@@ -38,6 +38,14 @@ set_target_mcu() {
     TARGET_MCU="${TARGET_MCU_PACKAGE%"${MCU_REMAINING}"}"
 }
 
+default_package() {
+    case $MCU_REMAINING in
+        '')
+            MCU_REMAINING="$1"
+            ;;
+    esac
+}
+
 case $TARGET_MCU_PACKAGE in
     CH32V00*)
         DEFINES="CH32V00x"
@@ -71,6 +79,8 @@ case $TARGET_MCU_PACKAGE in
     CH32V10*)
         DEFINES="CH32V10x"
         advance 8
+        set_target_mcu
+        default_package "R8T6"
         case ${MCU_REMAINING} in
             [RC]8*)
                 FLASH_SIZE_KB=64
@@ -85,7 +95,6 @@ case $TARGET_MCU_PACKAGE in
                 ;;
         esac
         advance 2
-        set_target_mcu
         ;;
     CH32X03[35]*)
         DEFINES="CH32X03x"
@@ -120,6 +129,7 @@ case $TARGET_MCU_PACKAGE in
         esac
         advance 1
         set_target_mcu
+        default_package "F6P6"
         advance 1
         case ${MCU_REMAINING} in
             6*)
@@ -162,6 +172,7 @@ case $TARGET_MCU_PACKAGE in
         esac
         advance 1
         set_target_mcu
+        default_package "VCT6"
         advance 1
         case ${MCU_REMAINING} in
             C*)
@@ -276,7 +287,7 @@ case $TARGET_MCU_PACKAGE in
         set_target_mcu
         ;;
     CH32H41*)
-        DEFINES="CH32H4x HAS_COUPLED_RAM"
+        DEFINES="CH32H41x HAS_COUPLED_RAM"
         ARCH="rv32imafc"
         RAM_SIZE_KB=512
         advance 7
