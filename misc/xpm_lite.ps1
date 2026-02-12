@@ -86,7 +86,7 @@ $cyan = "$([char]0x1b)[36m"
 $reset = "$([char]0x1b)[0m"
 
 $platform = Get-Platform
-Write-Host "🖥️ Using platform $cyan$platform$reset"
+Write-Host "➤ Using platform $cyan$platform$reset"
 
 $archive = "tar.gz"
 if ($platform -like 'win*') {
@@ -95,7 +95,7 @@ if ($platform -like 'win*') {
 
 $packageCount = $Xpacks.Count
 $installPath = Get-InstallPath
-Write-Host "📁 Installing $cyan$packageCount$reset packages to $cyan$installPath$reset"
+Write-Host "➤ Installing $cyan$packageCount$reset packages to $cyan$installPath$reset"
 if (-not (Prompt-YesNo "Is this correct?")) {
     Write-Host "Installation cancelled."
     exit
@@ -108,30 +108,30 @@ foreach ($xpack in $Xpacks.GetEnumerator()) {
     $fullName = $xpack.Key
     $version = $xpack.Value
     $name = $fullName.Split('/')[-1]
-    Write-Host "🚀 Installing $cyan$name$reset version $cyan$version$reset"
+    Write-Host "➤ Installing $cyan$name$reset version $cyan$version$reset"
     $filename = "$name-$version-$platform.$archive"
     $downloadUrl = "https://github.com/$($fullName -replace '^@', '')-xpack/releases/download/v$version/xpack-$filename"
     $downloadPath = Join-Path $tempFolder $filename
-    Write-Host "📥 Downloading from $cyan$downloadUrl$reset..."
+    Write-Host "➤ Downloading from $cyan$downloadUrl$reset..."
     try {
         Invoke-WebRequest -Uri $downloadUrl -OutFile $downloadPath
     } catch {
-        Write-Host "❌ Failed to download: $_"
+        Write-Host "✘ Failed to download: $_"
         continue
     }
-    Write-Host "📂 Extracting archive..."
+    Write-Host "➤ Extracting archive..."
     if ($archive -eq 'zip') {
         Expand-Archive -Path $downloadPath -DestinationPath $installPath -Force
     } else {
         MkDir $installPath
         tar -xzf $downloadPath -C $installPath
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "❌ Failed to extract archive"
+            Write-Host "✘ Failed to extract archive"
             continue
         }
     }
     # Remove the top-level folder created by the archive, if it exists
-    Write-Host "🧹 Cleaning up extracted files..."
+    Write-Host "➤ Cleaning up extracted files..."
     $extractedFolder = Join-Path $installPath "xpack-$name-$version"
     if (Test-Path $extractedFolder) {
         Get-ChildItem -Path $extractedFolder -Recurse -File | Move-Item -Destination {
@@ -141,7 +141,7 @@ foreach ($xpack in $Xpacks.GetEnumerator()) {
         } -Force
         Remove-Item -Path $extractedFolder -Recurse -Force
     }
-    Write-Host "✅ Install completed"
+    Write-Host "✔ Install completed"
 }
 $ProgressPreference = 'Continue'
 
@@ -150,12 +150,12 @@ $target = if (Get-IsAdmin) { [EnvironmentVariableTarget]::Machine } else { [Envi
 $systemPath = [Environment]::GetEnvironmentVariable('PATH', $target)
 if (-not ($systemPath -split ';' | Where-Object { $_ -eq $binPath })) {
     if (Prompt-YesNo "Do you want to add $binPath to your PATH environment variable? This will allow you to run the installed tools from any terminal.") {
-        Write-Host "🔧 Adding $cyan$binPath$reset to PATH"
+        Write-Host "➤ Adding $cyan$binPath$reset to PATH"
         [Environment]::SetEnvironmentVariable('PATH', "$systemPath;$binPath", $target)
         $env:PATH = "$env:PATH;$binPath"
-        Write-Host "✅ PATH updated!"
+        Write-Host "✔ PATH updated!"
     }
 } else {
-    Write-Host "🔍 $cyan$binPath$reset is already in PATH, skipping."
+    Write-Host "➤ $cyan$binPath$reset is already in PATH, skipping."
 }
-Write-Host "🎉 All done!"
+Write-Host "✔ All done!"
