@@ -127,7 +127,7 @@ void TIM2_Init()
 	TIM2->PSC = FUNCONF_SYSTEM_CORE_CLOCK / 100000 - 1;
 	
 	// The goal is to generate a waves with 300ms period.
-	// 0.3 / DAC_BUF_SIZE / 1e-6 = 146.4 ticks
+	// 0.3 / DAC_BUF_SIZE / 10e-6 = 14.6 ticks
 	TIM2->ATRLR = 15-1;
 	
 	// Reload immediately
