@@ -5,8 +5,8 @@
 #include "ch32fun.h"
 
 #define FUSB_CONFIG_EPS       3 // Include EP0 in this count
-#define FUSB_EP1_MODE         1 // TX (OUT)
-#define FUSB_EP2_MODE         -1 // RX (IN)
+#define FUSB_EP1_MODE         1 // TX (IN)
+#define FUSB_EP2_MODE         -1 // RX (OUT)
 #define USB_EP_TX             1
 #define USB_EP_RX             2
 #define FUSB_SUPPORTS_SLEEP   0

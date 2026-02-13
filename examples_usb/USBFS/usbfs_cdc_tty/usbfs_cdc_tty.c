@@ -4,12 +4,11 @@
 #include "fsusb.h"
 
 #ifdef CH570_CH572
-#define PIN_LED    PA9
-#define PIN_BUTTON PA1
-#define BUTTON_PRESSED funDigitalRead( PIN_BUTTON )
+#define PIN_LED        PA9
+#define BUTTON_PRESSED 0
 #else
-#define PIN_LED    PA8
-#define PIN_BUTTON PB22
+#define PIN_LED        PA8
+#define PIN_BUTTON     PB22
 #define BUTTON_PRESSED !funDigitalRead( PIN_BUTTON )
 #endif
 
@@ -64,7 +63,9 @@ int main()
 	funGpioInitAll();
 
 	funPinMode( PIN_LED,    GPIO_CFGLR_OUT_10Mhz_PP ); // Set PIN_LED to output
+#ifndef CH570_CH572
 	funPinMode( PIN_BUTTON, GPIO_CFGLR_IN_PUPD ); // Set PIN_BUTTON to input
+#endif
 
 	USBFSSetup();
 	blink(1);
