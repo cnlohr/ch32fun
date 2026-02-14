@@ -2005,6 +2005,13 @@ void SystemInit( void )
 	#define CLK_SOURCE_CH5XX CLK_SOURCE_PLL_60MHz
 #endif
 #if (defined(CH570_CH572) || defined(CH584_CH585))
+#if (defined(CH584_CH585) && (CLK_SOURCE_CH5XX==CLK_SOURCE_PLL_60MHz))
+#warning "The ch584/5 does not support an exact 60MHz setting. Please pick an availabe clock source from the SYS_CLKTypeDef struct in ch5xxhw.h"
+#warning "Choosing CLK_SOURCE_HSI_PLL_62_4MHz for now"
+#define CLK_SOURCE_CH5XX CLK_SOURCE_HSI_PLL_62_4MHz
+#undef FUNCONF_SYSTEM_CORE_CLOCK
+#define FUNCONF_SYSTEM_CORE_CLOCK 62400000
+#endif
 	SYS_CLKTypeDef sc = CLK_SOURCE_CH5XX;
 	
 	if(sc == RB_CLK_SYS_MOD)  // LSI
@@ -2015,6 +2022,7 @@ void SystemInit( void )
 	}
 	else
 	{
+#if defined(CH570_CH572)
 		if((sc & RB_CLK_SYS_MOD) == 0x40) // PLL div
 		{
 			SYS_SAFE_ACCESS(
@@ -2029,6 +2037,56 @@ void SystemInit( void )
 				R8_FLASH_CFG = (sc & 0x1F) ? 0x02 : 0x07;
 			);
 		}
+#else
+		if( sc & 0x100) // PLL
+		{
+			if( (sc&0x1F) == 0 ) // HSI@16MHz, HSE@32MHz
+			{
+				SYS_SAFE_ACCESS(
+					R8_FLASH_SCK = R8_FLASH_SCK|(1<<4);
+					R8_FLASH_CFG = 0x07;
+				);
+			}
+			else if( (sc&0x1F) < 10 ) // HSI/HSE+PLL>=39MHz
+			{
+				SYS_SAFE_ACCESS(
+					R8_FLASH_SCK = R8_FLASH_SCK & (~(1<<4));
+					R8_FLASH_CFG = 0x01; // Probably a divider value for flash clock
+				);
+			}
+			else if( (sc&0x1F) < 16 ) // HSI/HSE+PLL>19.5MHz
+			{
+				SYS_SAFE_ACCESS(
+					R8_FLASH_SCK = R8_FLASH_SCK & (~(1<<4));
+					R8_FLASH_CFG = 0x02;
+				);
+			}
+			else // HSI/HSE+PLL<=19.5MHz
+			{
+				SYS_SAFE_ACCESS(
+					R8_FLASH_SCK = R8_FLASH_SCK|(1<<4);
+					R8_FLASH_CFG = 0x03;
+				);
+			}
+		}
+		else
+		{
+				if( (sc&0x1F) < 8 ) //HSI>=4MHz, HSE>=6.4Mhz
+				{
+					SYS_SAFE_ACCESS(
+						R8_FLASH_SCK = R8_FLASH_SCK & (~(1<<4));
+						R8_FLASH_CFG = 0x51;
+					);
+				}
+				else // HSI=2MHz,1MHz, HSE=4Mhz,2Mhz
+				{
+					SYS_SAFE_ACCESS(
+						R8_FLASH_SCK = R8_FLASH_SCK & (~(1<<4));
+						R8_FLASH_CFG = 0x57;
+					);
+				}
+		}
+#endif
 		SYS_SAFE_ACCESS(
 #ifdef CH570_CH572
 			R8_CLK_SYS_CFG = sc;

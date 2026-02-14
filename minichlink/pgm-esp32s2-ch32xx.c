@@ -174,7 +174,7 @@ int ESPReadBinaryBlob( void * dev, uint32_t address_to_read_from, uint32_t read_
 	uint32_t address_to_read_from_2 = address_to_read_from;
 	uint8_t * blob_2 = blob;
 	int r = 0;
-	
+
 	if( read_size == 0 )
 	{
 		return 0;
@@ -598,19 +598,25 @@ int ESPPollTerminal( void * dev, uint8_t * buffer, int maxlen, uint32_t leavefla
 	return rlen - 1;
 }
 
+extern void ch570_disable_read_protection( void * dev );
 void esp_ch570_disable_read_protection( void * dev )
 {
 	struct ESP32ProgrammerStruct * eps = (struct ESP32ProgrammerStruct *)dev;
+
+	if( !(eps->capabilities & HAS_CH5xx_UNLOCK) ) return ch570_disable_read_protection( dev );
+
 	ESPFlushLLCommands( eps );
 	Write2LE( eps, 0x27fe );
 	ESPFlushLLCommands( eps );
-	return;
 }
 
+extern int ch5xx_read_eeprom(void * dev, uint32_t addr, uint8_t* buffer, uint32_t len);
 int esp_ch5xx_read_eeprom( void * dev, uint32_t addr, uint8_t* buffer, uint8_t len )
 {
 	struct ESP32ProgrammerStruct * eps = (struct ESP32ProgrammerStruct *)dev;
-	
+
+	if( !(eps->capabilities & HAS_CH5xx_EEPROM) ) return ch5xx_read_eeprom( dev, addr, buffer, len );
+
 	if( len == 0 )
 	{
 		return 0;
@@ -647,10 +653,13 @@ int esp_ch5xx_read_eeprom( void * dev, uint32_t addr, uint8_t* buffer, uint8_t l
 	return 0;
 }
 
+extern int ch5xx_read_options_bulk( void * dev, uint32_t addr, uint8_t* buffer, uint32_t len );
 int esp_ch5xx_read_options_bulk( void * dev, uint32_t addr, uint8_t* buffer, uint32_t len )
 {
 	struct ESP32ProgrammerStruct * eps = (struct ESP32ProgrammerStruct *)dev;
-	
+
+	if( !(eps->capabilities & HAS_CH5xx_OPTIONS) ) return ch5xx_read_options_bulk( dev, addr, buffer, len );
+
 	if( len == 0 )
 	{
 		return 0;
@@ -797,7 +806,6 @@ int ESPCH5xxErase( void * dev, uint32_t addr, uint32_t len, int type )
 	struct ESP32ProgrammerStruct * eps = (struct ESP32ProgrammerStruct *)dev;
 	
 	enum MemoryArea area = DEFAULT_AREA;
-	fprintf( stderr, "Erasing\n" );
 	if( type == 1 )
 	{
 		printf("Whole-chip erase\n");
@@ -1025,6 +1033,7 @@ int ESPCH5xxReadBinaryBlob( void * dev, uint32_t address_to_read_from, uint32_t 
 		ret = -1;
 		goto end;
 	}
+	MCF.SetClock(dev, 0);
 	if (iss->current_area == OPTIONS_AREA) {
 		if( eps->capabilities & HAS_CH5xx_OPTIONS )
 			ret = esp_ch5xx_read_options_bulk(dev, address_to_read_from, blob, read_size);
@@ -1435,9 +1444,18 @@ int ESPDetermineChipType( void * dev )
 			}
 			if( iss->target_chip->protocol == PROTOCOL_CH5xx )
 			{
-				MCF.WriteBinaryBlob = ESPCH5xxWriteBinaryBlob;
-				MCF.Erase = ESPCH5xxErase;
-				MCF.ReadBinaryBlob = ESPCH5xxReadBinaryBlob;
+				if( eps->capabilities & HAS_CH5xx_SUPPORT )
+				{
+					MCF.WriteBinaryBlob = ESPCH5xxWriteBinaryBlob;
+					MCF.Erase = ESPCH5xxErase;
+					MCF.ReadBinaryBlob = ESPCH5xxReadBinaryBlob;
+				}
+				else
+				{
+					MCF.WriteBinaryBlob = CH5xxWriteBinaryBlob;
+					MCF.Erase = CH5xxErase;
+					MCF.ReadBinaryBlob = CH5xxReadBinaryBlob;
+				}
 				MCF.ConfigureNRSTAsGPIO = CH5xxConfigureNRSTAsGPIO;
 			}
 
@@ -1563,7 +1581,8 @@ void * TryInit_ESP32S2CHFUN()
 		eps->commandbuffersize = 264;
 		eps->replybuffersize = 264;
 		MCF.DetermineChipType = ESPDetermineChipType;
-		MCF.SetClock = ESPSetClock;
+		// MCF.SetClock = ESPSetClock;
+		MCF.SetClock = CH5xxSetClock; // Temporary fallback to generic function, untill we update the programmer firmware
 	}
 	else
 	{

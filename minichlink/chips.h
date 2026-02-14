@@ -17,7 +17,7 @@ struct RiscVChip_s {
 	uint32_t eeprom_size; // EEPROM size
 	uint32_t ram_base; // A few old chips have weird RAM offset, the rest have 0x20000000
 	uint32_t ram_size; // RAM size in bytes
-	uint8_t interface_speed; // WCH-LinkE has 3 speed settings for SWD communcation 6MHz, 4MHz and 400KHz. Some chips can't handle the highest speed
+	uint8_t interface_speed; // WCH-LinkE has 3 speed settings for SWD communication 6MHz, 4MHz and 400KHz. Some chips can't handle the highest speed
 	enum ProgProtocol protocol;	// Currently there are 2 distinct flashing protocols one is for CH32 chips and the other is for CH5xx chips
 	uint8_t no_autoexec; // Some chips seem to lack autoexec functionality in DM (3.12.8 in RISC-V External Debug Support manual)
 	uint16_t isp_id_mask; // ID to detect model of the chip using ISP bootloader

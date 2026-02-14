@@ -375,7 +375,6 @@ typedef enum
 
 	CLK_SOURCE_HSE_PLL_78MHz = (0x300 | 0x40 | 4), // RTC does not work at this speed, so low power sleep also not!
 	CLK_SOURCE_HSE_PLL_62_4MHz = (0x300 | 0x40 | 5),
-	#define CLK_SOURCE_PLL_60MHz "The ch584/5 does not support an exact 60MHz setting. Please pick an availabe clock source from the SYS_CLKTypeDef struct in ch5xxhw.h"
 	CLK_SOURCE_HSE_PLL_52MHz = (0x300 | 0x40 | 6),
 	CLK_SOURCE_HSE_PLL_39MHz = (0x300 | 0x40 | 8),
 	CLK_SOURCE_HSE_PLL_26MHz = (0x300 | 0x40 | 12),

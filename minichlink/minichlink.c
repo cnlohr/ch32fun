@@ -752,8 +752,6 @@ keep_going:
 			}
 			case 'r':
 			{
-				if( MCF.HaltMode ) MCF.HaltMode( dev, HALT_MODE_HALT_BUT_NO_RESET ); //No need to reboot.
-
 				if( argchar[2] != 0 )
 				{
 					fprintf( stderr, "Error: can't have char after paramter field\n" ); 
@@ -786,7 +784,15 @@ keep_going:
 						fprintf( stderr, "Error: memory address is out of range\n" );
 						return -9;
 					}
-					
+				}
+
+				if( iss->target_chip_type != CHIP_CH570 || iss->current_area == RAM_AREA )
+				{
+					if( MCF.HaltMode ) MCF.HaltMode( dev, HALT_MODE_HALT_BUT_NO_RESET ); //No need to reboot.
+				}
+				else
+				{
+					if( MCF.HaltMode ) MCF.HaltMode( dev, HALT_MODE_HALT_AND_RESET ); //Need to reboot.
 				}
 
 				FILE * f = 0;
@@ -925,7 +931,7 @@ keep_going:
 				}
 				if( !CheckMemoryLocation( dev, DEFAULT_AREA, offset, len ) )
 				{
-					fprintf( stderr, "Error: binary doesn't fit into this memory area" );
+					fprintf( stderr, "Error: binary doesn't fit into this memory area\n" );
 					exit( -44 );
 				}
 				if( status != 1 )
@@ -1529,26 +1535,31 @@ static int DefaultDetermineChipType( void * dev )
 			{
 				iss->target_chip = &ch32v002;
 				chip_id_address = 0x1ffff704;
+				flash_size_address = 0;
 			}
 			else if( masked_id == 0x00400000 )
 			{
 				iss->target_chip = &ch32v004;
 				chip_id_address = 0x1ffff704;
+				flash_size_address = 0;
 			}
 			else if( masked_id == 0x00500000 )
 			{
 				iss->target_chip = &ch32v005;
 				chip_id_address = 0x1ffff704;
+				flash_size_address = 0;
 			}
 			else if( masked_id == 0x00600000 )
 			{
 				iss->target_chip = &ch32v006;
 				chip_id_address = 0x1ffff704;
+				flash_size_address = 0;
 			}
 			else if( masked_id == 0x00700000 )
 			{
 				iss->target_chip = &ch32v007;
 				chip_id_address = 0x1ffff704;
+				flash_size_address = 0;
 			}
 			else if( (masked_id & 0xff000000) == 0x41000000 )
 			{

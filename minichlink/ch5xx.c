@@ -60,20 +60,22 @@ int CH5xxSetClock(void * dev, uint32_t clock) {
 			if ((rr&0xfff) != 0x14d) {
 				ch5xx_write_safe(dev, 0x4000100A, 0x16, 0);
 				ch5xx_write_safe(dev, 0x40001008, 0x14d, 1);
+				// ch5xx_write_safe(dev, 0x40001807, 2, 0); // Flash CFG
 			} else {
 				return 0;
 			}
 			break;
 
 		case CHIP_CH570:
-			iss->clock_set = 75000;
-			if ((rr&0xff) != 0x48) {
+			iss->clock_set = 20000;
+			if ((rr&0xff) != 0x5e) {
 				ch5xx_write_safe(dev, 0x4000100A, 0x14, 0); // Enable PLL
 				// Set flash clock (undocumented)
-				ch5xx_write_safe(dev, 0x40001805, 8, 0); // Flash SCK
-				ch5xx_write_safe(dev, 0x40001807, 1, 0); // Flash CFG
+				// ch5xx_write_safe(dev, 0x40001805, 8, 0); // Flash SCK
+				// ch5xx_write_safe(dev, 0x40001807, 1, 0); // Flash CFG
 				//Set core clock
-				ch5xx_write_safe(dev, 0x40001008, 0x48, 0); // 75MHz
+				ch5xx_write_safe(dev, 0x40001008, 0x5e, 0); // 20MHz
+				// ch5xx_write_safe(dev, 0x40001008, 0x48, 0); // 75MHz
 				// Disable watchdog
 				MCF.WriteWord(dev, 0x40001000, 0x5555);
 				MCF.WriteWord(dev, 0x40001004, 0x7fff);
@@ -1062,7 +1064,8 @@ int CH5xxWriteBinaryBlob(void * dev, uint32_t address_to_write, uint32_t blob_si
 				ret = -2;
 				goto end;
 			} else {
-				write_function = &ch5xx_write_flash;
+				// It was ch5xx_write_`flash before, but it produced holes on ch570
+				write_function = &ch5xx_write_flash_using_microblob2;
 			}
 		} else {
 			if (!iss->debugger) write_function = &ch5xx_write_flash_using_microblob2;
