@@ -1,6 +1,6 @@
 name: Build CI
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
   build-all:
@@ -34,7 +34,8 @@ jobs:
       - name: Install xPack GCC + Make
         shell: pwsh
         run: |
-          ./misc/install_xpack_gcc.ps1 -SkipPrompts
+          cat ./misc/xpacks.json -Raw | ./misc/xpm_lite.ps1 -SkipPrompts
+          Add-Content -Path $env:GITHUB_ENV -Value "PATH=$env:PATH"
       - name: Build all examples
         shell: cmd
         run: |
