@@ -58,6 +58,10 @@
 #define __HIGH_CODE
 #endif
 
+#define LL_RX              0x01
+#define LL_TX              0x02
+#define LL_STOP            0x08
+
 // common fields
 #define CTRL_CFG           BB0
 #define CRCINIT1           BB1
@@ -98,7 +102,6 @@
 #define CTRL_TX            BB11
 #define RSSI               BB12 // ? couldn't find it, not sure
 #define TMR                LL24
-#define TXBUF              LL28
 #define RXBUF              LL29
 #define RFEND_TXCTUNE_INIT 0x180000
 #define CTRL_MOD_RFSTOP    0xfffffff8
@@ -348,6 +351,7 @@ uint8_t channel_map[] = {1,2,3,4,5,6,7,8,9,10,12,13,14,15,16,17,18,19,20,21,22,2
 #define PHY_S8 8
 
 void DevSetMode(uint16_t mode);
+void iSLERStop();
 __attribute__((aligned(4))) uint32_t LLE_BUF[0x110];
 #ifdef CH571_CH573
 __attribute__((aligned(4))) uint32_t LLE_BUF2[0x110];
@@ -362,7 +366,6 @@ volatile uint32_t rx_ready;
 #ifdef CH571_CH573
 __attribute__((interrupt))
 void BB_IRQHandler() {
-	// printf("BB\n");
 	if(BB->BB14 & (1<<6)) {
 		BB->BB14 &= 0xffffff9f;
 	}
@@ -379,69 +382,31 @@ void BB_IRQHandler() {
 
 __attribute__((interrupt))
 void LLE_IRQHandler() {
-	int rx_flag = 0;
+	uint32_t status = LL->STATUS;
 #ifdef CH571_CH573
-	if(LL->STATUS & (1<<9)) {
+	if(status & (1<<9)) {
 		LL->TMR = 400;
 		BB->CTRL_TX = (BB->CTRL_TX & 0xfffffffc) | 2;
 		BB->CTRL_CFG |= 0x10000000;
-		rx_flag = 1; // XXX TODO: Figure out which bit is the RX bit.
+		status |= 1; // XXX TODO: Figure out which bit is the RX bit.
 	}
 	LL->STATUS = 0;
-#elif defined(CH582_CH583)
-	if((LL->STATUS & (1<<14)) && (LL->INT_EN & (1<<14))) {
-		LL->LL26 = 0xffffffff;
-		LL->STATUS = 0x4000;
-		rx_flag = 1; // XXX TODO: Figure out which bit is the RX bit.
-	}
-	else
-#endif
-	{
-		rx_flag = LL->STATUS & 1;
-		LL->STATUS &= LL->INT_EN;
-		BB->CTRL_TX = (BB->CTRL_TX & 0xfffffffc) | 1;
-	}
-	DevSetMode(0);
-	LL->CTRL_MOD &= CTRL_MOD_RFSTOP;
-	LL->LL0 |= 0x08;
-
-	if( rx_flag )
-	{
-#ifdef ISLER_CALLBACK
-		ISLER_CALLBACK();
 #else
-		rx_ready = 1;
+	LL->STATUS = status; // acknowledge
 #endif
-	}
-}
 
-void RFEND_Reset() {
-#ifdef CH571_CH573
-	RF->RF3 |= 0x1000;
-	ADD_N_NOPS(20);
-	RF->RF3 &= 0xffffefff;
-	ADD_N_NOPS(20);
-	RF->RF3 |= 0x1000;
-	ADD_N_NOPS(20);
-	RF->RF3 |= 1;
-	ADD_N_NOPS(20);
-	RF->RF3 &= 0xfffffffe;
-	ADD_N_NOPS(20);
-	RF->RF3 |= 1;
-	ADD_N_NOPS(20);
-	RF->RF3 |= 0x100;
-	ADD_N_NOPS(20);
-	RF->RF3 &= 0xfffffeff;
-	ADD_N_NOPS(20);
-	RF->RF3 |= 0x100;
-	ADD_N_NOPS(20);
-#elif defined(CH32V208)
-	RF->RF3 = 0x1101;
-	ADD_N_NOPS(20);
-	RF->RF3 = 0;
-	ADD_N_NOPS(20);
-	RF->RF3 = 0x1101;
+	if( (status & LL_RX) || (status & LL_TX) ) {
+		if(!(status & LL_TX)) {
+			BB->CTRL_TX = (BB->CTRL_TX & 0xfffffffc) | 1;
+			iSLERStop();
+
+#ifdef ISLER_CALLBACK
+			ISLER_CALLBACK();
+#else
+			rx_ready = status;
 #endif
+		}
+	}
 }
 
 void DevInit(uint8_t TxPower) {
@@ -456,56 +421,22 @@ void DevInit(uint8_t TxPower) {
 	DMA->DMA3 |= 0x1000;
 	DMA->DMA0 |= 2;
 	DMA->DMA0 |= 0x20;
-
-	LL->LL5 = 0x50;
-	LL->LL7 = 10;
-	LL->LL9 = 0x8c;
-	LL->LL13 = 0x8c;
-	LL->LL17 = 0x50;
-	LL->LL19 = 10;
-#elif defined(CH570_CH572) || defined(CH582_CH583) || defined(CH584_CH585) || defined(CH591_CH592)
-	LL->LL5 = 0x8c;
-	LL->LL7 = 0x76;
-	LL->LL9 = 0x8c;
-	LL->LL13 = 0x8c;
-	LL->LL17 = 0x8c;
-	LL->LL19 = 0x76;
-#elif defined(CH32V208)
-	LL->LL5 = 0x8c;
-	LL->LL7 = 0x6c;
-	LL->LL9 = 0x8c;
-	LL->LL13 = 0x8c;
-	LL->LL17 = 0x8c;
-	LL->LL19 = 0x6c;
 #endif
 
 #ifdef CH570_CH572
-	LL->LL11 = 0x6c;
-	LL->LL15 = 0x6c;
-	LL->LL1 = 0x78;
 	LL->LL21 = 0;
 	LL->INT_EN = 0x16000f;
 #elif defined(CH571_CH573)
-	LL->LL11 = 0x3c;
-	LL->LL15 = 0x3c;
 	LL->LL22 = 0xf6;
 	LL->INT_EN = 0xc303;
 	NVIC->FIBADDRR = 0x20000000;
 	NVIC->VTFADDR[2] = (uint32_t)LLE_IRQHandler -NVIC->FIBADDRR;
 #elif defined(CH582_CH583) || defined(CH32V208)
-	LL->LL11 = 0x3c;
-	LL->LL15 = 0x3c;
 	LL->INT_EN = 0xf00f;
 #elif defined(CH584_CH585)
-	LL->LL11 = 0x6e;
-	LL->LL15 = 0x6e;
-	LL->LL1 &= 0xffffffe1;
 	LL->LL21 = 0;
 	LL->INT_EN = 0x1f000f;
 #elif defined(CH591_CH592)
-	LL->LL6 = 0x78;
-	LL->LL8 = 0xffffffff;
-	LL->LL11 = 0x6e;
 	LL->LL21 = 0x14;
 	LL->INT_EN = 0x1f000f;
 #endif
@@ -515,51 +446,11 @@ void DevInit(uint8_t TxPower) {
 	RF->RF10 = 0x480;
 
 #ifdef CH570_CH572
-	RF->RF12 &= 0xfff9ffff;
-	RF->RF12 |= 0x70000000;
-	RF->RF15 = (RF->RF15 & 0xf8ffffff) | 0x2000000;
-	RF->RF15 = (RF->RF15 & 0x1fffffff) | 0x40000000;
-	RF->RF18 &= 0xfff8ffff;
-	RF->RF20 = (RF->RF20 & 0xfffff8ff) | 0x300;
-	RF->RF23 |= 0x70000;
-	RF->RF23 |= 0x700000;
-
 	BB->BB14 = 0x2020c;
 	BB->BB15 = 0x50;
 	BB->CTRL_TX = (BB->CTRL_TX & 0x1ffffff) | (TxPower | 0x40) << 0x19;
 	BB->CTRL_CFG &= 0xfffffcff;
-#elif defined(CH571_CH573) || defined(CH582_CH583) || defined(CH32V208)
-	RFEND_Reset();
-	RF->RF18 = (RF->RF18 & 0x8fffffff) | 0x20000000;
-	RF->RF18 = (RF->RF18 & 0xf8ffffff) | 0x4000000;
-	RF->RF18 = (RF->RF18 & 0xfffffff0) | 9;
-	RF->RF18 &= 0xfff8ffff;
-	RF->RF18 |= 0x80000000;
-	RF->RF19 = (RF->RF19 & 0xfffffff8) | 3;
-	RF->RF19 = (RF->RF19 & 0xffffff8f) | 0x30;
-	RF->RF19 = (RF->RF19 & 0xfffff8ff) | 0x300;
-	RF->RF19 &= 0xfeffffff;
-	RF->RF19 |= 0x2000000;
-	RF->RF20 = (RF->RF20 & 0xffff0fff) | 0x4000;
-	RF->RF21 = (RF->RF21 & 0xfffffff0) | 0xc;
-	RF->RF21 |= 0x80;
-	RF->RF21 &= 0xffffefff;
-	RF->RF15 = (RF->RF15 & 0xffff0fff) | 0x8000;
-	RF->RF15 = (RF->RF15 & 0xf8ffffff) | 0x2000000;
-	RF->RF15 = (RF->RF15 & 0x1fffffff) | 0x40000000;
-	RF->RF11 |= 0x700000;
-	RF->RF11 &= 0xf8ffffff;
-	RF->RF11 = (RF->RF11 & 0xffffcfff) | 0x2000;
-	RF->RF11 = (RF->RF11 & 0xfffcffff) | 0x20000;
-	RF->RF12 &= 0xfffffff0;
-	RF->RF12 &= 0xffffff0f;
-	RF->RF12 &= 0xfffff8ff;
-	RF->RF12 |= 0x700000;
-	RF->RF12 = (RF->RF12 & 0x8fffffff) | 0x50000000;
-	RF->TXTUNE_CTRL = (RF->TXTUNE_CTRL & 0xff07ffff) | RFEND_TXCTUNE_INIT;
-	RF->TXTUNE_CTRL |= 0x80000000;
-
-#ifdef CH571_CH573
+#elif defined(CH571_CH573)
 	BB->CTRL_CFG = (TxPower << 8) | BB->CTRL_CFG | 0x1008000;
 	BB->CTRL_CFG = (BB->CTRL_CFG & 0xffffc0ff) | (TxPower & 0x3f) << 8;
 	SYS_SAFE_ACCESS(
@@ -570,8 +461,6 @@ void DevInit(uint8_t TxPower) {
 	BB->BB6 |= 0x8000;
 	BB->BB6 = (BB->BB6 & 0xffff807f) | 0x3500;
 	BB->BB13 = 0x152;
-
-	// NVIC->VTFADDR[3] = (uint32_t)BB_IRQHandler +0x14000000; // why 14000000?
 #elif defined(CH582_CH583) || defined(CH32V208)
 	BB->CTRL_CFG |= 0x800000;
 	BB->CTRL_CFG |= 0x10000000;
@@ -579,16 +468,7 @@ void DevInit(uint8_t TxPower) {
 	BB->CTRL_TX = TxPower << 0x19 | CTRL_TX_TXPOWER;
 	BB->CTRL_TX = (BB->CTRL_TX & 0x81ffffff) | (TxPower & 0x3f) << 0x19;
 	BB->BB8 = 0x90083;
-
-	// NVIC->VTFADDR[3] = (uint32_t)BB_IRQHandler +0x20000000; // why 20000000?
-#endif
 #elif defined(CH584_CH585) || defined(CH591_CH592)
-	RF->RF12 = (RF->RF12 & 0x8fffffff) | 0x10077700;
-	RF->RF15 = (RF->RF15 & 0x18ff0fff) | 0x42005000;
-	RF->RF19 &= 0xfffcff88;
-	RF->RF21 = (RF->RF21 & 0xfffffff0) | 9;
-	RF->RF23 &= 0xff88ffff;
-
 	BB->CTRL_CFG |= 0x800000;
 	BB->BB14 = 0x3ff; // ch584/5
 	BB->BB13 = 0x50;
@@ -651,8 +531,6 @@ uint32_t RFEND_TXCTune(uint8_t channel) {
 	uint8_t nCO = (uint8_t)RF->TXCTUNE_CO_CTRL & 0x3f;
 	uint8_t nGA = (uint8_t)(RF->TXCTUNE_GA_CTRL >> 10) & 0x7f;
 
-	// printf("nCO,nGA ch:%u idx:%u %u,%u\n", channel, channel_map[channel], nCO,nGA);
-
 	return (nGA << 24) | nCO;
 }
 
@@ -714,17 +592,6 @@ void RFEND_TXTune() {
 		RF->TXCTUNE_GA[i] = ((uint32_t*)txctune_ga)[i];
 	}
 
-
-#if 0
-	printf("2401 2440 2480 CO: %u %u %u, GA: %u %u %u\n", nCO2401, nCO2440, nCO2480, nGA2401, nGA2440, nGA2480);
-	for(int i = 0; i < 10; i++ ) {
-		printf( "%d: %08lx\n", i, RF->TXCTUNE_CO[i] );
-	}
-	for(int i = 0; i < 3; i++ ) {
-		printf( "%d: %08lx\n", i, RF->TXCTUNE_GA[i] );
-	}
-#endif
-
 	RF->RF1 &= 0xffffffef;
 	RF->RF1 &= 0xfffffffe;
 	RF->RF10 |= 0x1000;
@@ -765,6 +632,15 @@ void RegInit() {
 	DevSetMode(0);
 }
 
+void DevSetChannel(uint8_t channel) {
+#ifdef CH571_CH573
+	BB->BB6 = (BB->BB6 & 0xf8ffffff) | 0x4000000;
+	BB->BB6 = (BB->BB6 & 0xffffff83) | 0x1c;
+#endif
+	RF->RF11 &= 0xfffffffd;
+	BB->CTRL_CFG = (BB->CTRL_CFG & 0xffffff80) | (channel & 0x7f);
+}
+
 void iSLERInit(uint8_t TxPower) {
 #if defined(CH571_CH573) || defined(CH584_CH585) // maybe all?
 	NVIC->IENR[0] = 0x1000;
@@ -776,13 +652,13 @@ void iSLERInit(uint8_t TxPower) {
 	NVIC_EnableIRQ(LLE_IRQn);
 }
 
-void DevSetChannel(uint8_t channel) {
-#ifdef CH571_CH573
-	BB->BB6 = (BB->BB6 & 0xf8ffffff) | 0x4000000;
-	BB->BB6 = (BB->BB6 & 0xffffff83) | 0x1c;
-#endif
-	RF->RF11 &= 0xfffffffd;
-	BB->CTRL_CFG = (BB->CTRL_CFG & 0xffffff80) | (channel & 0x7f);
+__HIGH_CODE
+void iSLERStop() {
+	DevSetMode(0);
+	if(LL->LL0 & (LL_RX | LL_TX)) {
+		LL->CTRL_MOD &= CTRL_MOD_RFSTOP;
+		LL->LL0 |= LL_STOP;
+	}
 }
 
 __HIGH_CODE
@@ -870,23 +746,15 @@ void iSLERTX(uint32_t access_address, uint8_t adv[], size_t len, uint8_t channel
 	BB->CTRL_CFG |= CTRL_CFG_START_TX;
 	BB->CTRL_TX &= 0xfffffffc;
 
-	LL->LL0 = 2; // Not sure what this does, but on RX it's 1
+	LL->LL0 = LL_TX;
 
 	while(LL->TMR); // wait for tx buffer to empty
-	DevSetMode(0);
-	if(LL->LL0 & 3) {
-		LL->CTRL_MOD &= CTRL_MOD_RFSTOP;
-		LL->LL0 |= 0x08;
-	}
+	iSLERStop();
 }
 
 __HIGH_CODE
 void iSLERRX(uint32_t access_address, uint8_t channel, uint8_t phy_mode) {
-	DevSetMode(0);
-	if(LL->LL0 & 3) {
-		LL->CTRL_MOD &= CTRL_MOD_RFSTOP;
-		LL->LL0 |= 0x08;
-	}
+	iSLERStop();
 	LL->TMR = 0;
 
 	DevSetChannel(channel);
@@ -939,7 +807,7 @@ void iSLERRX(uint32_t access_address, uint8_t channel, uint8_t phy_mode) {
 	BB->CRCPOLY2 = (BB->CRCPOLY2 & 0xff000000) | 0x80032d;
 #endif
 
-	LL->LL0 = 1; // Not sure what this does, but on TX it's 2
+	LL->LL0 = LL_RX;
 #ifndef ISLER_CALLBACK
 	rx_ready = 0;
 #endif
