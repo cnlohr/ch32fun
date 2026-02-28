@@ -298,15 +298,18 @@ void ssd1306_drawImage(uint32_t x, uint32_t y, const unsigned char* input, uint3
 			uint32_t input_byte = input[byte + line * bytes_to_draw];
 
 			for (pixel = 0; pixel < 8; pixel++) {
-				x_absolute = x + 8 * (bytes_to_draw - byte) + pixel;
+				x_absolute = x + 8 * byte + pixel;
 				if (x_absolute >= SSD1306_W) {
 					break;
 				}
 				// looking at the horizontal display, we're drawing bytes bottom to top, not left to right, hence y / 8
 				buffer_addr = x_absolute + SSD1306_W * (y_absolute / 8);
 				// state of current pixel
-				uint8_t input_pixel = input_byte & (1 << pixel);
-
+#ifdef SSD1306_BMP_LSB_FIRST
+				uint8_t input_pixel = input_byte & (1 << pixel);  // LSB first
+#else
+				uint8_t input_pixel = input_byte & (0x80 >> pixel); // MSB first (default)
+#endif
 				switch (color_mode) {
 					case 0:
 						// write pixels as they are
