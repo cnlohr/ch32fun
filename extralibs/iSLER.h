@@ -9,7 +9,7 @@
 		iSLERInit(LL_TX_POWER_0_DBM);
 
 		// TX packets
-		iSLERTX(ACCESS_ADDRESS, adv, sizeof(adv), adv_channels[c], PHY_1M);
+		iSLERTX(ACCESS_ADDRESS, txbuf, sizeof(txbuf), adv_channels[c], PHY_1M);
 
 	To receive packets, you can either:
 
@@ -685,38 +685,34 @@ int iSLERCRCOK() {
 }
 
 __HIGH_CODE
-void iSLERTX(uint32_t access_address, uint8_t adv[], size_t len, uint8_t channel, uint8_t phy_mode) {
-	BB->CTRL_TX = (BB->CTRL_TX & 0xfffffffc) | 1;
-
+void iSLERLinkConfig(uint32_t access_address, uint8_t channel, uint8_t phy_mode, uint8_t *txbuf) {
+	// Set channel and tx buffer
 	DevSetChannel(channel);
 
-	// Uncomment to disable whitening to debug RF.
-	//BB->CTRL_CFG |= (1<<6);
-	DevSetMode(DEVSETMODE_TX);
+	if (txbuf != NULL) {
+#if defined(CH571_CH573)
+		DMA->TXBUF = (uint32_t)txbuf;
+#else
+		LL->TXBUF = (uint32_t)txbuf;
+#endif
+	}
 
-	BB->ACCESSADDRESS1 = access_address; // access address
-	BB->CRCINIT1 = 0x555555; // crc init
+	// Set Access Address & CRC
+	BB->ACCESSADDRESS1 = access_address;
+	BB->CRCINIT1 = 0x555555;
 #ifdef CH570_CH572
 	BB->ACCESSADDRESS2 = access_address;
 	BB->CRCINIT2 = 0x555555;
-	BB->CRCPOLY1 = (BB->CRCPOLY1 & 0xff000000) | 0x80032d; // crc poly
+	BB->CRCPOLY1 = (BB->CRCPOLY1 & 0xff000000) | 0x80032d;
 	BB->CRCPOLY2 = (BB->CRCPOLY2 & 0xff000000) | 0x80032d;
 #endif
 
-#if defined(CH571_CH573)
-	DMA->TXBUF = (uint32_t)adv;
-#else
-	LL->TXBUF = (uint32_t)adv;
-#endif
-
-	// Wait for tuning bit to clear.
-	for( int timeout = 3000; !(RF->RF26 & 0x1000000) && timeout >= 0; timeout-- );
-
+	// Set Global PHY Mode (CTRL_CFG)
 #if defined(CH582_CH583) || defined(CH32V208)
 	BB->CTRL_CFG = (phy_mode == PHY_2M) ? CTRL_CFG_PHY_2M:
 				   (phy_mode == PHY_S2) ? CTRL_CFG_PHY_CODED:
 				   (phy_mode == PHY_S8) ? CTRL_CFG_PHY_CODED:
-										  CTRL_CFG_PHY_1M; // default 1M for now
+										  CTRL_CFG_PHY_1M; 
 	if(phy_mode > PHY_2M) { // coded phy
 		BB->CTRL_CFG = (BB->CTRL_CFG & 0xffff3fff) | ((phy_mode == PHY_S2) ? 0x4000 : 0);
 	}
@@ -724,64 +720,15 @@ void iSLERTX(uint32_t access_address, uint8_t adv[], size_t len, uint8_t channel
 	BB->CTRL_CFG = CTRL_CFG_PHY_1M; // no 2M PHY on ch571/3
 #else
 	BB->CTRL_CFG = (phy_mode == PHY_2M) ? CTRL_CFG_PHY_2M:
-										  CTRL_CFG_PHY_1M; // default 1M for now
+										  CTRL_CFG_PHY_1M; 
 #endif
 
-#if defined(CH570_CH572)
-	BB->BB9 = (BB->BB9 & 0xf9ffffff) | ((phy_mode == PHY_2M) ? 0 : 0x2000000);
-#endif
-
-#if defined(CH571_CH573)
-	BB->BB11 = (BB->BB11 & 0xfffffffc); // |2 for RX
-#endif
-
-	// This clears bit 17 (If set, seems to have no impact.)
-	LL->LL4 &= 0xfffdffff;
-
-#if !defined(CH571_CH573)
-	LL->STATUS = LL_STATUS_TX;
-#endif
-	LL->TMR = (uint32_t)(len *512); // needs optimisation, per phy mode
-
-	BB->CTRL_CFG |= CTRL_CFG_START_TX;
-	BB->CTRL_TX &= 0xfffffffc;
-
-	LL->LL0 = LL_TX;
-
-	while(LL->TMR); // wait for tx buffer to empty
-	iSLERStop();
-}
-
-__HIGH_CODE
-void iSLERRX(uint32_t access_address, uint8_t channel, uint8_t phy_mode) {
-	iSLERStop();
-	LL->TMR = 0;
-
-	DevSetChannel(channel);
-	DevSetMode(DEVSETMODE_RX);
-
-#if defined(CH582_CH583) || defined(CH32V208)
-	BB->CTRL_CFG = (phy_mode == PHY_2M) ? CTRL_CFG_PHY_2M:
-				   (phy_mode == PHY_S2) ? CTRL_CFG_PHY_CODED:
-				   (phy_mode == PHY_S8) ? CTRL_CFG_PHY_CODED:
-										  CTRL_CFG_PHY_1M; // default 1M for now
-	if(phy_mode > PHY_2M) { // coded phy
-		BB->CTRL_CFG = (BB->CTRL_CFG & 0xffff3fff) | ((phy_mode == PHY_S2) ? 0x4000 : 0);
-	}
-#elif defined(CH571_CH573)
-	BB->CTRL_CFG = CTRL_CFG_PHY_1M; // no 2M PHY on ch571/3
-#else
-	BB->CTRL_CFG = (phy_mode == PHY_2M) ? CTRL_CFG_PHY_2M:
-										  CTRL_CFG_PHY_1M; // default 1M for now
-#endif
-
+	// Baseband Tuning
 #ifdef CH570_CH572
-	BB->BB9 = (BB->BB9 & 0xf9ffffff) | ((phy_mode == PHY_2M) ? 0 : 0x2000000);
+	BB->BB9 &= (phy_mode == PHY_2M) ? 0xf9ffffff : 0xfbffffff;
 	RF->RF20 = (RF->RF20 & 0xffffffe0) | ((phy_mode == PHY_2M) ? (tuneFilter2M & 0x1f) : (tuneFilter & 0x1f));
 	BB->BB5 = (BB->BB5 & 0xffffffc0) | ((phy_mode == PHY_2M) ? 0xd : 0xb);
 	BB->BB7 = (BB->BB7 & 0xff00fc00) | ((phy_mode == PHY_2M) ? 0x7f00a0 : 0x79009c);
-#elif defined(CH571_CH573)
-	BB->BB11 = (BB->BB11 & 0xfffffffc) | 2; // no |2 for TX
 #elif defined(CH582_CH583) || defined(CH32V208)
 #if defined(CH582_CH583)
 	BB->BB4 = (phy_mode < PHY_S2) ? 0x3722d0 : 0x3722df;
@@ -797,18 +744,57 @@ void iSLERRX(uint32_t access_address, uint8_t channel, uint8_t phy_mode) {
 	BB->BB6 = (BB->BB6 & 0xfffffc00) | ((phy_mode == PHY_2M) ? 0x13a : 0x132);
 	BB->BB4 = (BB->BB4 & 0x00ffffff) | ((phy_mode == PHY_2M) ? 0x78000000 : 0x7f000000);
 #endif
+}
 
-	BB->ACCESSADDRESS1 = access_address; // access address
-	BB->CRCINIT1 = 0x555555; // crc init
-#ifdef CH570_CH572
-	BB->ACCESSADDRESS2 = access_address;
-	BB->CRCINIT2 = 0x555555;
-	BB->CRCPOLY1 = (BB->CRCPOLY1 & 0xff000000) | 0x80032d; // crc poly
-	BB->CRCPOLY2 = (BB->CRCPOLY2 & 0xff000000) | 0x80032d;
+__HIGH_CODE
+void iSLERLinkTX(size_t len) {
+	BB->CTRL_TX = (BB->CTRL_TX & 0xfffffffc) | 1;
+
+	DevSetMode(DEVSETMODE_TX);
+
+	// Wait for PLL tuning bit to clear (ensures radio has settled after mode switch)
+	for( int timeout = 3000; !(RF->RF26 & 0x1000000) && timeout >= 0; timeout-- );
+
+#if defined(CH571_CH573)
+	BB->BB11 = (BB->BB11 & 0xfffffffc); // TX specific: Clear bits 0-1
+#else
+	LL->STATUS = LL_STATUS_TX;
+#endif
+
+	LL->TMR = ((uint32_t)len) *512; // Needs optimization per phy mode
+	BB->CTRL_CFG |= CTRL_CFG_START_TX;
+	BB->CTRL_TX &= 0xfffffffc;
+	LL->LL0 = LL_TX;
+
+	while(LL->TMR); // wait for tx buffer to empty
+	iSLERStop();
+}
+
+__HIGH_CODE
+void iSLERLinkRX(void) {
+	iSLERStop();
+	LL->TMR = 0;
+
+	DevSetMode(DEVSETMODE_RX);
+
+#ifdef CH571_CH573
+	BB->BB11 = (BB->BB11 & 0xfffffffc) | 2; // RX specific: Set bit 1
 #endif
 
 	LL->LL0 = LL_RX;
 #ifndef ISLER_CALLBACK
 	rx_ready = 0;
 #endif
+}
+
+__HIGH_CODE
+void iSLERTX(uint32_t access_address, uint8_t txbuf[], size_t len, uint8_t channel, uint8_t phy_mode) {
+	iSLERLinkConfig(access_address, channel, phy_mode, txbuf);
+	iSLERLinkTX(len);
+}
+
+__HIGH_CODE
+void iSLERRX(uint32_t access_address, uint8_t channel, uint8_t phy_mode) {
+	iSLERLinkConfig(access_address, channel, phy_mode, NULL);
+	iSLERLinkRX();
 }
