@@ -58,6 +58,10 @@
 #define __HIGH_CODE
 #endif
 
+#ifndef __INTERRUPT // for v208
+#define __INTERRUPT __attribute__((interrupt))
+#endif
+
 #define LL_RX              0x01
 #define LL_TX              0x02
 #define LL_STOP            0x08
@@ -361,10 +365,20 @@ volatile uint32_t tuneFilter2M;
 #ifndef ISLER_CALLBACK
 volatile uint32_t rx_ready;
 #endif
+volatile uint32_t tx_done;
+
+typedef struct {
+	uint32_t access_address;
+	uint32_t txbuf;
+	uint8_t channel;
+	uint8_t phy_mode;
+	uint8_t is_open;
+} LinkConfig_t;
+volatile LinkConfig_t gs_iSLERLink;
 
 
 #ifdef CH571_CH573
-__attribute__((interrupt))
+__INTERRUPT
 void BB_IRQHandler() {
 	if(BB->BB14 & (1<<6)) {
 		BB->BB14 &= 0xffffff9f;
@@ -380,7 +394,8 @@ void BB_IRQHandler() {
 }
 #endif
 
-__attribute__((interrupt))
+__HIGH_CODE
+__INTERRUPT
 void LLE_IRQHandler() {
 	uint32_t status = LL->STATUS;
 #ifdef CH571_CH573
@@ -395,17 +410,19 @@ void LLE_IRQHandler() {
 	LL->STATUS = status; // acknowledge
 #endif
 
-	if( (status & LL_RX) || (status & LL_TX) ) {
-		if(!(status & LL_TX)) {
-			BB->CTRL_TX = (BB->CTRL_TX & 0xfffffffc) | 1;
-			iSLERStop();
+	asm volatile("fence" ::: "memory");
+	if(status & LL_TX) {
+		tx_done = status;
+	}
+	else if(status & LL_RX) {
+		BB->CTRL_TX |= 1;
+		iSLERStop();
 
 #ifdef ISLER_CALLBACK
-			ISLER_CALLBACK();
+		ISLER_CALLBACK();
 #else
-			rx_ready = status;
+		rx_ready = status;
 #endif
-		}
 	}
 }
 
@@ -433,11 +450,8 @@ void DevInit(uint8_t TxPower) {
 	NVIC->VTFADDR[2] = (uint32_t)LLE_IRQHandler -NVIC->FIBADDRR;
 #elif defined(CH582_CH583) || defined(CH32V208)
 	LL->INT_EN = 0xf00f;
-#elif defined(CH584_CH585)
-	LL->LL21 = 0;
-	LL->INT_EN = 0x1f000f;
-#elif defined(CH591_CH592)
-	LL->LL21 = 0x14;
+#elif defined(CH584_CH585) || defined(CH591_CH592)
+	LL->LL21 = 0x0; // 0x14 ch591/2
 	LL->INT_EN = 0x1f000f;
 #endif
 
@@ -687,6 +701,11 @@ int iSLERCRCOK() {
 __HIGH_CODE
 void iSLERLinkConfig(uint32_t access_address, uint8_t channel, uint8_t phy_mode, uint8_t *txbuf) {
 	// Set channel and tx buffer
+	gs_iSLERLink.access_address = access_address;
+	gs_iSLERLink.channel = channel;
+	gs_iSLERLink.txbuf = (uint32_t)txbuf;
+	gs_iSLERLink.phy_mode = phy_mode;
+
 	DevSetChannel(channel);
 
 	if (txbuf != NULL) {
@@ -744,41 +763,38 @@ void iSLERLinkConfig(uint32_t access_address, uint8_t channel, uint8_t phy_mode,
 	BB->BB6 = (BB->BB6 & 0xfffffc00) | ((phy_mode == PHY_2M) ? 0x13a : 0x132);
 	BB->BB4 = (BB->BB4 & 0x00ffffff) | ((phy_mode == PHY_2M) ? 0x78000000 : 0x7f000000);
 #endif
+
+	gs_iSLERLink.is_open = 1;
 }
 
 __HIGH_CODE
-void iSLERLinkTX(size_t len) {
-	BB->CTRL_TX = (BB->CTRL_TX & 0xfffffffc) | 1;
-
+void iSLERLinkTX() {
+	iSLERStop();
 	DevSetMode(DEVSETMODE_TX);
 
 	// Wait for PLL tuning bit to clear (ensures radio has settled after mode switch)
-	for( int timeout = 3000; !(RF->RF26 & 0x1000000) && timeout >= 0; timeout-- );
+	// TODO: RF26 0x1000000 is for CH570/2, figure out this bit on the others
+	for( int timeout = Ticks_from_Us(100); !(RF->RF26 & 0x1000000) && timeout >= 0; timeout-- );
 
-#if defined(CH571_CH573)
-	BB->BB11 = (BB->BB11 & 0xfffffffc); // TX specific: Clear bits 0-1
-#else
-	LL->STATUS = LL_STATUS_TX;
+#if defined(CH584_CH585) || defined(CH591_CH592)
+	BB->CTRL_CFG = (gs_iSLERLink.phy_mode == PHY_2M) ? CTRL_CFG_PHY_2M: CTRL_CFG_PHY_1M;
 #endif
 
-	LL->TMR = ((uint32_t)len) *512; // Needs optimization per phy mode
+	tx_done = 0;
 	BB->CTRL_CFG |= CTRL_CFG_START_TX;
-	BB->CTRL_TX &= 0xfffffffc;
+	BB->CTRL_TX &= ~((1 << 0) | (1 << 1)); // TX specific: Clear bits 0-1
 	LL->LL0 = LL_TX;
-
-	while(LL->TMR); // wait for tx buffer to empty
-	iSLERStop();
 }
 
 __HIGH_CODE
 void iSLERLinkRX(void) {
 	iSLERStop();
-	LL->TMR = 0;
-
 	DevSetMode(DEVSETMODE_RX);
 
 #ifdef CH571_CH573
-	BB->BB11 = (BB->BB11 & 0xfffffffc) | 2; // RX specific: Set bit 1
+	BB->CTRL_TX |= (1 << 1); // RX specific: Set bit 1
+#elif defined(CH584_CH585) || defined(CH591_CH592)
+	BB->CTRL_CFG = (gs_iSLERLink.phy_mode == PHY_2M) ? CTRL_CFG_PHY_2M: CTRL_CFG_PHY_1M;
 #endif
 
 	LL->LL0 = LL_RX;
@@ -790,7 +806,10 @@ void iSLERLinkRX(void) {
 __HIGH_CODE
 void iSLERTX(uint32_t access_address, uint8_t txbuf[], size_t len, uint8_t channel, uint8_t phy_mode) {
 	iSLERLinkConfig(access_address, channel, phy_mode, txbuf);
-	iSLERLinkTX(len);
+	iSLERLinkTX();
+
+	// make it blocking, for more control over things use iSLERLink[Config,RX,TX]
+	for( int timeout = Ticks_from_Ms(5); !tx_done && timeout >= 0; timeout-- );
 }
 
 __HIGH_CODE
