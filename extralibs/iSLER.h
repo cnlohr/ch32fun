@@ -65,6 +65,7 @@
 #define LL_RX              0x01
 #define LL_TX              0x02
 #define LL_STOP            0x08
+#define LL_AUTO            0x01
 
 // common fields
 #define CTRL_CFG           BB0
@@ -699,7 +700,7 @@ int iSLERCRCOK() {
 }
 
 __HIGH_CODE
-void iSLERLinkConfig(uint32_t access_address, uint8_t channel, uint8_t phy_mode, uint8_t *txbuf) {
+void iSLERLinkConfig(uint32_t access_address, uint8_t channel, uint8_t phy_mode, uint8_t *txbuf, uint8_t auto_mode) {
 	// Set channel and tx buffer
 	gs_iSLERLink.access_address = access_address;
 	gs_iSLERLink.channel = channel;
@@ -764,6 +765,14 @@ void iSLERLinkConfig(uint32_t access_address, uint8_t channel, uint8_t phy_mode,
 	BB->BB4 = (BB->BB4 & 0x00ffffff) | ((phy_mode == PHY_2M) ? 0x78000000 : 0x7f000000);
 #endif
 
+	if(auto_mode) {
+		// switch between RX <-> TX automatically
+		LL->LL1 |= LL_AUTO;
+	}
+	else {
+		LL->LL1 &= ~LL_AUTO;
+	}
+
 	gs_iSLERLink.is_open = 1;
 }
 
@@ -805,7 +814,7 @@ void iSLERLinkRX(void) {
 
 __HIGH_CODE
 void iSLERTX(uint32_t access_address, uint8_t txbuf[], size_t len, uint8_t channel, uint8_t phy_mode) {
-	iSLERLinkConfig(access_address, channel, phy_mode, txbuf);
+	iSLERLinkConfig(access_address, channel, phy_mode, txbuf, /*auto_mode*/0);
 	iSLERLinkTX();
 
 	// make it blocking, for more control over things use iSLERLink[Config,RX,TX]
@@ -815,7 +824,7 @@ void iSLERTX(uint32_t access_address, uint8_t txbuf[], size_t len, uint8_t chann
 
 __HIGH_CODE
 void iSLERRX(uint32_t access_address, uint8_t channel, uint8_t phy_mode) {
-	iSLERLinkConfig(access_address, channel, phy_mode, NULL);
+	iSLERLinkConfig(access_address, channel, phy_mode, NULL, /*auto_mode*/0);
 	iSLERLinkRX();
 	gs_iSLERLink.is_open = 0;
 }
