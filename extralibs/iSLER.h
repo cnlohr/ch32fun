@@ -814,6 +814,7 @@ void iSLERLinkRX(void) {
 
 __HIGH_CODE
 void iSLERTX(uint32_t access_address, uint8_t txbuf[], size_t len, uint8_t channel, uint8_t phy_mode) {
+	txbuf[1] = (len > 257) ? 255 : len -2;
 	iSLERLinkConfig(access_address, channel, phy_mode, txbuf, /*auto_mode*/0);
 	iSLERLinkTX();
 
