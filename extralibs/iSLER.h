@@ -368,11 +368,11 @@ volatile uint32_t rx_ready;
 volatile uint32_t tx_done;
 
 typedef struct {
-	uint32_t access_address;
-	uint32_t txbuf;
-	uint8_t channel;
-	uint8_t phy_mode;
-	uint8_t is_open;
+	volatile uint32_t access_address;
+	volatile uint32_t txbuf;
+	volatile uint8_t channel;
+	volatile uint8_t phy_mode;
+	volatile uint8_t is_open;
 } LinkConfig_t;
 volatile LinkConfig_t gs_iSLERLink;
 
@@ -810,10 +810,12 @@ void iSLERTX(uint32_t access_address, uint8_t txbuf[], size_t len, uint8_t chann
 
 	// make it blocking, for more control over things use iSLERLink[Config,RX,TX]
 	for( int timeout = Ticks_from_Ms(5); !tx_done && timeout >= 0; timeout-- );
+	gs_iSLERLink.is_open = 0;
 }
 
 __HIGH_CODE
 void iSLERRX(uint32_t access_address, uint8_t channel, uint8_t phy_mode) {
 	iSLERLinkConfig(access_address, channel, phy_mode, NULL);
 	iSLERLinkRX();
+	gs_iSLERLink.is_open = 0;
 }
