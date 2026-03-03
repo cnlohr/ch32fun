@@ -88,7 +88,16 @@
 #define CRCINIT2           BB22
 #define CRCPOLY2           BB23
 #define ACCESSADDRESS2     BB24
-#define TMR                LL25
+#define TMR0               LL25 // 5 count down timers, at 2MHz.
+#define INT_ISLER_TMR0     (1 << 17)
+#define TMR1               LL26
+#define INT_ISLER_TMR1     (1 << 18)
+#define TMR2               LL27
+#define INT_ISLER_TMR2     (1 << 19)
+#define TMR3               LL28
+#define INT_ISLER_TMR3     (1 << 20)
+#define TMR4               LL29
+#define INT_ISLER_TMR4     (1 << 21)
 #define TXBUF              LL30
 #define RXBUF              LL31
 #define CTRL_MOD_RFSTOP    0xfffff8ff
@@ -106,7 +115,10 @@
 #define ACCESSADDRESS1     BB2
 #define CTRL_TX            BB11
 #define RSSI               BB12 // ? couldn't find it, not sure
-#define TMR                LL24
+#define TMR0               LL24
+#define INT_ISLER_TMR0     (1 << 14)
+#define TMR1               LL25
+#define INT_ISLER_TMR1     (1 << 15)
 #define RXBUF              LL29
 #define RFEND_TXCTUNE_INIT 0x180000
 #define CTRL_MOD_RFSTOP    0xfffffff8
@@ -120,7 +132,12 @@
 #define ACCESSADDRESS1     BB2
 #define CTRL_TX            BB11
 #define RSSI               BB12
-#define TMR                LL25
+#define TMR0               LL25 // 3 count down timers, at 2MHz.
+#define INT_ISLER_TMR0     (1 << 13)
+#define TMR1               LL26
+#define INT_ISLER_TMR1     (1 << 14)
+#define TMR2               LL27
+#define INT_ISLER_TMR2     (1 << 15)
 #define TXBUF              LL28
 #define RXBUF              LL29
 #define RFEND_TXCTUNE_INIT 0x880000
@@ -140,7 +157,16 @@
 #define ACCESSADDRESS1     BB2
 #define CTRL_TX            BB11
 #define RSSI               BB12
-#define TMR                LL25
+#define TMR0               LL25
+#define INT_ISLER_TMR0     (1 << 17)
+#define TMR1               LL26
+#define INT_ISLER_TMR1     (1 << 18)
+#define TMR2               LL27
+#define INT_ISLER_TMR2     (1 << 19)
+#define TMR3               LL28
+#define INT_ISLER_TMR3     (1 << 20)
+#define TMR4               LL29
+#define INT_ISLER_TMR4     (1 << 21)
 #define TXBUF              LL30
 #define RXBUF              LL31
 #define CTRL_MOD_RFSTOP    0xfffff8ff
@@ -158,7 +184,12 @@
 #define ACCESSADDRESS1     BB2
 #define CTRL_TX            BB11
 #define RSSI               BB12
-#define TMR                LL25
+#define TMR0               LL25 // 3 count down timers, at 2MHz.
+#define INT_ISLER_TMR0     (1 << 13)
+#define TMR1               LL26
+#define INT_ISLER_TMR1     (1 << 14)
+#define TMR2               LL27
+#define INT_ISLER_TMR2     (1 << 15)
 #define TXBUF              LL28
 #define RXBUF              LL29
 #define RFEND_TXCTUNE_INIT 0x100000
@@ -291,14 +322,14 @@ typedef struct {
 	volatile uint32_t LL21;
 	volatile uint32_t LL22;
 	volatile uint32_t LL23;
-	volatile uint32_t LL24; // ch571/3: TMR
-	volatile uint32_t LL25; // ch570/2, ch582/3, ch591/2: TMR
-	volatile uint32_t LL26;
-	volatile uint32_t LL27;
-	volatile uint32_t LL28; // ch582/3: TXBUF
-	volatile uint32_t LL29; // ch582/3: RXBUF
-	volatile uint32_t LL30; // ch570/2, ch591/2: TXBUF
-	volatile uint32_t LL31; // ch570/2, ch591/2: RXBUF
+	volatile uint32_t LL24; // ch571/3: TMR0
+	volatile uint32_t LL25; // ch570/2, ch582/3, ch584/5, ch591/2: TMR0, ch571/3: TMR1
+	volatile uint32_t LL26; // ch570/2, ch582/3, ch584/5, ch591/2: TMR1
+	volatile uint32_t LL27; // ch570/2, ch582/3, ch584/5, ch591/2: TMR2
+	volatile uint32_t LL28; // ch582/3, v208: TXBUF, ch570/2, ch582/3, ch584/5, ch591/2: TMR3
+	volatile uint32_t LL29; // ch582/3, v208: RXBUF, ch570/2, ch582/3, ch584/5, ch591/2: TMR4
+	volatile uint32_t LL30; // ch570/2, ch584/5, ch591/2: TXBUF
+	volatile uint32_t LL31; // ch570/2, ch584/5, ch591/2: RXBUF
 } LL_Type;
 
 typedef struct {
@@ -401,7 +432,7 @@ void LLE_IRQHandler() {
 	uint32_t status = LL->STATUS;
 #ifdef CH571_CH573
 	if(status & (1<<9)) {
-		LL->TMR = 400;
+		LL->TMR0 = 400;
 		BB->CTRL_TX = (BB->CTRL_TX & 0xfffffffc) | 2;
 		BB->CTRL_CFG |= 0x10000000;
 		status |= 1; // XXX TODO: Figure out which bit is the RX bit.
@@ -412,6 +443,22 @@ void LLE_IRQHandler() {
 #endif
 
 	asm volatile("fence" ::: "memory");
+#if defined(INT_ISLER_TMR0) && defined(ISLER_TMR0_CALLBACK)
+	if(status & INT_ISLER_TMR0) ISLER_TMR0_CALLBACK();
+#endif
+#if defined(INT_ISLER_TMR1) && defined(ISLER_TMR1_CALLBACK)
+	if(status & INT_ISLER_TMR1) ISLER_TMR1_CALLBACK();
+#endif
+#if defined(INT_ISLER_TMR2) && defined(ISLER_TMR2_CALLBACK)
+	if(status & INT_ISLER_TMR2) ISLER_TMR2_CALLBACK();
+#endif
+#if defined(INT_ISLER_TMR3) && defined(ISLER_TMR3_CALLBACK)
+	if(status & INT_ISLER_TMR3) ISLER_TMR3_CALLBACK();
+#endif
+#if defined(INT_ISLER_TMR4) && defined(ISLER_TMR4_CALLBACK)
+	if(status & INT_ISLER_TMR4) ISLER_TMR4_CALLBACK();
+#endif
+
 	if(status & LL_TX) {
 		tx_done = status;
 	}
@@ -536,9 +583,9 @@ uint32_t RFEND_TXCTune(uint8_t channel) {
 	RF->TXTUNE_CTRL = (RF->TXTUNE_CTRL & 0xfffe00ff) | (0xbf00 + (channel_map[channel] << 8));
 	RF->RF1 |= 1;
 
-	LL->TMR = 8000;
+	LL->TMR0 = 8000;
 	while(!(RF->TXCTUNE_CO_CTRL & (1 << 25)) || !(RF->TXCTUNE_CO_CTRL & (1 << 26))) {
-		if(LL->TMR == 0) {
+		if(LL->TMR0 == 0) {
 			break;
 		}
 	}
@@ -624,8 +671,8 @@ void RFEND_RXTune() {
 	RF->RF3 = (RF->RF3 & 0xffffffef) | 0x10;
 	RF->RF1 |= 0x1000;
 
-	LL->TMR = 100;
-	while(LL->TMR && ((RF->RXTUNE >> 8) & 1));
+	LL->TMR0 = 100;
+	while(LL->TMR0 && ((RF->RXTUNE >> 8) & 1));
 
 	tuneFilter = RF->RXTUNE & 0x1f;
 	RF->RF20 |= 0x10000;
