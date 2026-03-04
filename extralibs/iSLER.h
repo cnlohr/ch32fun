@@ -901,11 +901,15 @@ void iSLERTX(uint32_t access_address, uint8_t txbuf[], size_t len, uint8_t chann
 	iSLERLinkTX();
 
 	// make it blocking using Idle, for more control over things use iSLERLink[Config,RX,TX]
+#ifdef ISLER_IDLE_WHILE_TX
 	while(!tx_done) {
 		NVIC->SCTLR &= ~(1 << 2); // don't deep sleep
 		NVIC->SCTLR &= ~(1 << 3); // wfi
 		__WFI();
 	}
+#else
+	for( int timeout = Ticks_from_Ms(5); !tx_done && timeout >= 0; timeout-- );
+#endif
 	gs_iSLERLink.is_open = 0;
 }
 
