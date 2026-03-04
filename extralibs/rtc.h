@@ -2,7 +2,7 @@
 // Copyright (c) 2025 UniTheCat
 // This library supports two WCH hardware implementations for an RTC
 // and distinguishes between them using compile-time flags.
-
+#include <stdio.h>
 #if defined(CH32V10x) 
 #include "ch32v103hw.h"
 #elif defined (CH32L103)
@@ -167,11 +167,16 @@ void RTC_print_time(rtc_time_t time) {
 // after a few minutes. Tread carefully!
 void RTC_init() {
 #ifdef CH5xx
-	RTCInit();
+	SYS_SAFE_ACCESS(
+		R32_RTC_TRIG = 0;
+		R32_RTC_CTRL |= RB_RTC_LOAD_HI;
+		R32_RTC_CTRL |= RB_RTC_LOAD_LO;
+		R8_RTC_MODE_CTRL |= RB_RTC_TRIG_EN;  //enable RTC trigger
+	);
 #else
 	RCC->APB1PCENR |= RCC_APB1Periph_PWR | RCC_APB1Periph_BKP;
 
-    // backup domain enable
+	// backup domain enable
 	PWR->CTLR |= PWR_CTLR_DBP;
 
 	// prepare to configure clock source
@@ -346,10 +351,25 @@ void RTC_setDateTime(rtc_datetime_t *datetime) {
 #endif
 }
 
-#ifndef CH5xx
-// Currently only implemented for non-CH5xx
-// Should be possible to do with CH5xx using trigger and timer flags for RTC
+#ifdef CH5xx
+// Set RTC to generate an interrupt after cyc ticks.
+// Keep RTCTrigger function name for legacy reasons
+void RTCTrigger(uint32_t cyc) 
+{
+	//get the rtc current time
+	uint32_t alarm = (uint32_t) R16_RTC_CNT_LSI | ( (uint32_t) R16_RTC_CNT_DIV1 << 16 );
+	alarm += cyc;
 
+	if( alarm > RTC_MAX_COUNT ) {
+		alarm -= RTC_MAX_COUNT;
+	}
+
+	SYS_SAFE_ACCESS(
+		R32_RTC_TRIG = alarm;
+	);
+}
+void RTC_setAlarm(u32 increments) { RTCTrigger(increments); }
+#else
 void RTC_setAlarm(u32 increments) {
 	// Make sure AFIO power is on for EXTI interrupts
 	RCC->APB2PCENR |= RCC_AFIOEN;
