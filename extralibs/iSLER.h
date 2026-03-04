@@ -13,7 +13,8 @@
 
 	To receive packets, you can either:
 
-		#define ISLER_CALLBACK iSLERRXCallback
+		#define ISLER_CALLBACK_RX iSLERRXCallback
+		#define ISLER_CALLBACK_TX iSLERTXCallback
 
 		void iSLERRXCallback()
 		{
@@ -23,6 +24,11 @@
 			int rssi = iSLERRSSI();
 
 			// Do stuff
+		}
+
+		void iSLERTXCallback()
+		{
+			// TX is done, continue using the radio
 		}
 
 	Or, just poll on rx_ready, whenever it's set you can read the packet.
@@ -38,6 +44,11 @@
 #define Frame_TX   iSLERTX
 #define Frame_RX   iSLERRX
 #define ReadRSSI   iSLERRSSI
+
+#ifdef ISLER_CALLBACK
+#warning "ISLER_CALLBACK is deprecated, use ISLER_CALLBACK_RX"
+#define ISLER_CALLBACK_RX ISLER_CALLBACK
+#endif
 
 #include <stdint.h>
 #include <stddef.h>
@@ -394,10 +405,31 @@ __attribute__((aligned(4))) uint32_t LLE_BUF2[0x110];
 #endif
 volatile uint32_t tuneFilter;
 volatile uint32_t tuneFilter2M;
-#ifndef ISLER_CALLBACK
+volatile uint32_t tx_done;
+
+#ifdef ISLER_CALLBACK_RX
+void ISLER_CALLBACK_RX();
+#else
 volatile uint32_t rx_ready;
 #endif
-volatile uint32_t tx_done;
+#ifdef ISLER_CALLBACK_TX
+void ISLER_CALLBACK_TX();
+#endif
+#ifdef ISLER_CALLBACK_TMR0
+void ISLER_CALLBACK_TMR0();
+#endif
+#ifdef ISLER_CALLBACK_TMR1
+void ISLER_CALLBACK_TMR1();
+#endif
+#ifdef ISLER_CALLBACK_TMR2
+void ISLER_CALLBACK_TMR2();
+#endif
+#ifdef ISLER_CALLBACK_TMR3
+void ISLER_CALLBACK_TMR3();
+#endif
+#ifdef ISLER_CALLBACK_TMR4
+void ISLER_CALLBACK_TMR4();
+#endif
 
 typedef struct {
 	volatile uint32_t access_address;
@@ -443,31 +475,34 @@ void LLE_IRQHandler() {
 #endif
 
 	asm volatile("fence" ::: "memory");
-#if defined(INT_ISLER_TMR0) && defined(ISLER_TMR0_CALLBACK)
-	if(status & INT_ISLER_TMR0) ISLER_TMR0_CALLBACK();
+#if defined(INT_ISLER_TMR0) && defined(ISLER_CALLBACK_TMR0)
+	if(status & INT_ISLER_TMR0) ISLER_CALLBACK_TMR0();
 #endif
-#if defined(INT_ISLER_TMR1) && defined(ISLER_TMR1_CALLBACK)
-	if(status & INT_ISLER_TMR1) ISLER_TMR1_CALLBACK();
+#if defined(INT_ISLER_TMR1) && defined(ISLER_CALLBACK_TMR1)
+	if(status & INT_ISLER_TMR1) ISLER_CALLBACK_TMR1();
 #endif
-#if defined(INT_ISLER_TMR2) && defined(ISLER_TMR2_CALLBACK)
-	if(status & INT_ISLER_TMR2) ISLER_TMR2_CALLBACK();
+#if defined(INT_ISLER_TMR2) && defined(ISLER_CALLBACK_TMR2)
+	if(status & INT_ISLER_TMR2) ISLER_CALLBACK_TMR2();
 #endif
-#if defined(INT_ISLER_TMR3) && defined(ISLER_TMR3_CALLBACK)
-	if(status & INT_ISLER_TMR3) ISLER_TMR3_CALLBACK();
+#if defined(INT_ISLER_TMR3) && defined(ISLER_CALLBACK_TMR3)
+	if(status & INT_ISLER_TMR3) ISLER_CALLBACK_TMR3();
 #endif
-#if defined(INT_ISLER_TMR4) && defined(ISLER_TMR4_CALLBACK)
-	if(status & INT_ISLER_TMR4) ISLER_TMR4_CALLBACK();
+#if defined(INT_ISLER_TMR4) && defined(ISLER_CALLBACK_TMR4)
+	if(status & INT_ISLER_TMR4) ISLER_CALLBACK_TMR4();
 #endif
 
 	if(status & LL_TX) {
 		tx_done = status;
+#ifdef ISLER_CALLBACK_TX
+		ISLER_CALLBACK_TX();
+#endif
 	}
 	else if(status & LL_RX) {
 		BB->CTRL_TX |= 1;
 		iSLERStop();
 
-#ifdef ISLER_CALLBACK
-		ISLER_CALLBACK();
+#ifdef ISLER_CALLBACK_RX
+		ISLER_CALLBACK_RX();
 #else
 		rx_ready = status;
 #endif
@@ -854,7 +889,7 @@ void iSLERLinkRX(void) {
 #endif
 
 	LL->LL0 = LL_RX;
-#ifndef ISLER_CALLBACK
+#ifndef ISLER_CALLBACK_RX
 	rx_ready = 0;
 #endif
 }
