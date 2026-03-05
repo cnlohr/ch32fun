@@ -114,9 +114,9 @@
 #define CTRL_MOD_RFSTOP    0xfffff8ff
 #define DEVSETMODE_ON      ((BB->CTRL_CFG & 0xfffcffff) | 0x20000)
 #define DEVSETMODE_OFF     ((BB->CTRL_CFG & 0xfffcffff) | 0x10000)
-#define DEVSETMODE_TUNE    0x0558
-#define DEVSETMODE_TX      0x0258
-#define DEVSETMODE_RX      0x0158
+#define DEVMODE_TUNE       0x0558
+#define DEVMODE_TX         0x0258
+#define DEVMODE_RX         0x0158
 #define CTRL_CFG_PHY_1M    ((BB->CTRL_CFG & 0xfffffcff) | 0x100)
 #define CTRL_CFG_PHY_2M    (BB->CTRL_CFG & 0xfffffcff)
 #define LL_STATUS_TX       0x20000
@@ -133,9 +133,9 @@
 #define RXBUF              LL29
 #define RFEND_TXCTUNE_INIT 0x180000
 #define CTRL_MOD_RFSTOP    0xfffffff8
-#define DEVSETMODE_TUNE    0x5d
-#define DEVSETMODE_TX      0x5a
-#define DEVSETMODE_RX      0x59
+#define DEVMODE_TUNE       0x5d
+#define DEVMODE_TX         0x5a
+#define DEVMODE_RX         0x59
 #define CTRL_CFG_PHY_1M    (BB->CTRL_CFG | 0x10000000)
 #define LL_STATUS_TX       0x20000
 #define CTRL_CFG_START_TX  (BB->CTRL_CFG & 0xefffffff)
@@ -156,9 +156,9 @@
 #define CTRL_MOD_RFSTOP    0xfffffff8
 #define DEVSETMODE_ON      ((BB->CTRL_CFG & 0xfffffe7f) | 0x100)
 #define DEVSETMODE_OFF     ((BB->CTRL_CFG & 0xfffffe7f) | 0x80)
-#define DEVSETMODE_TUNE    0x00dd
-#define DEVSETMODE_TX      0x00da
-#define DEVSETMODE_RX      0x00d9
+#define DEVMODE_TUNE       0x00dd
+#define DEVMODE_TX         0x00da
+#define DEVMODE_RX         0x00d9
 #define CTRL_CFG_PHY_1M    ((BB->CTRL_CFG & 0xffff0fff) | 0x1000)
 #define CTRL_CFG_PHY_2M    (BB->CTRL_CFG & 0xffff0fff)
 #define CTRL_CFG_PHY_CODED ((BB->CTRL_CFG & 0xffff0fff) | 0x2000)
@@ -183,9 +183,9 @@
 #define CTRL_MOD_RFSTOP    0xfffff8ff
 #define DEVSETMODE_ON      ((BB->CTRL_CFG & 0xfffffcff) | 0x280)
 #define DEVSETMODE_OFF     ((BB->CTRL_CFG & 0xfffffcff) | 0x100)
-#define DEVSETMODE_TUNE    0x0558
-#define DEVSETMODE_TX      0x0258
-#define DEVSETMODE_RX      0x0158
+#define DEVMODE_TUNE       0x0558
+#define DEVMODE_TX         0x0258
+#define DEVMODE_RX         0x0158
 #define CTRL_CFG_PHY_1M    (BB->CTRL_CFG & 0xffffff7f)
 #define CTRL_CFG_PHY_2M    (BB->CTRL_CFG | 0x80)
 #define LL_STATUS_TX       0x20000
@@ -208,9 +208,9 @@
 #define CTRL_MOD_RFSTOP    0xfffffff8
 #define DEVSETMODE_ON      ((BB->CTRL_CFG & 0xfffffe7f) | 0x100)
 #define DEVSETMODE_OFF     ((BB->CTRL_CFG & 0xfffffe7f) | 0x80)
-#define DEVSETMODE_TUNE    0x5d
-#define DEVSETMODE_TX      0x5a
-#define DEVSETMODE_RX      0x59
+#define DEVMODE_TUNE       0x5d
+#define DEVMODE_TX         0x5a
+#define DEVMODE_RX         0x59
 #define CTRL_CFG_PHY_1M    ((BB->CTRL_CFG & 0xffff0fff) | 0x1000)
 #define CTRL_CFG_PHY_2M    (BB->CTRL_CFG & 0xffff0fff)
 #define CTRL_CFG_PHY_CODED ((BB->CTRL_CFG & 0xffff0fff) | 0x2000)
@@ -397,7 +397,7 @@ uint8_t channel_map[] = {1,2,3,4,5,6,7,8,9,10,12,13,14,15,16,17,18,19,20,21,22,2
 #define PHY_S2 4
 #define PHY_S8 8
 
-void DevSetMode(uint16_t mode);
+void iSLERSetMode(uint16_t mode);
 void iSLERStop();
 __attribute__((aligned(4))) uint32_t LLE_BUF[0x110];
 #ifdef CH571_CH573
@@ -509,7 +509,7 @@ void LLE_IRQHandler() {
 	}
 }
 
-void DevInit(uint8_t TxPower) {
+void iSLERDevInit(uint8_t TxPower) {
 #ifdef CH571_CH573
 	DMA->DMA4 = (uint32_t)LLE_BUF;
 	DMA->DMA5 = (uint32_t)LLE_BUF;
@@ -593,7 +593,7 @@ void DevInit(uint8_t TxPower) {
 	NVIC->VTFIDR[3] = 0x14;
 }
 
-void DevSetMode(uint16_t mode) {
+void iSLERSetMode(uint16_t mode) {
 #if !defined(CH571_CH573)
 	if(mode) {
 		BB->CTRL_CFG = DEVSETMODE_ON;
@@ -612,7 +612,7 @@ void DevSetMode(uint16_t mode) {
 	LL->CTRL_MOD = mode;
 }
 
-uint32_t RFEND_TXCTune(uint8_t channel) {
+uint32_t iSLERTXCTune(uint8_t channel) {
 	// 0xbf = 2401 MHz
 	RF->RF1 &= 0xfffffffe;
 	RF->TXTUNE_CTRL = (RF->TXTUNE_CTRL & 0xfffe00ff) | (0xbf00 + (channel_map[channel] << 8));
@@ -631,7 +631,7 @@ uint32_t RFEND_TXCTune(uint8_t channel) {
 	return (nGA << 24) | nCO;
 }
 
-void RFEND_TXTune() {
+void iSLERTXTune() {
 	RF->RF1 &= 0xfffffeff;
 	RF->RF10 &= 0xffffefff;
 	RF->RF11 &= 0xffffffef;
@@ -639,17 +639,17 @@ void RFEND_TXTune() {
 	RF->RF1 |= 0x10;
 
 	// 2401 MHz
-	uint32_t tune2401 = RFEND_TXCTune(37);
+	uint32_t tune2401 = iSLERTXCTune(37);
 	uint8_t nCO2401 = (uint8_t)(tune2401 & 0x3f);
 	uint8_t nGA2401 = (uint8_t)(tune2401 >> 24) & 0x7f;
 
 	// 2480 MHz
-	uint32_t tune2480 = RFEND_TXCTune(39);
+	uint32_t tune2480 = iSLERTXCTune(39);
 	uint8_t nCO2480 = (uint8_t)(tune2480 & 0x3f);
 	uint8_t nGA2480 = (uint8_t)(tune2480 >> 24) & 0x7f;
 
 	// 2440 MHz
-	uint32_t tune2440 = RFEND_TXCTune(18);
+	uint32_t tune2440 = iSLERTXCTune(18);
 	uint8_t nCO2440 = (uint8_t)(tune2440 & 0x3f);
 	uint8_t nGA2440 = (uint8_t)(tune2440 >> 24) & 0x7f;
 
@@ -700,7 +700,7 @@ void RFEND_TXTune() {
 	RF->RF1 |= 0x100;
 }
 
-void RFEND_RXTune() {
+void iSLERRXTune() {
 	RF->RF20 &= 0xfffeffff;
 	RF->RF2 |= 0x200000;
 	RF->RF3 = (RF->RF3 & 0xffffffef) | 0x10;
@@ -722,14 +722,14 @@ void RFEND_RXTune() {
 	RF->RF1 = (RF->RF1 & 0xfffeffff) | 0x100000;
 }
 
-void RegInit() {
-	DevSetMode(DEVSETMODE_TUNE);
-	RFEND_TXTune();
-	RFEND_RXTune();
-	DevSetMode(0);
+void iSLERTune() {
+	iSLERSetMode(DEVMODE_TUNE);
+	iSLERTXTune();
+	iSLERRXTune();
+	iSLERSetMode(0);
 }
 
-void DevSetChannel(uint8_t channel) {
+void iSLERSetChannel(uint8_t channel) {
 #ifdef CH571_CH573
 	BB->BB6 = (BB->BB6 & 0xf8ffffff) | 0x4000000;
 	BB->BB6 = (BB->BB6 & 0xffffff83) | 0x1c;
@@ -743,15 +743,15 @@ void iSLERInit(uint8_t TxPower) {
 	NVIC->IENR[0] = 0x1000;
 	NVIC->IRER[0] = 0x1000;
 #endif
-	DevInit(TxPower);
-	RegInit();
+	iSLERDevInit(TxPower);
+	iSLERTune();
 	NVIC->IPRIOR[0x15] |= 0x80;
 	NVIC_EnableIRQ(LLE_IRQn);
 }
 
 __HIGH_CODE
 void iSLERStop() {
-	DevSetMode(0);
+	iSLERSetMode(0);
 	if(LL->LL0 & (LL_RX | LL_TX)) {
 		LL->CTRL_MOD &= CTRL_MOD_RFSTOP;
 		LL->LL0 |= LL_STOP;
@@ -789,7 +789,7 @@ void iSLERLinkConfig(uint32_t access_address, uint8_t channel, uint8_t phy_mode,
 	gs_iSLERLink.txbuf = (uint32_t)txbuf;
 	gs_iSLERLink.phy_mode = phy_mode;
 
-	DevSetChannel(channel);
+	iSLERSetChannel(channel);
 
 	if (txbuf != NULL) {
 #if defined(CH571_CH573)
@@ -861,7 +861,7 @@ void iSLERLinkConfig(uint32_t access_address, uint8_t channel, uint8_t phy_mode,
 __HIGH_CODE
 void iSLERLinkTX() {
 	iSLERStop();
-	DevSetMode(DEVSETMODE_TX);
+	iSLERSetMode(DEVMODE_TX);
 
 	// Wait for PLL tuning bit to clear (ensures radio has settled after mode switch)
 	// TODO: RF26 0x1000000 is for CH570/2, figure out this bit on the others
@@ -880,7 +880,7 @@ void iSLERLinkTX() {
 __HIGH_CODE
 void iSLERLinkRX(void) {
 	iSLERStop();
-	DevSetMode(DEVSETMODE_RX);
+	iSLERSetMode(DEVMODE_RX);
 
 #ifdef CH571_CH573
 	BB->CTRL_TX |= (1 << 1); // RX specific: Set bit 1
