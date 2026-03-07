@@ -1,5 +1,5 @@
 #include "ch32fun.h"
-#include "extralibs/rtc.h"
+#include "rtc.h"
 #include <stdio.h>
 
 #ifdef CH570_CH572
