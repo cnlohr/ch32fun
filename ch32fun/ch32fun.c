@@ -2007,8 +2007,9 @@ void SystemInit( void )
 #if (defined(CH570_CH572) || defined(CH584_CH585))
 #if (defined(CH584_CH585) && (CLK_SOURCE_CH5XX==CLK_SOURCE_PLL_60MHz))
 #warning "The ch584/5 does not support an exact 60MHz setting. Please pick an availabe clock source from the SYS_CLKTypeDef struct in ch5xxhw.h"
-#warning "Choosing CLK_SOURCE_HSI_PLL_62_4MHz for now"
-#define CLK_SOURCE_CH5XX CLK_SOURCE_HSI_PLL_62_4MHz
+#warning "Choosing CLK_SOURCE_HSE_PLL_62_4MHz for now"
+#undef CLK_SOURCE_CH5XX
+#define CLK_SOURCE_CH5XX CLK_SOURCE_HSE_PLL_62_4MHz
 #undef FUNCONF_SYSTEM_CORE_CLOCK
 #define FUNCONF_SYSTEM_CORE_CLOCK 62400000
 #endif
