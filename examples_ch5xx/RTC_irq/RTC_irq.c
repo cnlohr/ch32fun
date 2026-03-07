@@ -1,4 +1,5 @@
 #include "ch32fun.h"
+#include "extralibs/rtc.h"
 #include <stdio.h>
 
 #ifdef CH570_CH572
@@ -29,7 +30,7 @@ int main(void)
 {
 	SystemInit();
 
-	RTCInit(); // initialize RTC count to 0, enable Trigger
+	RTC_init(); // initialize RTC count to 0, enable Trigger
 	NVIC_EnableIRQ(RTC_IRQn); // enable RTC IRQ to hit the RTC_IRQHandler
 
 	funGpioInitAll(); // no-op on ch5xx
