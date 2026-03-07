@@ -6,6 +6,7 @@
  */
 
 #include "ch32fun.h"
+#include "ch5xx_lowpower.h"
 #include "iSLER.h"
 #include <stdio.h>
 
@@ -27,7 +28,7 @@ __attribute__((aligned(4))) uint8_t adv[] = {
 		0x08, 0x09, 'c', 'h', '3', '2', 'f', 'u', 'n'}; // 0x09: "Complete Local Name"
 uint8_t adv_channels[] = {37,38,39};
 
-__attribute__((interrupt))
+__INTERRUPT
 void RTC_IRQHandler(void) {
 	// clear trigger flag
 	R8_RTC_FLAG_CTRL = RB_RTC_TRIG_CLR;
@@ -59,7 +60,7 @@ int main() {
 
 	DCDCEnable(); // Enable the internal DCDC
 	LSIEnable(); // Disable LSE, enable LSI
-	RTCInit(); // Set the RTC counter to 0
+	RTC_init(); // Set the RTC counter to 0
 	SleepInit(); // Enable wakeup from sleep by RTC, and enable RTC IRQ
 
 	allPinPullUp(); // this reduces sleep from ~70uA to 1uA
@@ -68,7 +69,7 @@ int main() {
 	funPinMode( LED, GPIO_CFGLR_OUT_2Mhz_PP );
 
 	uint8_t txPower = LL_TX_POWER_0_DBM;
-	RFCoreInit(txPower);
+	iSLERInit(txPower);
 
 	blink(5);
 	printf(".~ ch32fun BLE beacon ~.\n");
@@ -76,12 +77,12 @@ int main() {
 	while(1) {
 		// BLE advertisements are sent on channels 37, 38 and 39, over the 1M PHY
 		for(int c = 0; c < sizeof(adv_channels); c++) {
-			Frame_TX(ACCESS_ADDRESS, adv, sizeof(adv), adv_channels[c], PHY_1M);
+			iSLERTX(ACCESS_ADDRESS, adv, sizeof(adv), adv_channels[c], PHY_1M);
 		}
 
 		LowPower( MS_TO_RTC(SLEEPTIME_MS), (RB_PWR_RAM2K | RB_PWR_RAMX | RB_PWR_EXTEND) ); // PWR_RAM can be optimized
 
-		RFCoreInit(txPower); // RF wakes up in an odd state, we need to reinit after sleep
+		iSLERInit(txPower); // RF wakes up in an odd state, we need to reinit after sleep
 		DCDCEnable(); // DCDC gets disabled during sleep
 		blink(1);
 	}

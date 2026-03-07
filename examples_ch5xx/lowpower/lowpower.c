@@ -1,8 +1,9 @@
 /*
- * Demomstration of low power Idle and Sleep modes.
+ * Demonstration of low power Idle and Sleep modes.
  * The RTC is used to trigger an interrupt to exit those modes, which was entered with WFI
  */
 #include "ch32fun.h"
+#include "ch5xx_lowpower.h"
 #include <stdio.h>
 
 #ifdef CH570_CH572
@@ -51,7 +52,7 @@ int main()
 
 	DCDCEnable(); // Enable the internal DCDC
 	LSIEnable(); // Disable LSE, enable LSI
-	RTCInit(); // Set the RTC counter to 0 and enable RTC Trigger
+	RTC_init(); // Set the RTC counter to 0 and enable RTC Trigger
 	SleepInit(); // Enable wakeup from sleep by RTC, and enable RTC IRQ
 
 	allPinPullUp();
