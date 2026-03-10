@@ -1,0 +1,4 @@
+{
+    "@xpack-dev-tools/riscv-none-elf-gcc" : "15.2.0-1",
+    "@xpack-dev-tools/windows-build-tools" : "4.4.1-3"
+}
