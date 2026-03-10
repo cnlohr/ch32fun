@@ -1,3 +1,20 @@
+/*
+  Flash library for v20x/v30x. Use the following functions:
+
+  * ch20x_30x_flash_cmd_read(): Read from flash
+  * ch20x_30x_flash_cmd_write(): Write to flash
+  * ch20x_30x_flash_cmd_erase(): Erase flash
+  * ch20x_30x_flash_cmd_verify(): Verify written data.
+
+  Flash erase operations must be in page granularity: addr must be page aligned,
+  and length must be multiple of the page size (256 bytes).
+
+  For flash write operations, addr must be page aligned, and both buf and len
+  must be aligned to 32 bits.
+
+  Read and verify operations do not have alignment restrictions.
+*/
+
 #include <stdint.h>
 #include <string.h> // For memcmp()
 
