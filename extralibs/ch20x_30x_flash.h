@@ -7,13 +7,12 @@
 #define CH20X_30X_FLASH_PAGE_U32LEN (CH20X_30X_FLASH_PAGE_LEN / sizeof(uint32_t))
 #define CH20X_30X_FLASH_ALIGN_MASK (CH20X_30X_FLASH_PAGE_LEN - 1)
 
-#define BUSY_WAIT() while (FLASH->STATR & FLASH_STATR_BSY)
-
 enum {
 	FLASH_OK = 0,           // Success
 	FLASH_ERR_PARAM,        // Parameter error (check alignment!)
 	FLASH_ERR_CLK,          // Clock is too high (use HPRE or lower system clock below 120MHz)
 	FLASH_ERR_VERIFY,       // Verify has failed
+	FLASH_ERR_PROTECT,	// Write protection error
 };
 
 void _ch20x_30x_flash_unlock(void)
@@ -37,6 +36,17 @@ void ch20x_30x_flash_cmd_read(uintptr_t addr, uint8_t *buf, uint32_t len)
 	memcpy(buf, (void*)addr, len);
 }
 
+uint32_t _ch20x_30x_flash_busy_poll(void)
+{
+	while (FLASH->STATR & FLASH_STATR_BSY);
+
+	const uint32_t err = FLASH->STATR & FLASH_STATR_WRPRTERR;
+	// Clear status flags (EOP/WRPRTERR)
+	FLASH->STATR = FLASH_STATR_EOP | FLASH_STATR_WRPRTERR;
+
+	return err ? FLASH_ERR_PROTECT : FLASH_OK;
+}
+
 // Writes one page at most
 uint32_t _ch20x_30x_flash_page_write(uintptr_t addr, const uint32_t *data, uint32_t u32len)
 {
@@ -51,10 +61,9 @@ uint32_t _ch20x_30x_flash_page_write(uintptr_t addr, const uint32_t *data, uint3
 
 	// Perform buffer to flash program
 	FLASH->CTLR = CR_PAGE_PG | CR_PG_STRT;
-	BUSY_WAIT();
-	FLASH->STATR = FLASH_STATR_EOP; // Clear EOP flag
 
-	return 0;
+	// Busy poll and return
+	return _ch20x_30x_flash_busy_poll();
 }
 
 // addr must be page aligned (256 bytes).
@@ -83,6 +92,7 @@ uint32_t ch20x_30x_flash_cmd_write(uintptr_t addr, const uint8_t *buf, uint32_t 
 		buf += to_write;
 		len -= to_write;
 	}
+	FLASH->CTLR = 0;  // Clear FTPG
 	_ch20x_30x_flash_lock();
 
 	return err;
@@ -93,10 +103,9 @@ uint32_t _ch20x_30x_flash_page_erase(uintptr_t addr)
 	FLASH->CTLR = CR_PAGE_ER; // FTER, erase a full page
 	FLASH->ADDR = addr;
 	FLASH->CTLR = CR_STRT_Set | CR_PAGE_ER;
-	BUSY_WAIT();
 
-	FLASH->CTLR = 0;
-	FLASH->STATR = FLASH_STATR_EOP; // Clear EOP flag
+	// Busy poll and return
+	return _ch20x_30x_flash_busy_poll();
 }
 
 // addr and len must be page aligned (256 bytes)
@@ -120,6 +129,7 @@ uint32_t ch20x_30x_flash_cmd_erase(uintptr_t addr, uint32_t len)
 		err = _ch20x_30x_flash_page_erase(addr);
 		addr += CH20X_30X_FLASH_PAGE_LEN;
 	}
+	FLASH->CTLR = 0; // Clear FTER
 	_ch20x_30x_flash_lock();
 
 	return err;
