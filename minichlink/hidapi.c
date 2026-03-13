@@ -4768,6 +4768,11 @@ HID_API_EXPORT const wchar_t * HID_API_CALL  hid_error(hid_device *dev)
 	return last_global_error_str;
 }
 
+#elif defined( __NetBSD__ )
+// Use library version from pkgsrc/comms/libhidapi
+#include <string.h>
+#include <stdlib.h>
+#include <hidapi.h>
 
 #else
 // HIDAPI LIBUSB
