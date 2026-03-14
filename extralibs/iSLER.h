@@ -65,8 +65,32 @@
 #undef __HIGH_CODE
 #endif
 #define __HIGH_CODE FUNCONF_ISLER_SECTION
+#elif defined(CH571_CH573)
+// HIGH_CODE doesn't work for CH571/3
+#ifdef __HIGH_CODE
+#undef __HIGH_CODE
+#endif
+#define __HIGH_CODE
 #elif !defined(__HIGH_CODE)
 #define __HIGH_CODE
+#endif
+
+// Define the linker attributes for buffers
+// These need to be 4-byte aligned
+// For some chips, notably the CH571/3,
+// these also need to be in a DMA safe section of RAM
+// Note: the stack is *usually* in the DMA safe region (above 0x20004000)
+
+#ifdef FUNCONF_ISLER_BUFFER_SECTION
+#define ISLER_BUFFER_SECTION FUNCONF_ISLER_BUFFER_SECTION
+#elif defined(CH571_CH573)
+#define ISLER_BUFFER_SECTION ".dma_safe"
+#endif
+
+#if defined(ISLER_BUFFER_SECTION)
+#define ISLER_BUF_ATTR __attribute__((aligned(4))) __attribute__((section(ISLER_BUFFER_SECTION)))
+#else
+#define ISLER_BUF_ATTR __attribute__((aligned(4)))
 #endif
 
 #ifndef __INTERRUPT // for v208
@@ -399,10 +423,12 @@ uint8_t channel_map[] = {1,2,3,4,5,6,7,8,9,10,12,13,14,15,16,17,18,19,20,21,22,2
 
 void iSLERSetMode(uint16_t mode);
 void iSLERStop();
-__attribute__((aligned(4))) uint32_t LLE_BUF[0x110];
+
+ISLER_BUF_ATTR uint32_t LLE_BUF[0x110];
 #ifdef CH571_CH573
-__attribute__((aligned(4))) uint32_t LLE_BUF2[0x110];
+ISLER_BUF_ATTR uint32_t LLE_BUF2[0x110];
 #endif
+
 volatile uint32_t tuneFilter;
 volatile uint32_t tuneFilter2M;
 volatile uint32_t tx_done;
