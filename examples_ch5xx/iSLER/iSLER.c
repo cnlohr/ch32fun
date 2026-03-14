@@ -19,10 +19,14 @@
 
 #define REPORT_ALL 1 // if 0 only report received Find My advertisements
 
-__attribute__((aligned(4))) uint8_t adv[] = {
+const uint8_t adv_data[] = {
 		0x02, 0x0d, // header for LL: PDU + frame length
 		0x66, 0x55, 0x44, 0x33, 0x22, 0x11, // MAC (reversed)
 		0x06, 0x09, 'R', 'X', ':', '?', '?'}; // 0x09: "Complete Local Name"
+
+// On some chips, the iSLER buffer needs to be in a special section of memory.
+// This section may be uninitialized, so we manually copy our initial data into it at runtime.
+ISLER_BUF_ATTR uint8_t adv[256];
 
 // BLE advertisements are sent on channels 37, 38 and 39
 uint8_t adv_channels[] = {37,38,39};
@@ -73,6 +77,7 @@ int main()
 	funPinMode( LED, GPIO_CFGLR_OUT_2Mhz_PP );
 
 	iSLERInit(LL_TX_POWER_0_DBM);
+	memcpy(adv, adv_data, sizeof(adv_data));
 
 	blink(5);
 	printf(".~ ch32fun iSLER ~.\n");
