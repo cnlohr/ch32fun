@@ -84,7 +84,6 @@ int main() {
 	while(1) {
 		// BLE advertisements are sent on channels 37, 38 and 39, over the 1M PHY
 		for(int c = 0; c < sizeof(adv_channels); c++) {
-			printf("Advertising on channel %d\n", adv_channels[c]);
 			iSLERTX(ACCESS_ADDRESS, adv, sizeof(adv_data), adv_channels[c], PHY_1M);
 		}
 
