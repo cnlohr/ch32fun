@@ -393,8 +393,8 @@ gdbclient :
 	gdb-multiarch $(TARGET).elf -ex "target remote :3333"
 
 clangd :
-	make clean
-	bear -- make build
+	$(MAKE) clean
+	bear -- $(MAKE) build
 
 clangd_clean :
 	rm -f compile_commands.json
@@ -417,13 +417,13 @@ ch32fun.o : $(SYSTEM_C)
 
 # Only rebuild minichlink if it doesn't exist at all.
 $(MINICHLINK)/minichlink :
-	make -C $(MINICHLINK) all
+	$(MAKE) -C $(MINICHLINK) all
 
 cv_flash : $(TARGET).bin $(MINICHLINK)/minichlink
 	$(FLASH_COMMAND)
 
 cv_flash_ext : $(TARGET)_ext.bin
-	make -C $(MINICHLINK) all
+	$(MAKE) -C $(MINICHLINK) all
 	$(FLASH_EXT_COMMAND)
 
 cv_clean :
