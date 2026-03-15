@@ -35,6 +35,17 @@ else
 		LDFLAGS := -lpthread -framework CoreFoundation -framework IOKit -framework Security $(LIBUSB_LIBS)
 		CFLAGS := $(ARCHFLAG) -O0 -Wall -Wno-asm-operand-widths -Wno-deprecated-declarations -Wno-deprecated-non-prototype -D__MACOSX__ -DMINICHLINK -DCH32V003 -I. $(LIBUSB_INCS)
 	endif
+	ifeq ($(OS_NAME),netbsd)
+		# use pkgsrc/comms/libhidapi
+		LIBHIDAPI_INCS := $(shell pkg-config --cflags hidapi-netbsd)
+		LIBHIDAPI_LIBS := $(shell pkg-config --libs hidapi-netbsd)
+		# use pkgsrc/devel/libusb1
+		LIBUSB_INCS := $(shell pkg-config --cflags libusb-1.0)
+		LIBUSB_LIBS := $(shell pkg-config --libs libusb-1.0)
+
+		INCS := $(LIBHIDAPI_INCS) $(LIBUSB_INCS)
+		LDFLAGS := -lpthread $(LIBHIDAPI_LIBS) $(LIBUSB_LIBS)
+	endif
 endif
 
 all : $(TOOLS)
