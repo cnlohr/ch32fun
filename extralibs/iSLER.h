@@ -58,15 +58,39 @@
 // define the linker section where the "highcode" functions live
 // on ch5xx this is a section of RAM for quicker execution,
 // but for example in funcongif.h
-//  #define FUNCONF_ISLER_SECTION __attribute__( ( section( ".manual_ram" ) ) )
+//  #define FUNCONF_ISLER_FUNCTION_SECTION ".manual_ram"
 // you can put it where you want
-#if defined(FUNCONF_ISLER_SECTION)
+#if defined(FUNCONF_ISLER_FUNCTION_SECTION)
 #ifdef __HIGH_CODE
 #undef __HIGH_CODE
 #endif
-#define __HIGH_CODE FUNCONF_ISLER_SECTION
+#define __HIGH_CODE __attribute__( ( section( FUNCONF_ISLER_FUNCTION_SECTION ) ) )
+#elif defined(CH571_CH573)
+// HIGH_CODE doesn't work for CH571/3
+#ifdef __HIGH_CODE
+#undef __HIGH_CODE
+#endif
+#define __HIGH_CODE
 #elif !defined(__HIGH_CODE)
 #define __HIGH_CODE
+#endif
+
+// Define the linker attributes for buffers
+// These need to be 4-byte aligned
+// For some chips, notably the CH571/3,
+// these also need to be in a DMA safe section of RAM
+// Note: the stack is *usually* in the DMA safe region (above 0x20004000)
+
+#ifdef FUNCONF_ISLER_BUFFER_SECTION
+#define ISLER_BUFFER_SECTION FUNCONF_ISLER_BUFFER_SECTION
+#elif defined(CH571_CH573)
+#define ISLER_BUFFER_SECTION ".dma_safe"
+#endif
+
+#if defined(ISLER_BUFFER_SECTION)
+#define ISLER_BUF_ATTR __attribute__((aligned(4))) __attribute__((section(ISLER_BUFFER_SECTION)))
+#else
+#define ISLER_BUF_ATTR __attribute__((aligned(4)))
 #endif
 
 #ifndef __INTERRUPT // for v208
@@ -81,8 +105,8 @@
 // common fields
 #define CTRL_CFG           BB0
 #define CRCINIT1           BB1
-#define STATUS             LL2
-#define INT_EN             LL3
+#define LLSTATUS           LL2
+#define LLINT_EN           LL3
 #define CTRL_MOD           LL20
 #define TXTUNE_CTRL        RF14
 #define TXCTUNE_CO_CTRL    RF36
@@ -90,6 +114,7 @@
 #define RXTUNE             RF39
 #define TXCTUNE_CO         RF40
 #define TXCTUNE_GA         RF50
+#define BBSTATUS           BB14
 
 // chip specific fields
 #ifdef CH570_CH572
@@ -124,12 +149,23 @@
 #elif defined(CH571_CH573)
 #define TXBUF 		       DMA4
 #define ACCESSADDRESS1     BB2
+// BB->CTRL_TX:
+// [26:21] = TX postfix dead time (us)
+// [20:16] = TX postfix 0 carrier time (us)
+// [11:9] = TX prefix 0 carrier time (us)
+// [8:4] = TX dead carrier time (us)
+// [3] not sure, maybe also dead carrier +1 us??  
+// [2] = no apparent effect
 #define CTRL_TX            BB11
 #define RSSI               BB12 // ? couldn't find it, not sure
+// This may be the same on all chips, but only confirmed on ch571/3 so far
+#define BBINT_EN           BB13
 #define TMR0               LL24
 #define INT_ISLER_TMR0     (1 << 14)
 #define TMR1               LL25
 #define INT_ISLER_TMR1     (1 << 15)
+// Registers LL26 - LL31 appear to be hardwired zero
+// Writing seems harmless and simplifies the code flow
 #define RXBUF              LL29
 #define RFEND_TXCTUNE_INIT 0x180000
 #define CTRL_MOD_RFSTOP    0xfffffff8
@@ -399,10 +435,12 @@ uint8_t channel_map[] = {1,2,3,4,5,6,7,8,9,10,12,13,14,15,16,17,18,19,20,21,22,2
 
 void iSLERSetMode(uint16_t mode);
 void iSLERStop();
-__attribute__((aligned(4))) uint32_t LLE_BUF[0x110];
+
+ISLER_BUF_ATTR uint32_t LLE_BUF[0x110];
 #ifdef CH571_CH573
-__attribute__((aligned(4))) uint32_t LLE_BUF2[0x110];
+ISLER_BUF_ATTR uint32_t LLE_BUF2[0x110];
 #endif
+
 volatile uint32_t tuneFilter;
 volatile uint32_t tuneFilter2M;
 volatile uint32_t tx_done;
@@ -444,15 +482,15 @@ volatile LinkConfig_t gs_iSLERLink;
 #ifdef CH571_CH573
 __INTERRUPT
 void BB_IRQHandler() {
-	if(BB->BB14 & (1<<6)) {
-		BB->BB14 &= 0xffffff9f;
+	if(BB->BBSTATUS & (1<<6)) {
+		BB->BBSTATUS &= 0xffffff9f;
 	}
-	if(BB->BB14 & (1<<1)) {
-		BB->BB14 = 0xfffffffd;
+	if(BB->BBSTATUS & (1<<1)) {
+		BB->BBSTATUS = 0xfffffffd;
 		BB->BB20 = 0x45;
 	}
-	if(BB->BB14 & (1<<4)) {
-		BB->BB14 = 0xffffffef;
+	if(BB->BBSTATUS & (1<<4)) {
+		BB->BBSTATUS = 0xffffffef;
 		BB->BB20 = 0;
 	}
 }
@@ -461,7 +499,7 @@ void BB_IRQHandler() {
 __HIGH_CODE
 __INTERRUPT
 void LLE_IRQHandler() {
-	uint32_t status = LL->STATUS;
+	uint32_t status = LL->LLSTATUS;
 #ifdef CH571_CH573
 	if(status & (1<<9)) {
 		LL->TMR0 = 400;
@@ -469,9 +507,9 @@ void LLE_IRQHandler() {
 		BB->CTRL_CFG |= 0x10000000;
 		status |= 1; // XXX TODO: Figure out which bit is the RX bit.
 	}
-	LL->STATUS = 0;
+	LL->LLSTATUS = 0;
 #else
-	LL->STATUS = status; // acknowledge
+	LL->LLSTATUS = status; // acknowledge
 #endif
 
 	asm volatile("fence" ::: "memory");
@@ -511,10 +549,11 @@ void LLE_IRQHandler() {
 
 void iSLERDevInit(uint8_t TxPower) {
 #ifdef CH571_CH573
-	DMA->DMA4 = (uint32_t)LLE_BUF;
-	DMA->DMA5 = (uint32_t)LLE_BUF;
-	DMA->DMA6 = (uint32_t)LLE_BUF2;
-	DMA->DMA7 = (uint32_t)LLE_BUF2;
+	// Flipped from blob nomenclature so LLE_BUF is RX on all chips
+	DMA->DMA4 = (uint32_t)LLE_BUF2;
+	DMA->DMA5 = (uint32_t)LLE_BUF2;
+	DMA->DMA6 = (uint32_t)LLE_BUF;
+	DMA->DMA7 = (uint32_t)LLE_BUF;
 	DMA->DMA2 |= 0x2000;
 	DMA->DMA3 |= 0x2000;
 	DMA->DMA2 |= 0x1000;
@@ -525,25 +564,25 @@ void iSLERDevInit(uint8_t TxPower) {
 
 #ifdef CH570_CH572
 	LL->LL21 = 0;
-	LL->INT_EN = 0x16000f;
+	LL->LLINT_EN = 0x16000f;
 #elif defined(CH571_CH573)
 	LL->LL22 = 0xf6;
-	LL->INT_EN = 0xc303;
+	LL->LLINT_EN = 0xc303;
 	NVIC->FIBADDRR = 0x20000000;
 	NVIC->VTFADDR[2] = (uint32_t)LLE_IRQHandler -NVIC->FIBADDRR;
 #elif defined(CH582_CH583) || defined(CH32V208)
-	LL->INT_EN = 0xf00f;
+	LL->LLINT_EN = 0xf00f;
 #elif defined(CH584_CH585) || defined(CH591_CH592)
 	LL->LL21 = 0x0; // 0x14 ch591/2
-	LL->INT_EN = 0x1f000f;
+	LL->LLINT_EN = 0x1f000f;
 #endif
 
 	LL->RXBUF = (uint32_t)LLE_BUF;
-	LL->STATUS = 0xffffffff;
+	LL->LLSTATUS = 0xffffffff;
 	RF->RF10 = 0x480;
 
 #ifdef CH570_CH572
-	BB->BB14 = 0x2020c;
+	BB->BBSTATUS = 0x2020c;
 	BB->BB15 = 0x50;
 	BB->CTRL_TX = (BB->CTRL_TX & 0x1ffffff) | (TxPower | 0x40) << 0x19;
 	BB->CTRL_CFG &= 0xfffffcff;
@@ -567,7 +606,7 @@ void iSLERDevInit(uint8_t TxPower) {
 	BB->BB8 = 0x90083;
 #elif defined(CH584_CH585) || defined(CH591_CH592)
 	BB->CTRL_CFG |= 0x800000;
-	BB->BB14 = 0x3ff; // ch584/5
+	BB->BBSTATUS = 0x3ff; // ch584/5
 	BB->BB13 = 0x50;
 	BB->CTRL_TX = (BB->CTRL_TX & 0x81ffffff) | (TxPower & 0x3f) << 0x19;
 	uint32_t uVar3 = 0x1000000;
