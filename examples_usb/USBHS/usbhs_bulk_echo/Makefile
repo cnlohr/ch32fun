@@ -9,5 +9,5 @@ include ../../../ch32fun/ch32fun.mk
 bootloader :
 	./$(TARGET).py -b
 
-flash : bootloader cv_flash
+flash : cv_flash
 clean : cv_clean
