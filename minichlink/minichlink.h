@@ -271,7 +271,7 @@ extern struct MiniChlinkFunctions MCF;
 // Returns 'dev' on success, else 0.
 void * TryInit_WCHLinkE(void);
 void * TryInit_WCHISP(void);
-void * TryInit_ESP32S2CHFUN(void);
+void * TryInit_ESP32S2CHFUN(uint32_t id);
 void * TryInit_NHCLink042(void);
 void * TryInit_B003Fun(uint32_t id);
 void * TryInit_Ardulink(const init_hints_t*);
