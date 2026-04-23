@@ -89,6 +89,7 @@ typedef enum IRQn
 	.word   I2C1_EV_IRQHandler        /* I2C1 Event */                     \n\
 	.word   I2C1_ER_IRQHandler        /* I2C1 Error */                     \n\
 	.word   USART1_IRQHandler         /* USART1 */                         \n\
+	.word   USART2_IRQHandler         /* USART2 */                         \n\
 	.word   SPI1_IRQHandler           /* SPI1 */                           \n\
 	.word   TIM1_BRK_IRQHandler       /* TIM1 Break */                     \n\
 	.word   TIM1_UP_IRQHandler        /* TIM1 Update */                    \n\
