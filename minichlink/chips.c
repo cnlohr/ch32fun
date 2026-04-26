@@ -774,6 +774,7 @@ const struct RiscVChip_s * chip_collection[] = {
 	&ch581,
 	&ch582,
 	&ch583,
+	&ch584,
 	&ch585,
 	&ch591,
 	&ch592,
