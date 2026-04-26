@@ -42,14 +42,17 @@ void WS2812B_PWM_Init(int channel)
 	R8_PWM_POLAR = 0;
 	R8_PWM_CONFIG = RB_PWM_CYC_MOD; // 16 bit data mode
 	R16_PWM_CYC_VALUE = WS2812B_CYCLES - 1;
-	(&R16_PWM1_DATA)[channel - 1] = 0;
+	if (channel < 3)
+		(&R16_PWM1_DATA)[channel - 1] = 0;
+	else
+		(&R16_PWM4_DATA)[channel - 4] = 0;
 	R8_PWM_OUT_EN |= RB_PWM1_OUT_EN << (channel - 1);
 }
 
 void WriteWS2812B_PWM123_SetPixelRGB(uint16_t* buffer, int pixelNumber, int pwmChannel, int32_t rgb)
 {
 	// each DMA entry contains data for PWM1, 2 & 3, i.e. 6 bytes
-	uint16_t* dst = &buffer[pixelNumber * 24 * 3 + (pwmChannel - 1)];
+	uint16_t* dst = &buffer[(pixelNumber * 24 + 1) * 3 + (pwmChannel - 1)];
 	rgb <<= 8;
 	for(int bit = 0; bit != 24; ++bit, dst += 3, rgb <<= 1)
 	{
@@ -59,16 +62,14 @@ void WriteWS2812B_PWM123_SetPixelRGB(uint16_t* buffer, int pixelNumber, int pwmC
 void WS2812B_PWM123_StartDMA(const uint16_t* buffer, int numLeds)
 {
 	R8_PWM_DMA_CTRL = 0;
-	Delay_Us(10); // todo: how much delay (if any) is needed
 	R32_PWM_DMA_BEG = (uintptr_t)&buffer[0];
 	R32_PWM_DMA_END = (uintptr_t)&buffer[(numLeds * 24 + 2) * 3];
-	Delay_Us(10); // todo: how much delay (if any) is needed
 	R8_PWM_DMA_CTRL = RB_DMA_SEL|RB_DMA_ENABLE;	
 }
 void WriteWS2812B_PWM45_SetPixelRGB(uint16_t* buffer, int pixelNumber, int pwmChannel, int32_t rgb)
 {
 	// each DMA entry contains data for PWM4 & 5, i.e. 4 bytes
-	uint16_t* dst = &buffer[pixelNumber * 24 * 2 + (pwmChannel - 4)];
+	uint16_t* dst = &buffer[(pixelNumber * 24 + 1) * 2 + (pwmChannel - 4)];
 	rgb <<= 8;
 	for(int bit = 0; bit != 24; ++bit, dst += 2, rgb <<= 1)
 	{
@@ -78,10 +79,8 @@ void WriteWS2812B_PWM45_SetPixelRGB(uint16_t* buffer, int pixelNumber, int pwmCh
 void WS2812B_PWM45_StartDMA(const uint16_t* buffer, int numLeds)
 {
 	R8_PWM_DMA_CTRL = 0;
-	Delay_Us(10); // todo: how much delay (if any) is needed
 	R32_PWM_DMA_BEG = (uintptr_t)&buffer[0];
-	R32_PWM_DMA_END = (uintptr_t)&buffer[(numLeds * 24 + 1) * 2];
-	Delay_Us(10); // todo: how much delay (if any) is needed
+	R32_PWM_DMA_END = (uintptr_t)&buffer[(numLeds * 24 + 2) * 2];
 	R8_PWM_DMA_CTRL = RB_DMA_ENABLE;
 }
 #else
@@ -91,8 +90,11 @@ void WS2812B_PWM45_StartDMA(const uint16_t* buffer, int numLeds)
 #define NR_LEDS 4
 #define TMR_PA9 1
 
+// the PWM buffers start and end with zero entry (duty cycle of 0 = output off). 
+// I'm not sure why the start one is needed but you get flickering without it.
 uint16_t __attribute__((aligned(4))) WS2812B_PWM123_LedBuffer[(NR_LEDS * 24 + 2) * 3] = {0};
-uint16_t __attribute__((aligned(4))) WS2812B_PWM45_LedBuffer[(NR_LEDS * 24 + 1) * 2] = {0};
+uint16_t __attribute__((aligned(4))) WS2812B_PWM45_LedBuffer[(NR_LEDS * 24 + 2) * 2] = {0};
+// the TMR buffer just needs one zero at the end to turn off the output
 uint32_t WS2812B_TMR_LedBuffer[NR_LEDS * 24 + 1] = {0};
 
 int main()
