@@ -35,6 +35,10 @@
 #define SSD1306_SOFT_SPI 0
 #endif
 
+#ifndef SSD1306_3WIRE_SPI
+#define SSD1306_3WIRE_SPI 0
+#endif
+
 /*
  * init SPI and GPIO for SSD1306 OLED
  */
@@ -101,6 +105,10 @@ void ssd1306_rst(void)
  */
 uint8_t ssd1306_pkt_send(const uint8_t *data, int sz, uint8_t cmd)
 {
+#if SSD1306_3WIRE_SPI
+	uint8_t leftover = 0;
+	int8_t dc_pos = 7;
+#else
 	if(cmd)
 	{
 		funDigitalWrite( SSD1306_DC_PIN, FUN_LOW );
@@ -109,7 +117,7 @@ uint8_t ssd1306_pkt_send(const uint8_t *data, int sz, uint8_t cmd)
 	{
 		funDigitalWrite( SSD1306_DC_PIN, FUN_HIGH );
 	}
-
+#endif
 	funDigitalWrite( SSD1306_CS_PIN, FUN_LOW );
 	
 	// send data
@@ -118,6 +126,11 @@ uint8_t ssd1306_pkt_send(const uint8_t *data, int sz, uint8_t cmd)
 #if SSD1306_SOFT_SPI
 		uint8_t c = *data++;
 		int i = 8;
+#if SSD1306_3WIRE_SPI
+			funDigitalWrite( SSD1306_SCK_PIN, FUN_LOW );       ADD_N_NOPS(1)
+			funDigitalWrite( SSD1306_MOSI_PIN, !cmd );         ADD_N_NOPS(1)
+			funDigitalWrite( SSD1306_SCK_PIN, FUN_HIGH );      ADD_N_NOPS(1)
+#endif
 		do
 		{
 			funDigitalWrite( SSD1306_SCK_PIN, FUN_LOW );       ADD_N_NOPS(1)
@@ -128,15 +141,41 @@ uint8_t ssd1306_pkt_send(const uint8_t *data, int sz, uint8_t cmd)
 
 #elif defined( CH5xx )
 		while(! (R8_SPI0_INT_FLAG & RB_SPI_FREE) );
+#if SSD1306_3WIRE_SPI
+		uint8_t byte = leftover | (!cmd) << dc_pos | (*data) >> (8-dc_pos);
+		leftover = (*data++) << (dc_pos);
+		if( dc_pos-- < 0 ) dc_pos = 7;
+		R8_SPI0_BUFFER = byte;
+#else
 		R8_SPI0_BUFFER = *data++;
+#endif
 #else
 		// wait for TXE
 		while(!(SPI1->STATR & SPI_STATR_TXE));
 		
 		// Send byte
+#if SSD1306_3WIRE_SPI
+		uint8_t byte = leftover | (!cmd) << dc_pos | (*data) >> (8-dc_pos);
+		leftover = (*data++) << (dc_pos--);
+		if( dc_pos < 0 ) dc_pos = 7;
+		SPI1->DATAR = byte;
+#else
 		SPI1->DATAR = *data++;
 #endif
+#endif
 	}
+#if !SSD1306_SOFT_SPI && SSD1306_3WIRE_SPI
+	if( dc_pos )
+	{
+#if defined( CH5xx )
+		while(! (R8_SPI0_INT_FLAG & RB_SPI_FREE) );
+		R8_SPI0_BUFFER = leftover;
+#else
+		while(!(SPI1->STATR & SPI_STATR_TXE));
+		SPI1->DATAR = leftover;
+#endif
+	}
+#endif
 	
 	// wait for not busy before exiting
 #if SSD1306_SOFT_SPI

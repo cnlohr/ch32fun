@@ -11,7 +11,11 @@
 #include "font_8x8.h"
 
 // comfortable packet size for this OLED
+#if SSD1306_3WIRE_SPI && !SSD1306_SOFT_SPI
+#define SSD1306_PSZ 8
+#else
 #define SSD1306_PSZ 32
+#endif
 
 #if defined (SSD1306_CUSTOM)
 // Let the caller configure the OLED.

@@ -920,6 +920,7 @@ void I2C2_ER_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION)
 void SPI2_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void USART1_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void USART2_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void OPCM_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void USART3_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void EXTI15_10_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void RTCAlarm_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
