@@ -1481,7 +1481,7 @@ static int ESPResetInterface( void * dev )
 	return 0;
 }
 
-void * TryInit_ESP32S2CHFUN()
+void * TryInit_ESP32S2CHFUN(uint32_t id)
 {
 	hid_init();
 
@@ -1505,6 +1505,13 @@ void * TryInit_ESP32S2CHFUN()
 	{
 		eps->commandbuffersize = 79;
 		eps->replybuffersize = 79;
+	}
+	else if( !!( hd = hid_open( id>>16, id&0xFFFF, 0) ) )
+	{
+		fprintf( stderr, "VID:0x%04x, PID:0x%04x\n", id>>16, id&0xFFFF );
+		eps->commandbuffersize = 79;
+		eps->replybuffersize = 79;
+		eps->programmer_type = PROGRAMMER_TYPE_CH32V003;
 	}
 	else
 	{

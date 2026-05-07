@@ -41,6 +41,10 @@ void * MiniCHLinkInitAsDLL( struct MiniChlinkFunctions ** MCFO, const init_hints
 {
 	void * dev = 0;
 	
+#ifdef VERSION
+	char * version = VERSION;
+	fprintf(stderr, "minichlink version - %s\n", version);
+#endif
 	const char * specpgm = init_hints->specific_programmer;
 	if( specpgm )
 	{
@@ -49,7 +53,7 @@ void * MiniCHLinkInitAsDLL( struct MiniChlinkFunctions ** MCFO, const init_hints
 		else if( strcmp( specpgm, "isp" ) == 0 )
 			dev = TryInit_WCHISP();
 		else if( !strcmp( specpgm, "esp32s2chfun" ) || !strcmp( specpgm, "funprog" ) )
-			dev = TryInit_ESP32S2CHFUN();
+			dev = TryInit_ESP32S2CHFUN(SimpleReadNumberInt(init_hints->serial_port, 0x12065d10));
 		else if( strcmp( specpgm, "nchlink" ) == 0 )
 			dev = TryInit_NHCLink042();
 		else if( strcmp( specpgm, "b003boot" ) == 0 )
@@ -67,7 +71,7 @@ void * MiniCHLinkInitAsDLL( struct MiniChlinkFunctions ** MCFO, const init_hints
 		{
 			fprintf( stderr, "Found WCH Link\n" );
 		}
-		else if( (dev = TryInit_ESP32S2CHFUN()) )
+		else if( (dev = TryInit_ESP32S2CHFUN(SimpleReadNumberInt(init_hints->serial_port, 0x12065d10))) )
 		{
 			// Will print the exact programmer type in init
 			// fprintf( stderr, "Found ESP32S2-Style Programmer\n" );
@@ -1459,7 +1463,8 @@ static int DefaultDetermineChipType( void * dev )
 					}
 					else
 					{
-						iss->target_chip = &ch585;
+						if (chip_id == 0x84) iss->target_chip = &ch584;
+						else iss->target_chip = &ch585;
 						iss->target_chip_id = chip_id << 24;
 					}
 				}

@@ -10,6 +10,7 @@ H_S:=cmdserver.h funconfig.h hidapi.h libusb.h microgdbstub.h minichlink.h seria
 
 CFLAGS_WINDOWS:=-Os -s -Wall -D_WIN32_WINNT=0x0600 -I. -Wall -DCH32V003 -DMINICHLINK
 LDFLAGS_WINDOWS:=-L. -lpthread -lusb-1.0 -lsetupapi -lws2_32
+VERSION:=$(shell shasum $(C_S) $(H_S) Makefile | shasum | head -c 40)
 ifeq ($(OS),Windows_NT)
 	TOOLS:=minichlink.exe
 else
@@ -52,10 +53,10 @@ all : $(TOOLS)
 
 # will need mingw-w64-x86-64-dev gcc-mingw-w64-x86-64
 minichlink.exe : $(C_S) $(H_S) Makefile
-	x86_64-w64-mingw32-gcc -o $@ $(C_S) $(LDFLAGS_WINDOWS) $(CFLAGS_WINDOWS)
+	x86_64-w64-mingw32-gcc -o $@ $(C_S) $(LDFLAGS_WINDOWS) $(CFLAGS_WINDOWS) -DVERSION=\"$(VERSION)\"
 
 minichlink : $(C_S) $(H_S) Makefile
-	gcc -o $@ $(C_S) $(LDFLAGS) $(CFLAGS) $(INCS)
+	gcc -o $@ $(C_S) $(LDFLAGS) $(CFLAGS) $(INCS) -DVERSION=\"$(VERSION)\"
 
 minichlink.so : $(C_S) $(H_S) Makefile
 	gcc -o $@ $(C_S) $(LDFLAGS) $(CFLAGS) $(INCS) -shared -fPIC
@@ -74,3 +75,7 @@ inspect_bootloader : minichlink
 
 clean :
 	rm -rf $(TOOLS) minichlink.exe
+
+hash :
+	echo $(VERSION) > version
+	shasum $(C_S) $(H_S) Makefile >> version

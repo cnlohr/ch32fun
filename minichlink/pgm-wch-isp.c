@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include "terminalhelp.h"
 #include "libusb.h"
 #include "minichlink.h"
 #include "chips.h"
@@ -342,6 +343,20 @@ int ISPWriteBinaryBlob( void * d, uint32_t address_to_write, uint32_t blob_size,
 		printf("ERROR: Only XOR key length of 8 is implemented.\n");
 		return -1;
 	}
+
+	if (iss->current_area == PROGRAM_AREA && (iss->target_chip_type == CHIP_CH57x ||
+	    iss->target_chip_type == CHIP_CH58x ||
+	    iss->target_chip_type == CHIP_CH585 || iss->target_chip_type == CHIP_CH59x))
+		{
+			wch_isp_command( dev, "\xa7\x02\x00\x1f\x00", 5, (int*)&transferred, rbuff, 1024 );
+			uint32_t option_bytes = *((uint32_t*)&rbuff[14]);
+			if (option_bytes & 0x10) {
+				fprintf(stderr, "\nWARNING - you have debug enabled, you need to disable it to be able to write to flash using ISP.\n");
+				fprintf(stderr, "Proceding will only erase the flash.\nPress any key to continue, or Ctrl+C to cancel.\n");
+				while(!IsKBHit());
+				ReadKBByte();
+			}
+		}
 
 	address_to_write = (address_to_write == 0x08000000) ? 0 : address_to_write;
 

@@ -95,7 +95,9 @@ typedef enum IRQn
 	.word   TIM1_TRG_COM_IRQHandler   /* TIM1 Trigger and Commutation */   \n\
 	.word   TIM1_CC_IRQHandler        /* TIM1 Capture Compare */           \n\
 	.word   TIM2_IRQHandler           /* TIM2 */                           \n\
-	.option   pop;\n"
+	.word   USART2_IRQHandler         /* USART2 */                         \n\
+    .word   OPCM_IRQHandler           /* OPCM */                           \n\
+    .option   pop;\n"
 
 
 /* memory mapped structure for SysTick */
