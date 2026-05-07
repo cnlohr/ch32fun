@@ -1,6 +1,6 @@
 # WS2812B PWM and TMR DMA example
 
-This is a very basic example of writing WS2812B LED data using PWM, TMR & DMA on the CH5xx.
+This shows how to write WS2812B LED data using PWM, TMR & DMA on the CH5xx.
 The main reasons you might want to do this instead of using SPI is if you don't have or want
 to use the SPI pins or you want to drive more than one set of LEDs.  In this example the
 entire buffer is generated and then sent by DMA in one go.  With long strips an interrupt
@@ -30,6 +30,7 @@ Two or three sets of LEDs can be driven simultaneously on the PWM channels. In a
 another strip can be driven by the TMR.
  
 PWM channels 1-5 are on pins PA7, PA2, PA3, PA4, PA8
+
 TMR can be on pin PA7, PA2, PA4 or PA9
 
 ## CH584/5 and CH592
@@ -37,8 +38,9 @@ TMR can be on pin PA7, PA2, PA4 or PA9
 Two sets of LEDs can be driven simultaneously by the timers.
 
 TMR1 is PA10 or PB10
+
 TMR2 is PA11 or PB11
 
 ## CH584/5
 
-UART0 is PB7 or PA14 
+UART0 is PB7 or PA14
