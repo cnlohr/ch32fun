@@ -3,6 +3,8 @@
 #include "ch32fun.h"
 #include "../ws2812bdemo/color_utilities.h"
 
+#define NR_LEDS 4
+
 #define WS2812B_CLOCK_HZ (800 * 1000)
 #define WS2812B_CYCLES (FUNCONF_SYSTEM_CORE_CLOCK / WS2812B_CLOCK_HZ)
 #define WS2812B_DUTYCYCLE_NS(NANOSECS) ((WS2812B_CYCLES * NANOSECS + 625) / 1250)
@@ -110,8 +112,6 @@ void WS2812B_TMR2_StartDMA(const uint32_t* buffer, int numLeds)
 }
 #endif
 
-#define NR_LEDS 4
-
 #ifdef CH57x
 #define TMR_PA9 1
 // the PWM buffers start and end with zero entry (duty cycle of 0 = output off). 
@@ -128,13 +128,13 @@ uint32_t WS2812B_UART_LedBuffer[NR_LEDS];
 static const uint8_t WS2812B_UART_LUT[8] = 
 {
 	~0b0100100, // 9 bits are used to encode 3 bits of WS2812B data.
-	~0b1100100, // There are only 7 bits in thes table entries because
-	~0b0101100, // the UART high start bit is sent at the start and the 
-	~0b1101100, // low stop bit at the end.
-	~0b0100101, 
-	~0b1100101, 
-	~0b0101101, 
-	~0b1101101, 
+	~0b1100100, // Each of these 7 bit payloads is framed by the
+	~0b0101100, // UART high-start and low-stop bits. Entries are
+	~0b1101100, // inverted to compensate for the output inversion.
+	~0b0100101,
+	~0b1100101,
+	~0b0101101,
+	~0b1101101,
 };
 void WS2812B_UART0_Send(const uint32_t* ledData, int numLeds)
 {
