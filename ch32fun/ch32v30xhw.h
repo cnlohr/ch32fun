@@ -10586,6 +10586,22 @@ typedef struct
 #define PD13 61
 #define PD14 62
 #define PD15 63
+#define	PE0	64
+#define	PE1	65
+#define	PE2	66
+#define	PE3	67
+#define	PE4	68
+#define	PE5	69
+#define	PE6	70
+#define	PE7	71
+#define	PE8	72
+#define	PE9	73
+#define	PE10 74
+#define	PE11 75
+#define	PE12 76
+#define	PE13 77
+#define	PE14 78
+#define	PE15 79
 
 /*
  * This file contains various parts of the official WCH EVT Headers which

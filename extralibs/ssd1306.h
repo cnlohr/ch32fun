@@ -21,7 +21,7 @@
 // Let the caller configure the OLED.
 #else
 // characteristics of each type
-#if !defined (SSD1306_64X32) && !defined (SSD1306_72X40) && !defined (SSD1306_128X32) && !defined (SSD1306_128X64) && !defined (SH1107_128x128) && !(defined(SSD1306_W) && defined(SSD1306_H) && defined(SSD1306_OFFSET) )
+#if !defined (SSD1306_64X32) && !defined (SSD1306_72X40) && !defined (SSD1306_128X32) && !defined (SSD1306_128X64) && !defined (SH1106_128x64) && !defined (SH1107_128x128) && !(defined(SSD1306_W) && defined(SSD1306_H) && defined(SSD1306_OFFSET) )
 	#error "Please define the SSD1306_WXH resolution used in your application"
 #endif
 
@@ -50,6 +50,15 @@
 #define SSD1306_H 64
 #define SSD1306_FULLUSE
 #define SSD1306_OFFSET 0
+#endif
+
+#ifdef SH1106_128x64
+#define SH1107
+#define SSD1306_FULLUSE
+#define SSD1306_W 128
+#define SSD1306_H 64
+#define SSD1306_FULLUSE
+#define SSD1306_OFFSET 2
 #endif
 
 #ifdef SH1107_128x128
@@ -116,6 +125,7 @@ uint8_t ssd1306_data(uint8_t *data, int sz)
 // OLED initialization commands for 128x32
 const uint8_t ssd1306_init_array[] =
 {
+
 #ifdef SH1107
 	SSD1306_DISPLAYOFF,               // Turn OLED off
 	0x00,                             // Low column
@@ -210,8 +220,8 @@ void ssd1306_refresh(void)
 	for(i=0;i<SSD1306_H/8;i++)
 	{
 		ssd1306_cmd(0xb0 | i);
-		ssd1306_cmd( 0x00 | (0&0xf) ); 
-		ssd1306_cmd( 0x10 | (0>>4) );
+		ssd1306_cmd( 0x00 | (SSD1306_OFFSET&0xf) );
+		ssd1306_cmd( 0x10 | (SSD1306_OFFSET>>4) );
 		ssd1306_data(&ssd1306_buffer[i*4*SSD1306_PSZ+0*SSD1306_PSZ], SSD1306_PSZ);
 		ssd1306_data(&ssd1306_buffer[i*4*SSD1306_PSZ+1*SSD1306_PSZ], SSD1306_PSZ);
 		ssd1306_data(&ssd1306_buffer[i*4*SSD1306_PSZ+2*SSD1306_PSZ], SSD1306_PSZ);
