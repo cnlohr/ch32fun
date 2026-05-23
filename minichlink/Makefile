@@ -8,6 +8,7 @@ H_S:=cmdserver.h funconfig.h hidapi.h libusb.h microgdbstub.h minichlink.h seria
 # gdb-multilib {file}
 # target remote :2345
 
+TARGET_OS?=$(OS)
 ifeq ($(OS),Windows_NT)
 	WHICH:=where
 	NULLDEV:=nul
@@ -29,7 +30,7 @@ endif
 CFLAGS_WINDOWS:=-Os -s -Wall -D_WIN32_WINNT=0x0600 -I. -Wall -DCH32V003 -DMINICHLINK
 LDFLAGS_WINDOWS:=-L. -lpthread -lusb-1.0 -lsetupapi -lws2_32
 VERSION:=$(shell $(SHASUM) $(C_S) $(H_S) Makefile | $(SHASUM) | head -c 40)
-ifeq ($(OS),Windows_NT)
+ifeq ($(TARGET_OS),Windows_NT)
 	TOOLS:=minichlink.exe
 else
 	OS_NAME := $(shell uname -s | tr A-Z a-z)
