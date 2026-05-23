@@ -7,7 +7,8 @@ Import("env")
 board = env.BoardConfig()
 chip_name = str(board.get("build.mcu", "")).lower()
 # retrieve needed macro values using the helper script
-config_vars = check_output([
+busybox_exe = [join("bin", "busybox.exe")] if sys.platform.startswith("win") else []
+config_vars = check_output(busybox_exe + [
     "sh",
     join("ch32fun", "parse_mcu_package.sh"),
     chip_name.upper()
