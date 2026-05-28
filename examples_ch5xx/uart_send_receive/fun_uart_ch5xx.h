@@ -5,7 +5,7 @@
 
 #define FUNCONF_UART_PRINTF_BAUD 115200
 
-void uart_init_ch5xx(UART_Typedef *UARTx, int baudrate) {
+void uart_init_ch5xx(UART_TypeDef *UARTx, int baudrate) {
 	//# Configure GPIOs for CH582
 	if (UARTx == UART0) {
 		funPinMode(PB4, GPIO_CFGLR_IN_PU);		   // RX0 (PB4)
@@ -50,7 +50,7 @@ void uart_init_ch5xx(UART_Typedef *UARTx, int baudrate) {
 	UARTx->DIV = divider;
 }
 
-void uart_send_ch5xx(UART_Typedef *UARTx, u8 *buf, u16 len) {
+void uart_send_ch5xx(UART_TypeDef *UARTx, u8 *buf, u16 len) {
 	for (int i = 0; i < len; i++) {
 		while (!(UARTx->LSR & RB_LSR_TX_ALL_EMP));
 		UARTx->THR_RBR = buf[i];
@@ -58,7 +58,7 @@ void uart_send_ch5xx(UART_Typedef *UARTx, u8 *buf, u16 len) {
 }
 
 //! NOTE: if you are debugging with printf, note that it introduces a delay   
-u16 uart_receive_ch5xx( UART_Typedef *UARTx, u8 *buf, u16 max_len) {
+u16 uart_receive_ch5xx( UART_TypeDef *UARTx, u8 *buf, u16 max_len) {
 	u16 len = 0;
 	u32 start_time = SysTick->CNT;
 
