@@ -929,10 +929,10 @@ typedef enum
 #define SAFE_ACCESS_SIG0    0x00                      // WO: safe accessing sign value for disable
 #define SYS_SAFE_ACCESS(a)  do { R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG1; \
 								 R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG2; \
-								 asm volatile ("nop\nnop"); \
+								 __ASM volatile ("nop\nnop"); \
 								 {a} \
 								 R8_SAFE_ACCESS_SIG = SAFE_ACCESS_SIG0; \
-								 asm volatile ("nop\nnop"); } while(0)
+								 __ASM volatile ("nop\nnop"); } while(0)
 
 #define R8_CHIP_ID          (*((vu8*)0x40001041))     // RF, chip ID register
 #define R8_SAFE_ACCESS_ID   (*((vu8*)0x40001042))     // RF, safe accessing ID register
@@ -2682,13 +2682,13 @@ RV_STATIC_INLINE void jump_isprom()
 #if (defined(CH570_CH572) || defined(CH584_CH585) || defined(CH591_CH592))
 	memset((void*)ISPROM_BSS_ADDRESS, 0, ISPROM_BSS_SIZE); // clear .bss
 
-	asm( "la gp, " ISPROM_IN_RAM_GLOBALPOINTER "\n"
+	__ASM( "la gp, " ISPROM_IN_RAM_GLOBALPOINTER "\n"
 		 ".option arch, +zicsr\n"
 		 "li t0, " ISPROM_IN_RAM_ENTRYPOINT "\n"
 		 "csrw mepc, t0\n" // __set_MEPC is not available here
 		 "mret\n");
 #elif defined(CH582_CH583)
-	asm( "la gp, " ISPROM_GLOBALPOINTER "\n"
+	__ASM( "la gp, " ISPROM_GLOBALPOINTER "\n"
 		 "j " ISPROM_ENTRYPOINT "\n");
 #endif
 }
