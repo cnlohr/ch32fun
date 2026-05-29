@@ -248,147 +248,170 @@ typedef struct {
 #endif
 
 typedef struct {
-    __IO uint32_t INT_EN;       // 90
-    __IO uint32_t INT_MODE;     // 94
-    uint32_t RESERVED0;         // 98
-    __IO uint32_t INT_IF;       // 9C
-    __IO uint32_t PA_DIR;       // A0
-    __IO uint32_t PA_PIN;       // A4
-    __IO uint32_t PA_OUT;       // A8
-    __IO uint32_t PA_CLR;       // AC
-    __IO uint32_t PA_PU;        // B0
-    __IO uint32_t PA_PD_DRV;    // B4
-    __IO uint32_t PA_SET;       // B8
+    __IO uint32_t INT_EN;        // 0
+#if defined(CH570_CH572)
+    __IO uint16_t INT_MODE;      // 4H
+    __IO uint16_t INT_EDGE_TYPE; // 6H
+#else
+    __IO uint32_t INT_MODE;      // 4H
+#endif
+#if defined(CH59x)
+    __IO uint32_t INT_EDGE_TYPE; // 8H
+#else
+    uint32_t RESERVED0;          // 8H
+#endif
+    __IO uint32_t INT_IF;        // CH
+    __IO uint32_t PA_DIR;        // 10H
+    __IO uint32_t PA_PIN;        // 14H
+    __IO uint32_t PA_OUT;        // 18H
+    __IO uint32_t PA_CLR;        // 1CH
+    __IO uint32_t PA_PU;         // 20H
+    __IO uint32_t PA_PD_DRV;     // 24H
+#if !defined(CH582_CH583) && !defined(CH571_CH573)
+    __IO uint32_t PA_SET;        // 28H
+#else
+    uint32_t RESERVED1;          // 28H
+#endif
 #if defined(CH571_CH573) || defined(CH58x) || defined(CH59x)
-    uint32_t RESERVED1;         // BC
-    __IO uint32_t PB_DIR;       // C0
-    __IO uint32_t PB_PIN;       // C4
-    __IO uint32_t PB_OUT;       // C8
-    __IO uint32_t PB_CLR;       // CC
-    __IO uint32_t PB_PU;        // D0
-    __IO uint32_t PB_PD_DRV;    // D4
-    __IO uint32_t PB_SET;       // D8
+    uint32_t RESERVED2;          // 2CH
+    __IO uint32_t PB_DIR;        // 30H
+    __IO uint32_t PB_PIN;        // 34H
+    __IO uint32_t PB_OUT;        // 38H
+    __IO uint32_t PB_CLR;        // 3CH
+    __IO uint32_t PB_PU;         // 40H
+    __IO uint32_t PB_PD_DRV;     // 44H
+#if !defined(CH582_CH583) && !defined(CH571_CH573)
+    __IO uint32_t PB_SET;        // 48H
 #endif
 } GPIO_TypeDef;
 
 #ifndef CH571_CH573
 typedef struct {
-    __IO uint16_t CTRL1;         // 0
-    uint16_t RESERVED0;          // 2
-    __IO uint16_t CTRL2;         // 4
-    uint16_t RESERVED1;          // 6
-    __IO uint16_t OADDR1;        // 8
-    uint16_t RESERVED2;          // A
-    __IO uint16_t OADDR2;        // C
-    uint16_t RESERVED3;          // E
-    __IO uint16_t DATAR;         // 10
-    uint16_t RESERVED4;          // 12
-    __IO uint16_t STAR1;         // 14
-    uint16_t RESERVED5;          // 16
-    __IO uint16_t STAR2;         // 18
-    uint16_t RESERVED6;          // 1A
-    __IO uint16_t CKCFGR;        // 1C
-    uint16_t RESERVED7;          // 1E
-    __IO uint16_t RTR;           // 20
+    __IO uint16_t CTRL1;         // 0H
+    uint16_t RESERVED0;          // 2H
+    __IO uint16_t CTRL2;         // 4H
+    uint16_t RESERVED1;          // 6H
+    __IO uint16_t OADDR1;        // 8H
+    uint16_t RESERVED2;          // AH
+    __IO uint16_t OADDR2;        // CH
+    uint16_t RESERVED3;          // EH
+    __IO uint16_t DATAR;         // 10H
+    uint16_t RESERVED4;          // 12H
+    __IO uint16_t STAR1;         // 14H
+    uint16_t RESERVED5;          // 16H
+    __IO uint16_t STAR2;         // 18H
+    uint16_t RESERVED6;          // 1AH
+    __IO uint16_t CKCFGR;        // 1CH
+    uint16_t RESERVED7;          // 1EH
+    __IO uint16_t RTR;           // 20H
 } I2C_TypeDef;
 #endif
 
 #ifdef CH570_CH572
 typedef struct {
-    __IO uint16_t CTRL;          // 0
-    __IO uint8_t INT_EN;         // 2
-    __IO uint8_t INT_FLAG;       // 3
-    __IO uint16_t SCAN_NUMB;     // 4
+    __IO uint16_t CTRL;          // 0H
+    __IO uint8_t INT_EN;         // 2H
+    __IO uint8_t INT_FLAG;       // 3H
+    __IO uint16_t SCAN_NUMB;     // 4H
 } KeyScan_TypeDef;
 #endif
 
 typedef struct {
-    __IO uint8_t OUT_EN;         // 0
-    __IO uint8_t OUT_POLAR;      // 1
-    __IO uint8_t CONFIG;         // 2
+    __IO uint8_t OUT_EN;         // 0H
+    __IO uint8_t OUT_POLAR;      // 1H
+    __IO uint8_t CONFIG;         // 2H
 #ifdef CH570_CH572
-    __IO uint8_t DMA_CTRL;       // 3
-    __IO uint8_t PWM1_DATA;      // 4
-    __IO uint8_t PWM2_DATA;      // 5
-    __IO uint8_t PWM3_DATA;      // 6
-    uint8_t RESERVED0[5];        // 7
-    __IO uint8_t INT_EN;         // C
-    __IO uint8_t INT_FLAG;       // D
-    uint16_t RESERVED1;          // E
-    __IO uint8_t PWM4_DATA;      // 10
-    __IO uint8_t PWM5_DATA;      // 11
-    uint16_t RESERVED2;          // 12
-    __IO uint16_t CYC_VALUE;     // 14
-    __IO uint16_t CYC1_VALUE;    // 16
-    __IO uint16_t CLOCK_DIV;     // 18
-    uint16_t RESERVED3;          // 1A
-    __IO uint32_t DMA_NOW;       // 1C
-    __IO uint32_t DMA_BEG;       // 20
-    __IO uint32_t DMA_END;       // 24
+    __IO uint8_t DMA_CTRL;       // 3H
+    __IO uint8_t PWM1_DATA;      // 4H
+    __IO uint8_t PWM2_DATA;      // 5H
+    __IO uint8_t PWM3_DATA;      // 6H
+    uint8_t RESERVED0[5];        // 7H
+    __IO uint8_t INT_EN;         // CH
+    __IO uint8_t INT_FLAG;       // DH
+    uint16_t RESERVED1;          // EH
+    __IO uint8_t PWM4_DATA;      // 10H
+    __IO uint8_t PWM5_DATA;      // 11H
+    uint16_t RESERVED2;          // 12H
+    __IO uint16_t CYC_VALUE;     // 14H
+    __IO uint16_t CYC1_VALUE;    // 16H
+    __IO uint16_t CLOCK_DIV;     // 18H
+    uint16_t RESERVED3;          // 1AH
+    __IO uint32_t DMA_NOW;       // 1CH
+    __IO uint32_t DMA_BEG;       // 20H
+    __IO uint32_t DMA_END;       // 24H
 #else
-    __IO uint8_t CLOCK_DIV;      // 3
-    __IO uint8_t PWM4_DATA;      // 4
-    __IO uint8_t PWM5_DATA;      // 5
-    __IO uint8_t PWM6_DATA;      // 6
-    __IO uint8_t PWM7_DATA;      // 7
-    __IO uint8_t PWM8_DATA;      // 8
-    __IO uint8_t PWM9_DATA;      // 9
-    __IO uint8_t PWM10_DATA;     // A
-    __IO uint8_t PWM11_DATA;     // B
-    __IO uint8_t INT_CTRL;       // C
+    __IO uint8_t CLOCK_DIV;      // 3H
+    __IO uint8_t PWM4_DATA;      // 4H
+    __IO uint8_t PWM5_DATA;      // 5H
+    __IO uint8_t PWM6_DATA;      // 6H
+    __IO uint8_t PWM7_DATA;      // 7H
+    __IO uint8_t PWM8_DATA;      // 8H
+    __IO uint8_t PWM9_DATA;      // 9H
+    __IO uint8_t PWM10_DATA;     // AH
+    __IO uint8_t PWM11_DATA;     // BH
+    __IO uint8_t INT_CTRL;       // CH
 #if defined(CH584_CH585) || defined(CH591_CH592)
-    uint8_t RESERVED0[3];        // D
-    __IO uint32_t REG_DATA8;     // 10
-    __IO uint32_t REG_CYCLE;     // 14
+    uint8_t RESERVED0[3];        // DH
+    __IO uint32_t REG_DATA8;     // 10H
+    __IO uint32_t REG_CYCLE;     // 14H
 #endif
 #endif
 } PWM_TypeDef;
 
 typedef struct {
-    __IO uint8_t CTRL_MOD;         // 0
-    __IO uint8_t CTRL_CFG;         // 1
-    __IO uint8_t INTER_EN;         // 2
-    __IO uint8_t CLKDIV_SLAVEPRE;  // 3
-    __IO uint8_t BUFFER;           // 4
-    __IO uint8_t RUN_FLAG;         // 5
-    __IO uint8_t INT_FLAG;         // 6
-    __IO uint8_t FIFO_COUNT;       // 7
+    __IO uint8_t CTRL_MOD;         // 0H
+    __IO uint8_t CTRL_CFG;         // 1H
+    __IO uint8_t INTER_EN;         // 2H
+    __IO uint8_t CLKDIV_SLAVE_PRE; // 3H
+    __IO uint8_t BUFFER;           // 4H
+    __IO uint8_t RUN_FLAG;         // 5H
+    __IO uint8_t INT_FLAG;         // 6H
+    __IO uint8_t FIFO_COUNT;       // 7H
 #ifdef CH570_CH572
-    __IO uint8_t INT_TYPE;         // 8
-    __IO uint8_t INTER1_EN;        // 9
-    __IO uint8_t INTER1_FLAG;      // A
+    __IO uint8_t INT_TYPE;         // 8H
+    __IO uint8_t INTER1_EN;        // 9H
+    __IO uint8_t INTER1_FLAG;      // AH
 #else
-    uint8_t RESERVED0[3];          // 8
+    uint8_t RESERVED0[3];          // 8H
 #endif
-    __IO uint16_t TOTAL_CNT;       // C
-    uint16_t RESERVED1;            // E
-    __IO uint8_t FIFO;             // 10
-    uint8_t RESERVED2[2];          // 11
-    __IO uint8_t COUNT1;           // 13
-    __IO uint16_t DMA_NOW;         // 14
-    uint16_t RESERVED3;            // 16
-    __IO uint16_t DMA_BEG;         // 18
-    uint16_t RESERVED4;            // 1A
-    __IO uint16_t DMA_END;         // 1C
+    __IO uint16_t TOTAL_CNT;       // CH
+    uint16_t RESERVED1;            // EH
+    __IO uint8_t FIFO;             // 10H
+    uint8_t RESERVED2[2];          // 11H
+    __IO uint8_t COUNT1;           // 13H
+    __IO uint16_t DMA_NOW;         // 14H
+    uint16_t RESERVED3;            // 16H
+    __IO uint16_t DMA_BEG;         // 18H
+    uint16_t RESERVED4;            // 1AH
+    __IO uint16_t DMA_END;         // 1CH
 } SPI_TypeDef;
 
 typedef struct {
-    __IO uint8_t CTRL_MOD;       // 0
-    __IO uint8_t CTRL_DMA;       // 1
-    __IO uint8_t INTER_EN;       // 2
-    uint8_t RESERVED0;           // 3
-    __IO uint8_t PWM_MOD;        // 4
-    uint8_t RESERVED1;           // 5
-    __IO uint8_t INT_FLAG;       // 6
-    __IO uint8_t FIFO_COUNT;     // 7
-    __IO uint32_t COUNT;         // 8
-    __IO uint32_t CNT_END;       // C
-    __IO uint32_t FIFO;          // 10
-    __IO uint16_t DMA_NOW;       // 14
-    uint16_t RESERVED2;          // 16
-    __IO uint16_t DMA_BEG;       // 18
-    uint16_t RESERVED3;          // 1A
-    __IO uint16_t DMA_END;       // 1C
+    __IO uint8_t CTRL_MOD;       // 0H
+    __IO uint8_t CTRL_DMA;       // 1H
+    __IO uint8_t INTER_EN;       // 2H
+    uint8_t RESERVED0;           // 3H
+    __IO uint8_t PWM_MOD;        // 4H
+    uint8_t RESERVED1;           // 5H
+    __IO uint8_t INT_FLAG;       // 6H
+    __IO uint8_t FIFO_COUNT;     // 7H
+    __IO uint32_t COUNT;         // 8H
+    __IO uint32_t CNT_END;       // CH
+    __IO uint32_t FIFO;          // 10H
+    __IO uint16_t DMA_NOW;       // 14H
+    uint16_t RESERVED2;          // 16H
+    __IO uint16_t DMA_BEG;       // 18H
+    uint16_t RESERVED3;          // 1AH
+    __IO uint16_t DMA_END;       // 1CH
+#if defined(CH570_CH572)
+    uint16_t RESERVED4;          // 1EH
+    __IO uint8_t ENC_REG_CTRL;   // 20H
+    __IO uint8_t ENC_INTER_EN;   // 21H
+    __IO uint8_t ENC_INTER_FLAG; // 22H
+    uint8_t RESERVED5;           // 23H
+    __IO uint32_t ENC_REG_CEND;  // 24H
+    __IO uint32_t ENC_REG_CCNT;  // 28H
+#endif
 } TMR_TypeDef;
 
 typedef struct {
