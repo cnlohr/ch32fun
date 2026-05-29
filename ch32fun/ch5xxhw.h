@@ -248,40 +248,44 @@ typedef struct {
 #endif
 
 typedef struct {
-    __IO uint32_t INT_EN;        // 0
 #if defined(CH570_CH572)
-    __IO uint16_t INT_MODE;      // 4H
-    __IO uint16_t INT_EDGE_TYPE; // 6H
+    __IO uint16_t PA_INT_EN;        // 0H
+    uint16_t RESERVED0;             // 2H
+    __IO uint16_t PA_INT_MODE;      // 4H
+    __IO uint16_t PA_INT_EDGE_TYPE; // 6H
+    uint32_t RESERVED1;             // 8H
+    __IO uint16_t PA_INT_IF;        // CH
+    uint16_t RESERVED2;             // EH
 #else
-    __IO uint32_t INT_MODE;      // 4H
-#endif
-#if defined(CH59x)
-    __IO uint32_t INT_EDGE_TYPE; // 8H
+    __IO uint16_t PA_INT_EN;        // 0H
+    __IO uint16_t PB_INT_EN;        // 2H
+    __IO uint16_t PA_INT_MODE;      // 4H
+    __IO uint16_t PB_INT_MODE;      // 6H
+#if defined(CH591_CH592)
+    __IO uint16_t PA_INT_EDGE_TYPE; // 8H
+    __IO uint16_t PB_INT_EDGE_TYPE; // AH
 #else
-    uint32_t RESERVED0;          // 8H
+    uint32_t RESERVED0;             // 8H
 #endif
-    __IO uint32_t INT_IF;        // CH
-    __IO uint32_t PA_DIR;        // 10H
-    __IO uint32_t PA_PIN;        // 14H
-    __IO uint32_t PA_OUT;        // 18H
-    __IO uint32_t PA_CLR;        // 1CH
-    __IO uint32_t PA_PU;         // 20H
-    __IO uint32_t PA_PD_DRV;     // 24H
-#if !defined(CH582_CH583) && !defined(CH571_CH573)
-    __IO uint32_t PA_SET;        // 28H
-#else
-    uint32_t RESERVED1;          // 28H
+    __IO uint16_t PA_INT_IF;        // CH
+    __IO uint16_t PB_INT_IF;        // EH
 #endif
-#if defined(CH571_CH573) || defined(CH58x) || defined(CH59x)
-    uint32_t RESERVED2;          // 2CH
-    __IO uint32_t PB_DIR;        // 30H
-    __IO uint32_t PB_PIN;        // 34H
-    __IO uint32_t PB_OUT;        // 38H
-    __IO uint32_t PB_CLR;        // 3CH
-    __IO uint32_t PB_PU;         // 40H
-    __IO uint32_t PB_PD_DRV;     // 44H
-#if !defined(CH582_CH583) && !defined(CH571_CH573)
-    __IO uint32_t PB_SET;        // 48H
+    __IO uint32_t PA_DIR;           // 10H
+    __IO uint32_t PA_PIN;           // 14H
+    __IO uint32_t PA_OUT;           // 18H
+    __IO uint32_t PA_CLR;           // 1CH
+    __IO uint32_t PA_PU;            // 20H
+    __IO uint32_t PA_PD_DRV;        // 24H
+    __IO uint32_t PA_SET;           // 28H
+#if defined(CH571_CH573) || defined(CH582_CH583) || defined(CH584_CH585) || defined(CH591_CH592)
+    uint32_t RESERVED1;             // 2CH
+    __IO uint32_t PB_DIR;           // 30H
+    __IO uint32_t PB_PIN;           // 34H
+    __IO uint32_t PB_OUT;           // 38H
+    __IO uint32_t PB_CLR;           // 3CH
+    __IO uint32_t PB_PU;            // 40H
+    __IO uint32_t PB_PD_DRV;        // 44H
+    __IO uint32_t PB_SET;           // 48H
 #endif
 } GPIO_TypeDef;
 
