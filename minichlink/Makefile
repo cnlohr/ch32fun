@@ -8,10 +8,29 @@ H_S:=cmdserver.h funconfig.h hidapi.h libusb.h microgdbstub.h minichlink.h seria
 # gdb-multilib {file}
 # target remote :2345
 
+TARGET_OS?=$(OS)
+ifeq ($(OS),Windows_NT)
+	WHICH:=where
+	NULLDEV:=nul
+else
+	WHICH:=which
+	NULLDEV:=/dev/null
+endif
+
+ifneq ($(shell $(WHICH) shasum 2>$(NULLDEV)),)
+	SHASUM:=shasum
+else ifneq ($(shell $(WHICH) sha1sum 2>$(NULLDEV)),)
+	SHASUM:=sha1sum
+else ifneq ($(shell $(WHICH) busybox 2>$(NULLDEV)),)
+	SHASUM:=busybox sha1sum
+else
+$(error "No shasum found in PATH")
+endif
+
 CFLAGS_WINDOWS:=-Os -s -Wall -D_WIN32_WINNT=0x0600 -I. -Wall -DCH32V003 -DMINICHLINK
 LDFLAGS_WINDOWS:=-L. -lpthread -lusb-1.0 -lsetupapi -lws2_32
-VERSION:=$(shell shasum $(C_S) $(H_S) Makefile | shasum | head -c 40)
-ifeq ($(OS),Windows_NT)
+VERSION:=$(shell $(SHASUM) $(C_S) $(H_S) Makefile | $(SHASUM) | head -c 40)
+ifeq ($(TARGET_OS),Windows_NT)
 	TOOLS:=minichlink.exe
 else
 	OS_NAME := $(shell uname -s | tr A-Z a-z)
@@ -78,4 +97,4 @@ clean :
 
 hash :
 	echo $(VERSION) > version
-	shasum $(C_S) $(H_S) Makefile >> version
+	$(SHASUM) $(C_S) $(H_S) Makefile >> version
