@@ -143,8 +143,8 @@ static __attribute__((noreturn)) void processLoop()
 		{
 			if( --doreboot == 0 )
 			{
-				USBFSReset();
 #if defined(CH5xx)
+				USBFSReset();
 				jump_isprom();
 #else
 				// There aren't any other chips that can reboot into USB bootloader, are there?
