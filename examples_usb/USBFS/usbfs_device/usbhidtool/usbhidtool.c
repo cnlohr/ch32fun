@@ -83,7 +83,6 @@ int main( int argc, char ** argv )
 	if( isterm )
 	{
 		fprintf( stderr, "Terminal starting.\n" );
-		int errorstreak = 0;
 		while(1)
 		{
 			buffer[0] = 0xe2;
@@ -91,11 +90,9 @@ int main( int argc, char ** argv )
 
 			if( r < 8 )
 			{
-				if( errorstreak++ < 10 ) continue;
 				fprintf( stderr, "hid_get_feature_report error on terminal (%d)\n", r );
 				return -9;
 			}
-			errorstreak = 0;
 
 			int code = buffer[0];
 			if( buffer[0] & 0x80 )
