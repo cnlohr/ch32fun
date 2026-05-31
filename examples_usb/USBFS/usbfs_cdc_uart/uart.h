@@ -5,23 +5,6 @@
 #include "ch32fun.h"
 
 #ifdef CH5xx
-typedef struct {
-	volatile uint8_t MCR;
-	volatile uint8_t IER;
-	volatile uint8_t FCR;
-	volatile uint8_t LCR;
-	volatile uint8_t IIR;
-	volatile uint8_t LSR;
-	uint16_t reserved_1;
-	volatile uint8_t THR;
-	uint8_t reserved_2;
-	volatile uint8_t RFC;
-	volatile uint8_t TFC;
-	volatile uint16_t DL;
-	volatile uint8_t DIV;
-	volatile uint8_t ADR;
-} UART_TypeDef;
-
 #define USART_WordLength_5b 0x00
 #define USART_WordLength_6b 0x01
 #define USART_WordLength_7b 0x02

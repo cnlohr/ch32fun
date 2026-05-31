@@ -13,7 +13,7 @@ void uart_reset() {
 	// Manually clearing FIFO, because CH570 doesn't have reset UART function
 	for(int i = 0; i <= UART(cdc.uart->number)->RFC; i++)
 	{
-		UART(cdc.uart->number)->THR;
+		UART(cdc.uart->number)->THR_RBR;
 	}
 #endif
 #ifndef CH5xx
@@ -165,7 +165,7 @@ void uart_process_rx(CDC_config_t * ctx) {
 		
 		for (i = 0; i <= UART(ctx->uart->number)->RFC; i++) {
 			if ((pos + i) >= UART_RX_BUF_SIZE) pos -= UART_RX_BUF_SIZE;
-			uart_rx_buffer[pos+i] = UART(ctx->uart->number)->THR;
+			uart_rx_buffer[pos+i] = UART(ctx->uart->number)->THR_RBR;
 		}
 		
 		if ((ctx->rx_remain += i) > UART_RX_BUF_SIZE) {
@@ -271,7 +271,7 @@ void uart_process_tx(CDC_config_t * ctx) {
 	int local_pos = ctx->tx_pos;
 	// ctx->txing = 1;
 	while (ctx->tx_remain && UART(ctx->uart->number)->TFC != UART_FIFO_SIZE) {
-		UART(ctx->uart->number)->THR = uart_tx_buffer[local_pos++];
+		UART(ctx->uart->number)->THR_RBR = uart_tx_buffer[local_pos++];
 		if (ctx->tx_wrap_pos <= local_pos) {
 			local_pos = 0;
 			ctx->tx_wrap_pos = UART_TX_BUF_SIZE;
