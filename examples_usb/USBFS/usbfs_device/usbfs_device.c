@@ -6,6 +6,9 @@
 #if defined(CH32V30x)
 #define LED PA15
 #define LED_ON 1
+#elif defined(CH57x)
+#define LED PA7
+#define LED_ON 0
 #elif defined(CH5xx)
 #define LED PA8
 #define LED_ON 0
@@ -21,8 +24,9 @@
 #endif
 
 uint32_t count;
-
+int doreboot = 0;
 int last = 0;
+
 void handle_debug_input( int numbytes, uint8_t * data )
 {
 	last = data[0];
@@ -47,7 +51,9 @@ int HandleHidUserSetReportSetup( struct _USBState * ctx, tusb_control_request_t 
 int HandleHidUserGetReportSetup( struct _USBState * ctx, tusb_control_request_t * req )
 {
 	int id = req->wValue & 0xff;
-	if( id == 0xaa )
+	switch( id )
+	{
+	case 0xaa:
 	{
 		ctx->pCtrlPayloadPtr = scratchpad;
 		if( sizeof(scratchpad) - 1 < lrx )
@@ -55,15 +61,34 @@ int HandleHidUserGetReportSetup( struct _USBState * ctx, tusb_control_request_t 
 		else
 			return lrx;
 	}
+	case 0xe2: // Copy the printf debug buffer out of DMDATA0.
+		memcpy( scratchpad, (char*)DMDATA0, 8 );
+		ctx->pCtrlPayloadPtr = scratchpad;
+		*DMDATA0 = 0;
+		return 8;
+	}
 	return 0;
 }
 
 void HandleHidUserReportDataOut( struct _USBState * ctx, uint8_t * data, int len )
 {
+	switch( data[0] )
+	{
+	case 0xe1:
+		if( len > 7 )
+		{
+			if( strncmp( (char*)(data+1), "\xbe\xef\x00\xc0\x01\xd0\x0d", 7 ) == 0 )
+			{
+				doreboot = 1000;
+			}
+		}
+		break;
+	}
 }
 
 int HandleHidUserReportDataIn( struct _USBState * ctx, uint8_t * data, int len )
 {
+	// You almost will never need this, in general, you will use HandleHidUserGetReportSetup.
 //	printf( "IN %d %d %08x %08x\n", len, ctx->USBFS_SetupReqLen, data, FSUSBCTX.ENDPOINTS[0] );
 //	memset( data, 0xcc, len );
 	return len;
@@ -111,6 +136,19 @@ static __attribute__((noreturn)) void processLoop()
 					wasTickMouse = tickDown;
 				}
 				USBFS_SendEndpoint( i, (i==1)?8:4 );
+			}
+		}
+
+		if( doreboot )
+		{
+			if( --doreboot == 0 )
+			{
+				USBFSReset();
+#if defined(CH5xx)
+				jump_isprom();
+#else
+				// There aren't any other chips that can reboot into USB bootloader, are there?
+#endif
 			}
 		}
 	}
