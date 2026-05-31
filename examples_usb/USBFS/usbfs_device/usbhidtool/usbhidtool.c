@@ -87,7 +87,7 @@ int main( int argc, char ** argv )
 		while(1)
 		{
 			buffer[0] = 0xe2;
-			int r = hid_get_feature_report( hd, buffer, sizeof(buffer) );
+			int r = hid_get_feature_report( hd, buffer, 8 );
 
 			if( r < 8 )
 			{
