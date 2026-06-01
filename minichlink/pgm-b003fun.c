@@ -632,7 +632,7 @@ static int B003FunSetupInterface( void * dev )
 
 	iss->target_chip_id = chip_id;
 	iss->target_chip_type = iss->target_chip->family_id;
-	iss->flash_size = iss->target_chip->flash_size/1024;
+	iss->flash_size = iss->target_chip->flash_size;
 	iss->ram_base = iss->target_chip->ram_base;
 	iss->ram_size = iss->target_chip->ram_size;
 	iss->sector_size = iss->target_chip->sector_size;
@@ -640,7 +640,7 @@ static int B003FunSetupInterface( void * dev )
 	uint8_t uuid[8];
 	fprintf( stderr, "Detected %s\n", iss->target_chip->name_str );
 	fprintf(stderr, "HID buffer: %d bytes\n", eps->scratchpad_size );	// Can remove this line in future versions
-	fprintf( stderr, "Flash Storage: %d kB\n", iss->flash_size );
+	fprintf( stderr, "Flash Storage: %d kB\n", iss->flash_size/1024 );
 	if( MCF.GetUUID( dev, uuid ) ) fprintf( stderr, "Couldn't read UUID\n" );
 	else fprintf( stderr, "Part UUID: %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n", uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7] );
 	fprintf( stderr, "Part Type: %02x-%02x-%02x-%02x\n", part_type[3], part_type[2], part_type[1], part_type[0] );

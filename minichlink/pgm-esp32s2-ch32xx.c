@@ -1197,11 +1197,11 @@ int ESPDetermineChipTypeOLD( void * dev )
 				MCF.WriteReg32( dev, DMCOMMAND, 0x00221008 ); // Copy data from x8.
 				MCF.ReadReg32( dev, DMDATA0, &rr );
 
-				iss->flash_size = rr & 0xFFFF;
+				iss->flash_size = (rr & 0xFFFF) * 1024;
 			}
 
 			iss->target_chip_type = iss->target_chip->family_id;
-			if( iss->flash_size == 0 ) iss->flash_size = iss->target_chip->flash_size/1024;
+			if( iss->flash_size == 0 ) iss->flash_size = iss->target_chip->flash_size;
 			iss->ram_base = iss->target_chip->ram_base;
 			iss->ram_size = iss->target_chip->ram_size;
 			iss->sector_size = iss->target_chip->sector_size;
@@ -1216,7 +1216,7 @@ int ESPDetermineChipTypeOLD( void * dev )
 			uint8_t uuid[8];
 			if( MCF.GetUUID( dev, uuid ) ) fprintf( stderr, "Couldn't read UUID\n" );
 			fprintf( stderr, "Detected %s\n", iss->target_chip->name_str );
-			fprintf( stderr, "Flash Storage: %d kB\n", iss->flash_size );
+			fprintf( stderr, "Flash Storage: %d kB\n", iss->flash_size/1024 );
 			fprintf( stderr, "Part UUID: %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n", uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7] );
 			fprintf( stderr, "Read protection: %s\n", (read_protection > 0)?"enabled":"disabled" );
 		}
@@ -1427,11 +1427,11 @@ int ESPDetermineChipType( void * dev )
 			if( flash_size_address )
 			{
 				ESPReadWord( dev, flash_size_address, &rr);
-				iss->flash_size = rr & 0xFFFF;
+				iss->flash_size = (rr & 0xFFFF) * 1024;
 			}
 			
 			iss->target_chip_type = iss->target_chip->family_id;
-			if( iss->flash_size == 0 ) iss->flash_size = iss->target_chip->flash_size/1024;
+			if( iss->flash_size == 0 ) iss->flash_size = iss->target_chip->flash_size;
 			iss->ram_base = iss->target_chip->ram_base;
 			iss->ram_size = iss->target_chip->ram_size;
 			iss->sector_size = iss->target_chip->sector_size;
@@ -1463,7 +1463,7 @@ int ESPDetermineChipType( void * dev )
 			uint8_t uuid[8];
 			if( MCF.GetUUID( dev, uuid ) ) fprintf( stderr, "Couldn't read UUID\n" );
 			fprintf( stderr, "Detected %s\n", iss->target_chip->name_str );
-			fprintf( stderr, "Flash Storage: %d kB\n", iss->flash_size );
+			fprintf( stderr, "Flash Storage: %d kB\n", iss->flash_size/1024 );
 			fprintf( stderr, "Part UUID: %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n", uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7] );
 			fprintf( stderr, "Part Type: %02x-%02x-%02x-%02x\n", part_type[3], part_type[2], part_type[1], part_type[0] );
 			fprintf( stderr, "Read protection: %s\n", (read_protection > 0)?"enabled":"disabled" );

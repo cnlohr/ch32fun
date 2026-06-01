@@ -1653,7 +1653,7 @@ static int DefaultDetermineChipType( void * dev )
 				MCF.WriteReg32( dev, DMCOMMAND, 0x00221008 ); // Copy data from x8.
 				MCF.ReadReg32( dev, DMDATA0, &vendor_bytes );
 
-				iss->flash_size = vendor_bytes & 0xFFFF;
+				iss->flash_size = (vendor_bytes & 0xFFFF) * 1024;
 			}
 		}
 
@@ -1699,7 +1699,7 @@ chip_identified:
 			}
 			
 			iss->target_chip_type = iss->target_chip->family_id;
-			if( iss->flash_size == 0 ) iss->flash_size = iss->target_chip->flash_size/1024;
+			if( iss->flash_size == 0 ) iss->flash_size = iss->target_chip->flash_size;
 			iss->ram_base = iss->target_chip->ram_base;
 			iss->ram_size = iss->target_chip->ram_size;
 			iss->sector_size = iss->target_chip->sector_size;
@@ -1725,7 +1725,7 @@ chip_identified:
 			uint8_t uuid[8];
 			if( MCF.GetUUID( dev, uuid ) ) fprintf( stderr, "Couldn't read UUID\n" );
 			fprintf( stderr, "Detected %s\n", iss->target_chip->name_str );
-			fprintf( stderr, "Flash Storage: %d kB\n", iss->flash_size );
+			fprintf( stderr, "Flash Storage: %d kB\n", iss->flash_size/1024 );
 			fprintf( stderr, "Part UUID: %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n", uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7] );
 			fprintf( stderr, "Part Type: %02x-%02x-%02x-%02x\n", part_type[3], part_type[2], part_type[1], part_type[0] );
 			fprintf( stderr, "Read protection: %s\n", (read_protection > 0)?"enabled":"disabled" );
@@ -3454,6 +3454,8 @@ int DetectMemoryArea( void * dev, uint32_t address )
 	}
 	const struct RiscVChip_s * chip = iss->target_chip;
 	if( !iss->debugger ) fprintf( stderr, "Detecting Memory Area\n" );
+	else return 0;
+
 	if( address < chip->flash_offset)
 	{
 		fprintf( stderr, "The starting address is lower than FLASH start. Aborting\n" );

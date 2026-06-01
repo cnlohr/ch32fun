@@ -134,8 +134,8 @@ int ISPSetupInterface( void * d ) {
 			{
 				if( iss->target_chip == &ch32v103 )
 				{
-					if( rbuff[4] == 0x32 ) iss->flash_size = 32;
-					else iss->flash_size = 64;
+					if( rbuff[4] == 0x32 ) iss->flash_size = 32 * 1024;
+					else iss->flash_size = 64 * 1024;
 				}
 				else if( iss->target_chip == &ch32v203 )
 				{
@@ -145,7 +145,7 @@ int ISPSetupInterface( void * d ) {
 					case 0x35:
 					case 0x36:
 					case 0x37:
-						iss->flash_size = 32;
+						iss->flash_size = 32 * 1024;
 						break;
 					
 					case 0x30:
@@ -154,28 +154,28 @@ int ISPSetupInterface( void * d ) {
 					case 0x3a:
 					case 0x3b:
 					case 0x3e:
-						iss->flash_size = 64;
+						iss->flash_size = 64 * 1024;
 						break;
 
 					default:
-						iss->flash_size = 128;
+						iss->flash_size = 128 * 1024;
 						break;
 					}
 				}
 				else if ( iss->target_chip == &ch32v303 )
 				{
 					if( rbuff[4] == 0x32 || rbuff[4] == 0x33 ) iss->flash_size = 128;
-					else iss->flash_size = 128;
+					else iss->flash_size = 128 * 1024;
 				}
 				else // If CH32X035 of CH32L103
 				{
 					if ( (rbuff[4] & 0xf) == 7 ) iss->flash_size = 48;
-					else iss->flash_size = 64;
+					else iss->flash_size = 64 * 1024;
 				}
 			}
 			else
 			{
-				iss->flash_size = iss->target_chip->flash_size / 1024;
+				iss->flash_size = iss->target_chip->flash_size;
 			}
 		}
 		else
@@ -192,6 +192,7 @@ int ISPSetupInterface( void * d ) {
 		return -1;
 	}
 	printf( "Detected %s\n", iss->target_chip->name_str );
+	iss->target_chip_type = iss->target_chip->family_id;
 	uint8_t read_protection = 0;
 	
 	// read config
@@ -201,8 +202,7 @@ int ISPSetupInterface( void * d ) {
 		else if( iss->target_chip->protocol == PROTOCOL_CH5xx && iss->target_chip_type == CHIP_CH570 ) read_protection = (rbuff[16] == 0x3a);
 		else read_protection = (rbuff[6] == 0xa5);
 		printf( "Bootloader version: %d.%d%d\n", rbuff[19], rbuff[20], rbuff[21] );
-		printf( "Flash Storage: %d kB\n", iss->flash_size );
-		iss->target_chip_type = iss->target_chip->family_id;
+		printf( "Flash Storage: %d kB\n", iss->flash_size/1024 );
 		// printf("bootloader: v%d.%d%d\n", rbuff[19], rbuff[20], rbuff[21]);
 		printf( "Part UUID: %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n", rbuff[22], rbuff[23], rbuff[24], rbuff[25], rbuff[26], rbuff[27], rbuff[28], rbuff[29] );
 		printf( "Read protection: %s\n", (read_protection)?"disabled":"enabled" );
@@ -345,14 +345,22 @@ int ISPWriteBinaryBlob( void * d, uint32_t address_to_write, uint32_t blob_size,
 	}
 
 	if (iss->current_area == PROGRAM_AREA && (iss->target_chip_type == CHIP_CH57x ||
-	    iss->target_chip_type == CHIP_CH58x ||
+	    iss->target_chip_type == CHIP_CH570 || iss->target_chip_type == CHIP_CH58x ||
 	    iss->target_chip_type == CHIP_CH585 || iss->target_chip_type == CHIP_CH59x))
 		{
 			wch_isp_command( dev, "\xa7\x02\x00\x1f\x00", 5, (int*)&transferred, rbuff, 1024 );
 			uint32_t option_bytes = *((uint32_t*)&rbuff[14]);
-			if (option_bytes & 0x10) {
+			if (iss->target_chip_type == CHIP_CH570 && ((option_bytes&0x00FF0000)==0x3a0000)) {
+				fprintf(stderr, "\nWARNING - you have read protection disabled, you need to enable it to be able to write to flash using ISP.\n");
+				fprintf(stderr, "Proceding will only erase the flash.\nPress any key to continue, or Ctrl+C to cancel.\n");
+				fprintf(stderr, "You can enable read protection using minichlink -P\n");
+				while(!IsKBHit());
+				ReadKBByte();
+			}
+			else if (iss->target_chip_type != CHIP_CH570 && (option_bytes & 0x10)) {
 				fprintf(stderr, "\nWARNING - you have debug enabled, you need to disable it to be able to write to flash using ISP.\n");
 				fprintf(stderr, "Proceding will only erase the flash.\nPress any key to continue, or Ctrl+C to cancel.\n");
+				fprintf(stderr, "You can disable debug using minichlink -n\n");
 				while(!IsKBHit());
 				ReadKBByte();
 			}
