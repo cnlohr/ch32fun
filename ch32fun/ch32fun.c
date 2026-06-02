@@ -1451,6 +1451,7 @@ void handle_reset( void )
 
 __attribute__ ((naked)) int setjmp( jmp_buf env )
 {
+	(void)env;
 	asm volatile(
 	// Common registers
 "	sw ra, 0*4(a0)\n"
@@ -1493,6 +1494,8 @@ __attribute__ ((naked)) int setjmp( jmp_buf env )
 
 __attribute__ ((naked)) void longjmp( jmp_buf env, int val )
 {
+	(void)env;
+	(void)val;
 	asm volatile(
 	// Common registers
 "	lw ra, 0*4(a0)\n"
