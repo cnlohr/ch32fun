@@ -144,6 +144,10 @@
 	#define FUNCONF_ENABLE_HPE 0
 #endif
 
+#ifndef FUNCONF_TINYVECTOR
+	#define FUNCONF_TINYVECTOR 0
+#endif
+
 #if FUNCONF_ENABLE_HPE == 1
 	#define INTERRUPT_DECORATOR  __attribute__((interrupt("WCH-Interrupt-fast")))
 #else
@@ -1024,7 +1028,13 @@ void funAnalogInit( void );
 // Be sure to call funAnalogInit first.
 int funAnalogRead( int nAnalogNumber );
 
-void handle_reset()            __attribute__((naked)) __attribute((section(".text.handle_reset"))) __attribute__((used));
+#if FUNCONF_CUSTOM_MTVEC
+	void handle_reset( void ) __attribute__((naked))  __attribute__((section(".init"))) __attribute__((used));
+#else
+	void handle_reset( void ) __attribute__((naked))  __attribute__((section(".text.handle_reset"))) __attribute__((used));
+#endif
+
+
 void DefaultIRQHandler( void ) __attribute__((section(VECTOR_HANDLER_SECTION))) __attribute__((naked)) __attribute__((used));
 // used to clear the CSS flag in case of clock fail switch
 #if defined(FUNCONF_USE_CLK_SEC) && FUNCONF_USE_CLK_SEC

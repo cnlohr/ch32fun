@@ -1072,6 +1072,8 @@ void handle_reset( void ) __attribute__((section(".text.handle_reset")));
 #if FUNCONF_ISR_IN_RAM
 	void Init()         __attribute__((naked)) __attribute((section(".init"))) __attribute((weak,alias("InitDefault"))) __attribute((naked));
 	void InitDefault()  __attribute__((naked)) __attribute((section(".init"))) __attribute((naked));
+
+#if !defined(FUNCONF_TINYVECTOR) || !FUNCONF_TINYVECTOR
 	void InitDefault( void )
 	{
 		asm volatile( "\n\
@@ -1081,6 +1083,9 @@ void handle_reset( void ) __attribute__((section(".text.handle_reset")));
 			j handle_reset\n\
 		.option   pop;\n" );
 	}
+#else
+	void InitDefault()   __attribute__((naked)) __attribute((section(".init"))) __attribute((weak,alias("handle_reset")));
+#endif
 
 	void InterruptVector()         __attribute__((naked)) __attribute((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("InterruptVectorDefault"))) __attribute((naked));
 	void InterruptVectorDefault()  __attribute__((naked)) __attribute((section(VECTOR_HANDLER_SECTION))) __attribute((naked));
@@ -1091,6 +1096,7 @@ void handle_reset( void ) __attribute__((section(".text.handle_reset")));
 #else
 	void InterruptVector()         __attribute__((naked)) __attribute((section(".init"))) __attribute((weak,alias("InterruptVectorDefault"))) __attribute((naked));
 	void InterruptVectorDefault()  __attribute__((naked)) __attribute((section(".init"))) __attribute((naked));
+
 	void InterruptVectorDefault( void )
 	{
 		#if !defined(FUNCONF_TINYVECTOR) || !FUNCONF_TINYVECTOR
@@ -1132,18 +1138,19 @@ void handle_reset( void )
 	// Setup the interrupt vector, processor status and INTSYSCR.
 
 #if FUNCONF_ENABLE_HPE	// Enabled nested and hardware (HPE) stack, since it's really good on the x035.
-"	li t0, 0x1888\n\
-	csrs mstatus, t0\n"
-"	li t0, 0x0b\n\
-	csrw 0x804, t0\n"
+"	li a3, 0x1888\n\
+	csrs mstatus, a3\n"
+"	li a3, 0x0b\n\
+	csrw 0x804, a3\n"
 #else
 "	li a0, 0x1880\n\
 	csrw mstatus, a0\n"
 #endif
-"	li a3, 0x3\n\
-	la a0, InterruptVector\n\
-	or a0, a0, a3\n\
-	csrw mtvec, a0\n" 
+#if !defined(FUNCONF_TINYVECTOR) || !FUNCONF_TINYVECTOR
+"	la a3, InterruptVector\n\
+	ori a3, a3, 3\n\
+	csrw mtvec, a3\n"
+#endif
 	: : : "a0", "a3", "memory");
 
 	// Careful: Use registers to prevent overwriting of self-data.
@@ -1221,8 +1228,8 @@ void handle_reset( void )
 	la a1, _highcode_vma_start\n\
 	la a2, _highcode_vma_end\n\
 	bgeu a1, a2, 2f\n\
-1:	lw t0, (a0)\n\
-	sw t0, (a1)\n\
+1:	lw a3, (a0)\n\
+	sw a3, (a1)\n\
 	addi a0, a0, 4\n\
 	addi a1, a1, 4\n\
 	bltu a1, a2, 1b\n\
@@ -1233,8 +1240,8 @@ void handle_reset( void )
 	la a1, _data_vma\n\
 	la a2, _edata\n\
 	beq a1, a2, 2f\n\
-1:	lw t0, 0(a0)\n\
-	sw t0, 0(a1)\n\
+1:	lw a3, 0(a0)\n\
+	sw a3, 0(a1)\n\
 	addi a0, a0, 4\n\
 	addi a1, a1, 4\n\
 	bltu a1, a2, 1b\n\
@@ -1251,26 +1258,32 @@ void handle_reset( void )
 
 	// Setup the interrupt vector, processor status and INTSYSCR.
 	asm volatile(
-"	li t0, 0x1f\n\
-	csrw 0xbc0, t0\n"
+"	li a3, 0x1f\n\
+	csrw 0xbc0, a3\n"
 
 #if defined(CH32V30x) && !defined( DISABLED_FLOAT )
-"	li t0, 0x7888\n\
-	csrs mstatus, t0\n"
+"	li a3, 0x7888\n\
+	csrs mstatus, a3\n"
 #else
-"	li t0, 0x1888\n\
-	csrs mstatus, t0\n"
+"	li a3, 0x1888\n\
+	csrs mstatus, a3\n"
 #endif
 
 #if FUNCONF_ENABLE_HPE	// Enabled nested and hardware (HPE) stack, since it's really good on the x035.
-"	li t0, 0x0b\n\
-	csrw 0x804, t0\n"
+"	li a3, 0x0b\n\
+	csrw 0x804, a3\n"
 #endif
-"	la t0, InterruptVector\n\
-	ori t0, t0, 3\n\
-	csrw mtvec, t0\n"
-	: : [InterruptVector]"r"(InterruptVector) : "t0", "memory"
+	: : : "a3", "memory"
 	);
+
+#if !defined(FUNCONF_TINYVECTOR) || !FUNCONF_TINYVECTOR
+	asm volatile(
+"	la a3, InterruptVector\n\
+	ori a3, a3, 3\n\
+	csrw mtvec, a3\n"
+	: : [InterruptVector]"r"(InterruptVector) : "a3", "memory"
+	);
+#endif
 
 #if defined( FUNCONF_SYSTICK_USE_HCLK ) && FUNCONF_SYSTICK_USE_HCLK && !defined(CH32V10x)
 	SysTick->CTLR = 5;
@@ -1338,8 +1351,8 @@ void handle_reset( void )
 	la a1, _itcm_vma_start\n\
 	la a2, _itcm_vma_end\n\
 	bgeu a1, a2, 2f\n\
-1:	lw t0, (a0)\n\
-	sw t0, (a1)\n\
+1:	lw a3, (a0)\n\
+	sw a3, (a1)\n\
 	addi a0, a0, 4\n\
 	addi a1, a1, 4\n\
 	bltu a1, a2, 1b\n\
@@ -1349,8 +1362,8 @@ void handle_reset( void )
 	la a1, _dtcm_vma_start\n\
 	la a2, _dtcm_vma_end\n\
 	bgeu a1, a2, 2f\n\
-1:	lw t0, (a0)\n\
-	sw t0, (a1)\n\
+1:	lw a3, (a0)\n\
+	sw a3, (a1)\n\
 	addi a0, a0, 4\n\
 	addi a1, a1, 4\n\
 	bltu a1, a2, 1b\n\
@@ -1360,8 +1373,8 @@ void handle_reset( void )
 	la a1, _data_vma\n\
 	la a2, _edata\n\
 	beq a1, a2, 2f\n\
-1:	lw t0, 0(a0)\n\
-	sw t0, 0(a1)\n\
+1:	lw a3, 0(a0)\n\
+	sw a3, 0(a1)\n\
 	addi a0, a0, 4\n\
 	addi a1, a1, 4\n\
 	bltu a1, a2, 1b\n\
@@ -1379,39 +1392,46 @@ void handle_reset( void )
 	// Setup the interrupt vector, processor status and INTSYSCR.
 	asm volatile(
 "	bnez a7, 5f\n\
-	la t0, 0x12370303\n\
-	csrw 0xbc0, t0\n\
+	la a3, 0x12370303\n\
+	csrw 0xbc0, a3\n\
 	j 3f\n\
-5:	la t0, 0x12378400\n\
-	csrw 0xbc0, t0\n\
+5:	la a3, 0x12378400\n\
+	csrw 0xbc0, a3\n\
 3:\n"
 
 #if !defined( DISABLED_FLOAT )
-"	li t0, 0x7888\n\
-	csrs mstatus, t0\n"
+"	li a3, 0x7888\n\
+	csrs mstatus, a3\n"
 #else
-"	li t0, 0x1888\n\
-	csrs mstatus, t0\n"
+"	li a3, 0x1888\n\
+	csrs mstatus, a3\n"
 #endif
 
 #if FUNCONF_ENABLE_HPE
 "	bnez a7, 5f\n\
-	li t0, 0x01\n\
-	csrw 0xBC1, t0\n\
-	li t0, 0x0b\n\
-	csrw 0x804, t0\n\
+	li a3, 0x01\n\
+	csrw 0xBC1, a3\n\
+	li a3, 0x0b\n\
+	csrw 0x804, a3\n\
 	j 3f\n\
-5:	li t0, 0x07\n\
-	csrw 0xBC1, t0\n\
-	li t0, 0x0b\n\
-	csrw 0x804, t0\n\
+5:	li a3, 0x07\n\
+	csrw 0xBC1, a3\n\
+	li a3, 0x0b\n\
+	csrw 0x804, a3\n\
 3:\n"
 #endif
-"	la t0, InterruptVector\n\
-	ori t0, t0, 3\n\
-	csrw mtvec, t0\n"
-	: : [InterruptVector]"r"(InterruptVector) : "t0", "memory"
+	: : : "a3", "memory"
 	);
+
+
+#if !defined(FUNCONF_TINYVECTOR) || !FUNCONF_TINYVECTOR
+	asm volatile(
+"	la a3, InterruptVector\n\
+	ori a3, a3, 3\n\
+	csrw mtvec, a3\n"
+	: : [InterruptVector]"r"(InterruptVector) : "a3", "memory"
+	);
+#endif
 
 #if defined( FUNCONF_SYSTICK_USE_HCLK ) && FUNCONF_SYSTICK_USE_HCLK
 	SysTick->CTLR = 5;
