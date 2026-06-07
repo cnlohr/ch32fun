@@ -1,10 +1,21 @@
 #include "ch32fun.h"
 #include <stdio.h>
 
-#define TEST_VTF 1
+#define TEST_VTF 0
+
+//#define ISR_SECTION_ATTR __attribute__((section(".srodata")))
+#define ISR_SECTION_ATTR __attribute__((section(".text")))
+
+
+#if TEST_VTF
+#define ISR_ALIGNMENT
+#else
+// Alignment only needed on direct MTVEC writing, not VFT.
+#define ISR_ALIGNMENT __attribute__((aligned(1024)))
+#endif
 
 // Inherits the right "interrupt" flags for HPE/normal interrupts.
-void EXTI7_0_IRQHandler( void ) INTERRUPT_DECORATOR __attribute__((section(".srodata")));
+void EXTI7_0_IRQHandler( void ) INTERRUPT_DECORATOR ISR_ALIGNMENT ISR_SECTION_ATTR;
 
 void EXTI7_0_IRQHandler( void ) 
 {
@@ -50,6 +61,9 @@ int main()
 	PFIC->VTFIDR[0] = EXTI7_0_IRQn;
 #else
 	__set_MTVEC( (uint32_t)&EXTI7_0_IRQHandler );
+	// MTVEC on the 003/006, etc. is as follows:
+	//  bit 0: unified or tabled.  I.e. ADDRESS = address&0xfffffffc, otherwise ADDRESS = (address&0xfffffffc) + ISR*4
+	//  bit 1: indirect or direct, if 1, requires instruction at ADDRESS, i.e. jmp, so PC = *ADDRESS.  Otherwise set PC = ADDRESS
 #endif
 #endif
 
