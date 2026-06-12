@@ -3,10 +3,23 @@
 #include <string.h>
 
 #define SFHIP_DHCP_CLIENT 0
+#define DHCPD_ENABLE 1
 #define SFHIP_IMPLEMENTATION
+#if DHCPD_ENABLE
+#define SFHIP_UDP_USER_HANDLER udp_user_handler
+#endif
 #include "sfhip.h"
 
-#define BIG 1
+#if DHCPD_ENABLE
+#define DHCP_LOG_ENABLE 1
+#include "dhcpd.h"
+#endif
+
+#if ( DHCPD_ENABLE && SFHIP_DHCP_CLIENT )
+#error "Cannot have both DHCP client and server enabled"
+#endif
+
+#define BIG 0
 #include "data.h"
 
 #include "fsusb.h"
@@ -69,6 +82,10 @@ static sfhip hip = {
 	.self_mac = { { 0xf0, 0x11, 0x22, 0x33, 0x44, 0x55 } },
 #if SFHIP_DHCP_CLIENT
 	.hostname = "ch32v_ecm",
+#endif
+#if DHCPD_ENABLE
+	.ip = DHCP_SERVER_IP,
+	.gateway = DHCP_SERVER_IP,
 #endif
 };
 
@@ -136,12 +153,6 @@ int main()
 	for ( ;; )
 	{
 
-		if ( send_nc )
-		{
-			(void)USBFS_SendEndpointNEW( EP_NOTIFY, (uint8_t *)&notify_nc, sizeof( notify_nc ), 0 );
-			send_nc = false;
-		}
-
 		const size_t len = ethdev_read();
 		if ( len )
 		{
@@ -151,6 +162,19 @@ int main()
 		const uint32_t delta_ms = now - last_ms;
 		last_ms = now;
 		sfhip_tick( &hip, &packet_buf, (int)delta_ms );
+
+#if USBSTATS_ENABLE
+		static uint32_t last_print_ms = 0;
+		if ( now - last_print_ms >= 2000 )
+		{
+			last_print_ms = now;
+			printf( "USB Stats:\n" );
+			for ( int i = 0; i < 4; ++i )
+			{
+				printf( "  EP %d: IN=%d, OUT=%d\n", i, usb_stats.in[i], usb_stats.out[i] );
+			}
+		}
+#endif
 	}
 }
 
@@ -228,6 +252,17 @@ sfhip_length_or_tcp_code sfhip_tcp_event(
 			h->data_len = sizeof( index_html ) - 1;
 			h->sent = 0;
 		}
+		else if ( strcmp( url, "/status" ) == 0 )
+		{
+			static char buf[128];
+			int len =
+				snprintf( buf, 128, "HTTP/1.0 200 OK\r\nContent-Type: application/json\r\n\r\n{\"uptime_ms\": %lu}\n",
+					(unsigned long)SysTick_Ms );
+			h->state = HTP_REQUEST_DONE;
+			h->data = buf;
+			h->data_len = (size_t)len;
+			h->sent = 0;
+		}
 		else
 		{
 			h->state = HTP_REQUEST_DONE;
@@ -281,6 +316,17 @@ sfhip_length_or_tcp_code sfhip_tcp_event(
 	return 0;
 }
 
+#if DHCPD_ENABLE
+int udp_user_handler(
+	sfhip *hip, sfhip_phy_packet_mtu *pkt, uint8_t *payload, int ulen, int source_port, int destination_port )
+{
+#if DHCPD_ENABLE
+	if ( dhcpd_udp_handler( hip, pkt, payload, ulen, source_port, destination_port ) ) return 1;
+#endif
+	return 0;
+}
+#endif
+
 void sfhip_tcp_socket_closed( sfhip *hip, int sockno )
 {
 	if ( debugger ) printf( "Socket %d Closed\n", sockno );
@@ -288,9 +334,15 @@ void sfhip_tcp_socket_closed( sfhip *hip, int sockno )
 
 int HandleInRequest( struct _USBState *ctx, int endp, uint8_t *data, int len )
 {
+	int ret = USB_NAK;
+	if ( endp == EP_NOTIFY )
+	{
+		UEP_DMA( EP_NOTIFY ) = (uintptr_t)&notify_nc;
+		ret = sizeof( notify_nc );
+	}
+
 	usb_stats.in[endp]++;
 
-	int ret = USB_NAK; // Just NAK, we will send data async
 	return ret;
 }
 
@@ -327,8 +379,6 @@ void HandleDataOut( struct _USBState *ctx, int endp, uint8_t *data, int len )
 			// printf( "RECV done, total len: %d\n", (int)buff_len );
 			busy = true;
 		}
-		// USBFS_SendACK( EP_RECV, 0 );
-		ctx->USBFS_SetupReqLen = 0; // To ACK
 	}
 }
 

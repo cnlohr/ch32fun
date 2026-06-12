@@ -7,13 +7,12 @@ This example implements a USB CDC-ECM device using the SFHIP stack. When connect
 
 # Features
 
-The example provides an http server with a simple status API at `/api/status`, returning JSON data about the device.
+The example provides an http server with a simple status API at `/status`, returning JSON data about the device.
 
 ```sh
 ping 172.16.42.1
-curl -vv 'http://172.16.42.1/'
-curl -vv 'http://172.16.42.1/api/status'
-curl -vv 'http://any.address.you.want/'
+curl -vv 'http://192.168.14.1/'
+curl -vv 'http://192.168.14.1/status'
 ```
 
 # Reference
