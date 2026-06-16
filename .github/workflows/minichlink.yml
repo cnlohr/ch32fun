@@ -1,6 +1,6 @@
 name: Build minichlink
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 #    push:
 #        paths:
 #            - minichlink/**
@@ -42,8 +42,8 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           cd minichlink
-          OS=Windows_NT make clean
-          OS=Windows_NT make -j$(nproc) minichlink.exe
+          TARGET_OS=Windows_NT make clean
+          TARGET_OS=Windows_NT make -j$(nproc) minichlink.exe
 
       - name: Package Linux binaries
         if: matrix.os == 'ubuntu-latest'
