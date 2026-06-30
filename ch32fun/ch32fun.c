@@ -907,6 +907,7 @@ void CAN1_SCE_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION)
 void EXTI9_5_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void TIM1_BRK_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void TIM1_UP_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void TIM1_TRG_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void TIM1_TRG_COM_IRQHandler( void )	__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void TIM1_CC_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void TIM2_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
@@ -984,6 +985,10 @@ void PIOC_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) 
 void OPA_IRQHandler( void )				__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void USBPD_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void USBPD_WKUP_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void USBPD0_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void USBPD0_WKUP_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void USBPD1_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
+void USBPD1_WKUP_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void TIM2_CC_IRQHandler( void )			__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void TIM2_TRG_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
 void TIM2_BRK_IRQHandler( void )		__attribute__((section(VECTOR_HANDLER_SECTION))) __attribute((weak,alias("DefaultIRQHandler"))) __attribute__((used));
@@ -1122,7 +1127,7 @@ void handle_reset( void ) __attribute__((section(".text.handle_reset")));
 
 #if !FUNCONF_OVERRIDE_STARTUP
 
-#if defined( CH32V003 ) || defined( CH32X03x ) || defined(CH32V00x)
+#if defined( CH32V003 ) || defined( CH32X03x ) || defined(CH32V00x) || defined( CH32M030 )
 
 void handle_reset( void )
 {
@@ -1150,6 +1155,21 @@ void handle_reset( void )
 "	la a3, InterruptVector\n\
 	ori a3, a3, 3\n\
 	csrw mtvec, a3\n"
+#endif
+#if defined(CH32M030)
+	// QingKeV3B core CSRs at reset, matching WCH startup_ch32m030.S. Without
+	// corecfgr the core's fetch mode is wrong and it traps in early startup,
+	// never reaching main (SystemInit never runs -> clock stays at reset HSI).
+	// This variant of handle_reset never sets corecfgr/intsyscr otherwise.
+	//   corecfgr (0xBC0)=0x21  FETCH_MODE + MIE mapping/prefetch
+	//   intsyscr (0x804)=0x03  HWSTKEN + interrupt nesting enable
+	//   inestcr  (0xBC1)=0x01  nesting depth 1
+	"li a0, 0x21\n\
+	csrw 0xBC0, a0\n\
+	li a0, 0x03\n\
+	csrw 0x804, a0\n\
+	li a0, 0x01\n\
+	csrw 0xBC1, a0\n"
 #endif
 	: : : "a0", "a3", "memory");
 
