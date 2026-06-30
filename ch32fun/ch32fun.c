@@ -1902,6 +1902,21 @@ void DelaySysTick( uint32_t n )
 #if defined(CH32V003) || defined(CH32V00x)
 	uint32_t targend = SysTick->CNT + n;
 	while( ((int32_t)( SysTick->CNT - targend )) < 0 );
+#elif defined(CH32M030)
+	// M030 SysTick is 32-bit compare-mode only: CTLR(0), SR(4), CNT(0x08, 32-bit),
+	// CMP(0x10, 32-bit); offsets 0x0C/0x14 are RESERVED. The struct's 64-bit CNT/CMP
+	// span those reserved words, and accessing them bus-faults the core -> trap ->
+	// reset loop (the cold-boot blink failure). Use the 32-bit *L fields only and
+	// mirror WCH's Delay (mrs debug.c): clear flag, load CMP, enable, poll SR.
+	// The configured SysTick counts at full HCLK here (measured: dividing by 8 a la
+	// WCH's debug.c gives 8x-too-fast delays / 16 Hz blink). n is already in HCLK
+	// ticks, so load it directly.
+	SysTick->SR &= ~1u;                       // clear count-match flag
+	SysTick->CMPL = (uint32_t)n;              // 32-bit compare target (offset 0x10), HCLK ticks
+	SysTick->CTLR |= (1u << 4);
+	SysTick->CTLR |= (1u << 5) | (1u << 0);   // enable counter
+	while( ( SysTick->SR & 1u ) == 0 ) {}     // wait for compare match
+	SysTick->CTLR &= ~1u;                      // stop counter
 #elif defined(CH32V20x) || defined(CH32V30x) || defined(CH32X03x) || defined(CH32L103) || defined(CH582_CH583) || defined(CH591_CH592) || defined(CH32H41x)
 	uint64_t targend = SysTick->CNT + n;
 	while( ((int64_t)( SysTick->CNT - targend )) < 0 );
@@ -1969,6 +1984,22 @@ void StartV5F(v5f_main function)
 
 void SystemInit( void )
 {
+#if defined(CH32M030)
+	/* CH32M030 clock bring-up: HSI 8 MHz -> fixed-x18 PLL = 144 MHz -> HPRE/2 -> 72 MHz.
+	   CRITICAL: the factory HSI calibration lives in RCC_CTLR[15:8]. The generic path
+	   below writes RCC->CTLR wholesale, wiping that trim, so HSI drifts and the PLL
+	   never locks -> SystemInit hangs forever. Use read-modify-write ONLY. This mirrors
+	   WCH's SetSysClockTo72_HSI (mrs_files/.../system_ch32m030.c) in ch32fun style. */
+	FLASH->ACTLR = FLASH_ACTLR_LATENCY_3;             // 3 wait states @ 72 MHz (RM 19.3.1)
+	RCC->CTLR  |= RCC_HSION;                           // ensure HSI on (carries HSICAL trim)
+	RCC->CFGR0 |= RCC_HPRE_DIV2;                       // HCLK = SYSCLK / 2 -> 72 MHz
+	RCC->CFGR0 &= ~RCC_PLLSRC;                         // PLL source = HSI (RM 3.4.2)
+	RCC->CTLR  |= RCC_PLLON;                           // enable PLL (RMW: HSICAL preserved)
+	while( (RCC->CTLR & RCC_PLLRDY) == 0 ) {}          // wait for PLL lock
+	RCC->CFGR0  = (RCC->CFGR0 & ~0x3u) | RCC_SW_PLL;   // SYSCLK source = PLL (SW[1:0])
+	while( (RCC->CFGR0 & 0xCu) != 0x8u ) {}            // wait until SWS[3:2] == PLL
+	return;                                            // generic path below is bypassed for M030
+#endif
 #if defined(CH32V30x) && defined(TARGET_MCU_MEMORY_SPLIT)
 	FLASH->OBR = TARGET_MCU_MEMORY_SPLIT<<8;
 #endif
@@ -1992,17 +2023,22 @@ void SystemInit( void )
 		#define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PPRE2_DIV1 | RCC_PPRE1_DIV1 | PLL_MULTIPLICATION
 	#elif defined(CH32H41x)
 		#define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PPRE2_DIV2 | RCC_PPRE2_DIV2 | RCC_FPRE_DIV4 | RCC_CFGR0_MCO_SYSCLK
+	#elif defined(CH32M030)
+        /* M030 has no PPRE1/PPRE2 (APB1 and APB2 run at HCLK) and a fixed-multiplier
+           PLL (no PLLMUL field) — see RM v1.2 §3.4.2 CFGR0. SYSCLK target 72 MHz
+           is selected internally by hardware once PLL is enabled. */
+        #define BASE_CFGR0 RCC_HPRE_DIV1
 	#else
 		#define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PPRE2_DIV1 | RCC_PPRE1_DIV2 | PLL_MULTIPLICATION
 	#endif
 #else
-	#if defined(CH32V003) || defined(CH32X03x) || defined(CH32V00x)
-		#define BASE_CFGR0 RCC_HPRE_DIV1     					  // HCLK = SYSCLK = APB1 And, no pll.
-	#elif defined(CH32H41x)
-		#define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PPRE2_DIV0 | RCC_PPRE2_DIV0 | RCC_CFGR0_MCO_SYSCLK
-	#else
-		#define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PPRE2_DIV1 | RCC_PPRE1_DIV1
-	#endif
+	#if defined(CH32V003) || defined(CH32X03x) || defined(CH32V00x) || defined(CH32M030)
+        #define BASE_CFGR0 RCC_HPRE_DIV1                          // HCLK = SYSCLK = APB1 And, no pll. (M030 has no PPRE1/PPRE2)
+    #elif defined(CH32H41x)
+        #define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PPRE2_DIV0 | RCC_PPRE2_DIV0 | RCC_CFGR0_MCO_SYSCLK
+    #else
+        #define BASE_CFGR0 RCC_HPRE_DIV1 | RCC_PPRE2_DIV1 | RCC_PPRE1_DIV1
+    #endif
 #endif
 
 // HSI always ON - needed for the Debug subsystem
@@ -2027,6 +2063,11 @@ void SystemInit( void )
 	#endif
 #elif defined(CH32X03x)
 	FLASH->ACTLR = FLASH_ACTLR_LATENCY_2;                   // +2 Cycle Latency (Recommended per TRM)
+#elif defined(CH32M030)
+	// Fallback only: the dedicated M030 block at the top of SystemInit() sets
+	// LATENCY_3 and returns early, so this is normally unreached. Keep it
+	// consistent (3 wait states @ 72 MHz, RM 19.3.1) in case that path changes.
+	FLASH->ACTLR = FLASH_ACTLR_LATENCY_3;
 #elif defined(CH32H41x)
 	FLASH->ACTLR |= FLASH_ACTLR_EHMOD;
 #endif
