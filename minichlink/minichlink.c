@@ -2298,6 +2298,21 @@ int DefaultWriteBinaryBlob( void * dev, uint32_t address_to_write, uint32_t blob
 					// On the v2xx, v3xx, you also need to make sure FLASH->STATR & 2 is not set.  This is only an issue when running locally.
 
 					rsofar += 4;
+
+				// CH32M030 fast programming, per RM v1.2 §19.4.5 step 7: write
+				// 8 bytes (two 4-byte words) to the page-mapped address, THEN set
+				// FLASH_CTLR.BUFLOAD to commit them into the 128-byte page buffer;
+				// repeat 16 times to fill the page. So BUFLOAD pulses every SECOND
+				// word (j odd), not every word. An earlier port pulsed it every
+				// word (copying the X035 "in spite of the datasheet" path); on M030
+				// that silently drops isolated words during the write — verified by
+				// flash readback showing zeroed 4-byte holes (e.g. offset 0x0C, the
+				// HardFault vector, and 0x24), which reset-loops the CPU on any fault.
+				if( is_flash && iss->target_chip_type == CHIP_CH32M030 && (j & 1) )
+				{
+					MCF.WriteWord( dev, (intptr_t)&FLASH->CTLR, CR_PAGE_PG | CR_BUF_LOAD );
+					if( MCF.WaitForFlash ) MCF.WaitForFlash( dev );
+				}
 				}
 
 				if( is_flash )
@@ -2379,6 +2394,17 @@ int DefaultWriteBinaryBlob( void * dev, uint32_t address_to_write, uint32_t blob
 							return ret;
 						}
 						// On the v2xx, v3xx, you also need to make sure FLASH->STATR & 2 is not set.  This is only an issue when running locally.
+
+						// CH32M030: same RM v1.2 §19.4.5 step 7 rule as the full-sector
+						// path above — pulse BUFLOAD every second word to commit the
+						// 128-byte page buffer. This read-modify-write path handles any
+						// non-128-byte-aligned tail page; without the pulse that final
+						// page commits empty and reads back 0xFF.
+						if( is_flash && iss->target_chip_type == CHIP_CH32M030 && (j & 1) )
+						{
+							MCF.WriteWord( dev, (intptr_t)&FLASH->CTLR, CR_PAGE_PG | CR_BUF_LOAD );
+							if( MCF.WaitForFlash ) MCF.WaitForFlash( dev );
+						}
 					}
 
 					if( iss->target_chip_type == CHIP_CH32V20x || iss->target_chip_type == CHIP_CH32V30x || iss->target_chip_type == CHIP_CH32H41x )
