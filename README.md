@@ -22,7 +22,7 @@ ch32fun contains:
 
 ## Other family support
 
-Currently, there is support for the ch32x035, ch32v002, ch32v004, ch32v005, ch32v006, ch32v007, ch32v103, ch32v203, ch32v208, ch32v303, ch32v305 and ch32v307. Recently support for ch570, ch572, ch571, ch573, ch581, ch582, ch583, ch584, ch585 and ch591, ch592 was added. Some obscure chips like ch32m030, ch641, ch643, ch645 should also work, test reports on those will be appreciated.
+Currently, there is support for the ch32x035, ch32m030, ch32v002, ch32v004, ch32v005, ch32v006, ch32v007, ch32v103, ch32v203, ch32v208, ch32v303, ch32v305 and ch32v307. Recently support for ch570, ch572, ch571, ch573, ch581, ch582, ch583, ch584, ch585 and ch591, ch592 was added. Some obscure chips like ch641, ch643, ch645 should also work, test reports on those will be appreciated.
 
 GDB is mostly tested on the 003, but works, to a limited degree on the other processors.
 

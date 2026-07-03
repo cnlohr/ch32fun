@@ -156,7 +156,11 @@
 
 
 #if !defined( FUNCONF_USE_CLK_SEC )
-	#define FUNCONF_USE_CLK_SEC  1// use clock security system by default
+	#if defined( CH32M030 )
+		#define FUNCONF_USE_CLK_SEC  0 // M030 has no Clock Security System (per RM v1.2 §3) — default off
+	#else
+		#define FUNCONF_USE_CLK_SEC  1 // use clock security system by default
+	#endif
 #endif
 
 #ifndef HSE_VALUE
@@ -172,6 +176,8 @@
 		#endif
 	#elif defined(CH32V30x)
 		#define HSE_VALUE				  (8000000)
+	#elif defined(CH32M030)
+		#define HSE_VALUE				  (8000000) // M030 supports 4-25 MHz HSE; 8 MHz is the typical default
 	#elif defined(CH57x) || defined(CH58x) || defined(CH59x)
 		#define HSE_VALUE				  (32000000)
 	#elif defined(CH32H41x)
@@ -191,6 +197,8 @@
 		#define HSI_VALUE					(8000000)
 	#elif defined(CH32V30x)
 		#define HSI_VALUE					(8000000)
+	#elif defined(CH32M030)
+		#define HSI_VALUE					(8000000) // Internal 8 MHz RC oscillator
 	#elif defined(CH32H41x)
 		#define HSI_VALUE					(25000000)
 	#endif
@@ -215,6 +223,8 @@
 			#define FUNCONF_PLL_MULTIPLIER 18	// Default: 8 * 18 = 144 MHz
 		#elif defined(CH32V30x)
 			#define FUNCONF_PLL_MULTIPLIER 18	// Default: 8 * 18 = 144 MHz
+		#elif defined(CH32M030)
+			#define FUNCONF_PLL_MULTIPLIER 9	// M030 HW PLL is fixed x18, then HPRE/2: effective x9 -> 8 * 9 = 72 MHz
 		#elif defined(CH32H41x)
 			#define FUNCONF_PLL_MULTIPLIER 16	// Default: 25 * 16 = 400 MHz
 		#else // CH32V003
@@ -416,6 +426,8 @@ typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
 	#include "ch32x03xhw.h"
 #elif defined( CH32X03x )
 	#include "ch32x03xhw.h"
+#elif defined( CH32M030 )
+	#include "ch32m030hw.h"
 #elif defined( CH32V10x )
 	#include "ch32v10xhw.h"
 #elif defined( CH32L103 )
@@ -967,7 +979,7 @@ RV_STATIC_INLINE void funPinMode(u32 pin, GPIOModeTypeDef mode)
 
 #define funDigitalWrite( pin, value ) do{ GpioOf( pin )->BSHR = 1<<((!(value))*16 + ((pin) & 0xf)); }while(0)
 
-#if defined(CH32X03x)
+#if defined(CH32X03x) || defined(CH32M030)
 #define funGpioInitAll() { RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC ); }
 #define funPinMode( pin, mode ) { *((&GpioOf(pin)->CFGLR)+((pin&0x8)>>3)) = ( (*((&GpioOf(pin)->CFGLR)+((pin&0x8)>>3))) & (~(0xf<<(4*((pin)&0x7))))) | ((mode)<<(4*((pin)&0x7))); }
 #elif defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x) || defined(CH32L103)
