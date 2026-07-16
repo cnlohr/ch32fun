@@ -24,7 +24,7 @@ Select *common* and *segment* pins that you want to use by editing defines in th
 |COM1 |**PB13**           |**PB5**             |
 |COM2 |**PB14**           |**PB6**             |
 |COM3 |**PB15**           |**PB7**             |
-<br/>
+&nbsp;
 |SEG0 |**PB7** *(D/F/X)*  |**PB0** *(M/F)*     |
 |SEG1 |**PB4** *(D/F/X)*  |**PB1** *(M/F)*     |
 |SEG2 |**PB23** *(D/F/X)* |**PB2** *(M/F)*     |
