@@ -734,7 +734,7 @@ int B003DetermineChipType( void * dev )
 
 	if( (one & 2) || two != -1 ) read_protection = 1;
 
-	if( chip_id == 0xffffffff )
+	if( chip_id == 0xffffffff || chip_id == 0xe339e339 )
 	{
 		MCF.ReadWord( dev, 0x1ffff704, &chip_id );
 		switch (chip_id>>20)
