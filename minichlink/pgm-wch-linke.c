@@ -195,6 +195,15 @@ static inline libusb_device_handle * wch_link_base_setup( int inhibit_startup, c
 		fprintf( stderr, "\n" );
 	}
 
+	// libusb_free_device_list() with unref_devices=1 drops the last reference on
+	// every device in the list -- including the candidate(s) we still need to open
+	// below. Take a ref on each survivor first, otherwise libusb_open() operates on
+	// a freed device and fails (e.g. -4 on the libusb-win32 backend). The refs are
+	// balanced after the open (found path) or released implicitly at exit() (the
+	// IAP/ARM recovery paths).
+	if( found )                   libusb_ref_device( found );
+	if( found_arm_programmer )    libusb_ref_device( found_arm_programmer );
+	if( found_programmer_in_iap ) libusb_ref_device( found_programmer_in_iap );
 	libusb_free_device_list( list, 1 );
 
 	if( !found )
@@ -247,6 +256,11 @@ static inline libusb_device_handle * wch_link_base_setup( int inhibit_startup, c
 
 	libusb_device_handle * devh;
 	status = libusb_open( found, &devh );
+	// Balance the refs taken before libusb_free_device_list(). On success devh
+	// holds its own reference to `found`; the ARM/IAP candidates are unused here.
+	libusb_unref_device( found );
+	if( found_arm_programmer )    libusb_unref_device( found_arm_programmer );
+	if( found_programmer_in_iap ) libusb_unref_device( found_programmer_in_iap );
 	if( status )
 	{
 		fprintf( stderr, "Error: couldn't open wch link device (libusb_open() = %d)\n", status );

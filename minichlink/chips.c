@@ -356,7 +356,7 @@ const struct RiscVChip_s ch32m030 = {
 	.model_id = 0x0300,
 	.ram_base = 0x20000000,
 	.ram_size = 12*1024,
-	.sector_size = 256,
+	.sector_size = 128,
 	.flash_offset = 0x08000000,
 	.flash_size = 64*1024,
 	.bootloader_offset = 0,
@@ -364,7 +364,7 @@ const struct RiscVChip_s ch32m030 = {
 	.options_offset = 0x1FFFF300,
 	.options_size = 128,
 	.interface_speed = 0x01,
-	.protocol = PROTOCOL_UNSUPPORTED,
+	.protocol = PROTOCOL_DEFAULT,
 };
 
 const struct RiscVChip_s ch564 = {
