@@ -195,8 +195,6 @@ static inline libusb_device_handle * wch_link_base_setup( int inhibit_startup, c
 		fprintf( stderr, "\n" );
 	}
 
-	libusb_free_device_list( list, 1 );
-
 	if( !found )
 	{
 		// On a lark see if we have a programmer which got stuck in IAP mode.
