@@ -1,534 +1,796 @@
 #include "usbd.h"
-#include <string.h>
+#include "ch32fun.h"
+#include "usb_config.h"
 
-// loosely based on https://github.com/ArcaneNibble/wch-uf2/blob/main/bootloader.c
-// this would not exist if it was not for ArcaneNibble's efforts (I don't know how else to credit that)
+#include <stdio.h>
+
+// clang-format off
+#define ANYPRINTF	(defined( FUNCONF_USE_DEBUGPRINTF ) && FUNCONF_USE_DEBUGPRINTF) || \
+					(defined( FUNCONF_USE_UARTPRINTF ) && FUNCONF_USE_UARTPRINTF) || \
+					(defined( FUNCONF_USE_USBPRINTF ) && FUNCONF_USE_USBPRINTF)
+
+volatile uint8_t usb_debug = 0;
+// Uncomment to enable debugging
+// #define DEBUG
+#define USBD_DEBUGPRINTF( ... ) {if ( usb_debug ) { printf( __VA_ARGS__ ); }}
+#define min(a, b) (((a)<(b))?(a):(b))
+// clang-format on
 
 struct _USBState USBDCTX;
 
-#define BTABLE_OFFSET 0
+void USBD_InternalFinishSetup();
 
-static void PMA_Write(uint16_t pma_addr, const uint8_t *buffer, int len) {
-	volatile uint32_t *pma = (volatile uint32_t *)(USBD_PMA_BASE + pma_addr);
-	for (int i = 0; i < len; i += 2) {
-		uint16_t val = buffer[i];
-		if (i + 1 < len) {
-			val |= (uint16_t)buffer[i + 1] << 8;
-		}
-		*pma++ = val;
-	}
-}
+static inline void SetEPR_Status( const int ep, const uint16_t mask, const uint16_t value )
+{
+	const uint16_t reg = USBD->EPR[ep];
+	const uint16_t current_stat = reg & mask;
+	// Which bits we need to toggle
+	const uint16_t toggle = current_stat ^ value;
 
-static void PMA_Read(uint16_t pma_addr, uint8_t *buffer, int len) {
-	volatile uint32_t *pma = (volatile uint32_t *)(USBD_PMA_BASE + pma_addr);
-	for (int i = 0; i < len; i += 2) {
-		uint32_t val = *pma++;
-		buffer[i] = val & 0xFF;
-		if (i + 1 < len) {
-			buffer[i + 1] = (val >> 8) & 0xFF;
-		}
-	}
-}
-
-static void SetPMA_TxCount(int ep, int count) {
-	int pma_idx = (ep *4) + 1;
-	((uint32_t*)USBD_PMA_BASE)[pma_idx] = count;
-}
-
-static int GetPMA_RxCount(int ep) {
-	int pma_idx = (ep *4) + 3;
-	return ((uint32_t*)USBD_PMA_BASE)[pma_idx] & 0x3FF;
-}
-
-static inline void SetEPR_Status(int ep, uint16_t mask, uint16_t value) {
-	uint16_t reg = USBD->EPR[ep];
-	uint16_t current_stat = reg & mask;
-	uint16_t toggle = current_stat ^ value;
-	
-	uint16_t write_val = (reg & (USBD_EPR_EA | USBD_EPR_EP_TYPE_MASK | USBD_EPR_EP_KIND));
+	// Conserve EA, TYPE and KIND (Non-toggle)
+	uint16_t write_val = ( reg & ( USBD_EPR_EA | USBD_EPR_EP_TYPE_MASK | USBD_EPR_EP_KIND ) );
 	write_val |= toggle;
-	write_val |= (USBD_EPR_CTR_RX | USBD_EPR_CTR_TX);
-	
+	// Write 1 has no effect for CTR_RX and CTR_TX (0 clears)
+	write_val |= ( USBD_EPR_CTR_RX | USBD_EPR_CTR_TX );
+
 	USBD->EPR[ep] = write_val;
 }
 
-static inline void SetEPR_TxStatus(int ep, uint16_t status) {
-	SetEPR_Status(ep, USBD_EPR_STAT_TX_MASK, status);
-}
+int USBDSetup( void )
+{
+	// Initialize USB pins to pull-down to avoid mis-detection
+	GPIOA->CFGHR &= ~( ( 0xf << ( 4 * 3 ) ) | ( 0xf << ( 4 * 4 ) ) );
+	GPIOA->CFGHR |= ( GPIO_Speed_2MHz | GPIO_CNF_OUT_PP ) << ( 4 * 3 ) | ( GPIO_Speed_2MHz | GPIO_CNF_OUT_PP )
+	                                                                         << ( 4 * 4 );
+	GPIOA->BSHR = ( 1 << ( 16 + 11 ) ) | ( 1 << ( 16 + 12 ) );
 
-static inline void SetEPR_RxStatus(int ep, uint16_t status) {
-	SetEPR_Status(ep, USBD_EPR_STAT_RX_MASK, status);
-}
-
-// ISR
-void USB_LP_CAN1_RX0_IRQHandler(void) __attribute__((interrupt));
-void USB_LP_CAN1_RX0_IRQHandler(void) {
-	uint32_t istr = USBD->ISTR;
-
-	if (istr & USBD_ISTR_CTR) {
-		// Correct Transfer
-		int ep = istr & USBD_ISTR_EP_ID;
-		uint32_t epr = USBD->EPR[ep];
-
-		if (epr & USBD_EPR_CTR_RX) {
-			// Setup or Out
-			if (ep == 0 && (epr & USBD_EPR_SETUP)) {
-				// SETUP Packet
-				PMA_Read(USBDCTX.pma_offset[0][1], CTRL0BUFF, 8);
-
-				USBDCTX.pCtrlPayloadPtr = 0;
-
-				// Parse
-				USBDCTX.USBD_SetupReqType = pUSBD_SetupReqPak->bmRequestType;
-				USBDCTX.USBD_SetupReqCode = pUSBD_SetupReqPak->bRequest;
-				USBDCTX.USBD_SetupReqLen = pUSBD_SetupReqPak->wLength;
-				USBDCTX.USBD_IndexValue = (pUSBD_SetupReqPak->wIndex << 16) | pUSBD_SetupReqPak->wValue;
-
-				int len = 0;
-
-				if ((USBDCTX.USBD_SetupReqType & USB_REQ_TYP_MASK) == USB_REQ_TYP_STANDARD) {
-					switch (USBDCTX.USBD_SetupReqCode) {
-					case USB_GET_DESCRIPTOR:
-						// Simple Descriptor Search (User must define descriptor_list and DESCRIPTOR_LIST_ENTRIES)
-						const struct descriptor_list_struct *e = descriptor_list;
-						const struct descriptor_list_struct *e_end = e + DESCRIPTOR_LIST_ENTRIES;
-						int found = 0;
-						for (; e != e_end; e++) {
-							if (e->lIndexValue == USBDCTX.USBD_IndexValue) {
-								USBDCTX.pCtrlPayloadPtr = (uint8_t*)e->addr;
-								len = e->length;
-								found = 1;
-								break;
-							}
-						}
-						if(!found) {
-							goto stall;
-						}
-						
-						if (len > USBDCTX.USBD_SetupReqLen) {
-							len = USBDCTX.USBD_SetupReqLen;
-						}
-						USBDCTX.USBD_SetupReqLen = len;
-						
-						// Send first chunk
-						int send_len = (len > DEF_USBD_UEP0_SIZE) ? DEF_USBD_UEP0_SIZE : len;
-						PMA_Write(USBDCTX.pma_offset[0][0], USBDCTX.pCtrlPayloadPtr, send_len);
-						SetPMA_TxCount(0, send_len);
-						SetEPR_TxStatus(0, USBD_EPR_STAT_TX_VALID);
-						USBDCTX.pCtrlPayloadPtr += send_len;
-						USBDCTX.USBD_SetupReqLen -= send_len;
-						break;
-
-					case USB_SET_ADDRESS:
-						USBDCTX.USBD_DevAddr = (uint8_t)(USBDCTX.USBD_IndexValue & 0xFF);
-						// Zero Length Packet IN
-						SetPMA_TxCount(0, 0);
-						SetEPR_TxStatus(0, USBD_EPR_STAT_TX_VALID);
-						break;
-
-					case USB_SET_CONFIGURATION:
-						 USBDCTX.USBD_DevConfig = (uint8_t)(USBDCTX.USBD_IndexValue & 0xFF);
-						 USBDCTX.USBD_DevEnumStatus = 1;
-						 SetPMA_TxCount(0, 0);
-						 SetEPR_TxStatus(0, USBD_EPR_STAT_TX_VALID);
-						 break;
-
-					case USB_GET_STATUS:
-						CTRL0BUFF[0] = 0x00;
-						CTRL0BUFF[1] = 0x00;
-						PMA_Write(USBDCTX.pma_offset[0][0], CTRL0BUFF, 2);
-						SetPMA_TxCount(0, 2);
-						SetEPR_TxStatus(0, USBD_EPR_STAT_TX_VALID);
-						// We sent everything, set remaining len to 0 so CTR_TX enables RX for Status Stage
-						USBDCTX.USBD_SetupReqLen = 0; 
-						break;
-
-					case USB_GET_INTERFACE:
-						CTRL0BUFF[0] = 0x00;
-						PMA_Write(USBDCTX.pma_offset[0][0], CTRL0BUFF, 1);
-						SetPMA_TxCount(0, 1);
-						SetEPR_TxStatus(0, USBD_EPR_STAT_TX_VALID);
-						USBDCTX.USBD_SetupReqLen = 0; 
-						break;
-
-					case USB_GET_CONFIGURATION:
-						CTRL0BUFF[0] = USBDCTX.USBD_DevConfig;
-						PMA_Write(USBDCTX.pma_offset[0][0], CTRL0BUFF, 1);
-						SetPMA_TxCount(0, 1);
-						SetEPR_TxStatus(0, USBD_EPR_STAT_TX_VALID);
-						USBDCTX.USBD_SetupReqLen = 0; 
-						break;
-
-					default:
-						// Basic ACK for unhandled standards
-						SetPMA_TxCount(0, 0);
-						SetEPR_TxStatus(0, USBD_EPR_STAT_TX_VALID);
-						break;
-					}
-				}
-				else {
-					// Vendor/Class
-#if FUSB_USER_HANDLERS
-					len = HandleSetupCustom(&USBDCTX, USBDCTX.USBD_SetupReqCode);
-					if (len >= 0) {
-						if (USBDCTX.USBD_SetupReqType & DEF_UEP_IN) {
-							USBDCTX.USBD_SetupReqLen = len;
-							int send_len = (len > DEF_USBD_UEP0_SIZE) ? DEF_USBD_UEP0_SIZE : len;
-							
-							if(USBDCTX.pCtrlPayloadPtr) {
-								PMA_Write(USBDCTX.pma_offset[0][0], USBDCTX.pCtrlPayloadPtr, send_len);
-							}
-							else {
-								PMA_Write(USBDCTX.pma_offset[0][0], CTRL0BUFF, send_len);
-							}
-
-							SetPMA_TxCount(0, send_len);
-							SetEPR_TxStatus(0, USBD_EPR_STAT_TX_VALID);
-							USBDCTX.pCtrlPayloadPtr += send_len;
-							USBDCTX.USBD_SetupReqLen -= send_len;
-						}
-						else {
-							// OUT Data expected or Just Status IN
-							if (USBDCTX.USBD_SetupReqLen > 0) {
-								SetEPR_RxStatus(0, USBD_EPR_STAT_RX_VALID);
-								SetEPR_TxStatus(0, USBD_EPR_STAT_TX_NAK);
-							}
-							else {
-								SetPMA_TxCount(0, 0);
-								SetEPR_TxStatus(0, USBD_EPR_STAT_TX_VALID);
-							}
-						}
-					}
-					else {
-						goto stall;
-					}
-#else
-					goto stall;
-#endif
-				}
-			}
-			else {
-				// OUT Packet
-				int rx_len = GetPMA_RxCount(ep);
-				PMA_Read(USBDCTX.pma_offset[ep][1], USBDCTX.ENDPOINTS[ep], rx_len);
-
-				if (ep == 0) {
-					if(USBDCTX.USBD_SetupReqLen > 0) {
-						// Data Stage OUT
-
-						USBDCTX.USBD_SetupReqLen -= rx_len;
-						// Handle Data...
-#if FUSB_USER_HANDLERS
-						HandleDataOut(&USBDCTX, 0, USBDCTX.ENDPOINTS[0], rx_len);
-#endif
-						if (USBDCTX.USBD_SetupReqLen <= 0) {
-							// Status Stage IN
-							USBDCTX.USBD_SetupReqLen = 0; // Ensure clean state
-							SetPMA_TxCount(0, 0);
-							SetEPR_TxStatus(0, USBD_EPR_STAT_TX_VALID);
-							SetEPR_RxStatus(0, USBD_EPR_STAT_RX_VALID);
-						}
-						else {
-							SetEPR_RxStatus(0, USBD_EPR_STAT_RX_VALID);
-						}
-					}
-					else {
-						// Status Stage OUT (for IN transfer)
-						// Just ACK
-						SetEPR_RxStatus(0, USBD_EPR_STAT_RX_VALID);
-					}
-				}
-				else {
-#if FUSB_USER_HANDLERS
-					HandleDataOut(&USBDCTX, ep, USBDCTX.ENDPOINTS[ep], rx_len);
-#endif
-					SetEPR_RxStatus(ep, USBD_EPR_STAT_RX_VALID);
-				}
-			}
-
-			// Clear CTR_RX (Write 0 to RX, 1 to TX)
-			uint16_t wVal = USBD->EPR[ep] & (USBD_EPR_EA | USBD_EPR_EP_TYPE_MASK | USBD_EPR_EP_KIND);
-			USBD->EPR[ep] = wVal | USBD_EPR_CTR_TX;
-		}
-
-		if (epr & USBD_EPR_CTR_TX) {
-			// IN Complete
-			USBDCTX.USBD_Endp_Busy[ep] = 0;
-			
-			if (ep == 0) {
-				if (USBDCTX.USBD_SetupReqCode == USB_SET_ADDRESS) {
-					USBD->DADDR = 0x80 | USBDCTX.USBD_DevAddr;
-				}
-
-				if (USBDCTX.USBD_SetupReqLen > 0) {
-					// More data to send
-					int send_len = (USBDCTX.USBD_SetupReqLen > DEF_USBD_UEP0_SIZE) ? DEF_USBD_UEP0_SIZE : USBDCTX.USBD_SetupReqLen;
-					PMA_Write(USBDCTX.pma_offset[0][0], USBDCTX.pCtrlPayloadPtr, send_len);
-					SetPMA_TxCount(0, send_len);
-					SetEPR_TxStatus(0, USBD_EPR_STAT_TX_VALID);
-					USBDCTX.pCtrlPayloadPtr += send_len;
-					USBDCTX.USBD_SetupReqLen -= send_len;
-				}
-				else {
-					// End of transfer, ready for next SETUP
-					SetEPR_RxStatus(0, USBD_EPR_STAT_RX_VALID);
-				}
-			}
-			else {
-#if FUSB_USER_HANDLERS
-				HandleInRequest(&USBDCTX, ep, USBDCTX.ENDPOINTS[ep], 0);
-#endif
-			}
-
-			// Clear CTR_TX (Write 0 to TX, 1 to RX)
-			uint16_t wVal = USBD->EPR[ep] & (USBD_EPR_EA | USBD_EPR_EP_TYPE_MASK | USBD_EPR_EP_KIND);
-			USBD->EPR[ep] = wVal | USBD_EPR_CTR_RX;
-		}
-
-		USBD->ISTR = ~USBD_ISTR_CTR;
-		return;
-
-	stall:
-		SetEPR_TxStatus(0, USBD_EPR_STAT_TX_STALL);
-		SetEPR_RxStatus(0, USBD_EPR_STAT_RX_STALL);
-		// Clear CTR
-		uint16_t wVal = (epr & (USBD_EPR_EA | USBD_EPR_EP_TYPE_MASK | USBD_EPR_EP_KIND)); 
-		USBD->EPR[ep] = wVal; 
-	}
-
-	// Check for Reset
-	if (istr & USBD_ISTR_RESET) {
-		USBD->ISTR = ~USBD_ISTR_RESET;
-
-		// Reset Logic
-		USBD->BTABLE = BTABLE_OFFSET;
-		USBDCTX.USBD_DevConfig = 0;
-		USBDCTX.USBD_DevAddr = 0;
-		USBDCTX.USBD_DevEnumStatus = 0;
-
-		// Initialize Endpoints
-		for(int i = 0; i < FUSB_CONFIG_EPS; i++) {
-			USBDCTX.USBD_Endp_Busy[i] = 0;
-			// Clear EPR
-			USBD->EPR[i] = i;
-		}
-
-		// Configure EP0
-		SetEPR_Status(0, USBD_EPR_EP_TYPE_MASK, USBD_EPR_EP_TYPE_CTRL);
-		SetEPR_Status(0, USBD_EPR_STAT_RX_MASK, USBD_EPR_STAT_RX_VALID);
-		SetEPR_Status(0, USBD_EPR_STAT_TX_MASK, USBD_EPR_STAT_TX_NAK);
-
-		// Configure Other EPs based on FUSB_EPx_MODE
-		for(int i = 1; i < FUSB_CONFIG_EPS; i++) {
-			if (USBDCTX.endpoint_mode[i] != USBD_EP_OFF) {
-				// Set type Bulk (default for now, can be changed)
-				SetEPR_Status(i, USBD_EPR_EP_TYPE_MASK, USBD_EPR_EP_TYPE_BULK);
-				// Set address
-				USBD->EPR[i] = (USBD->EPR[i] & ~USBD_EPR_EA) | i;
-
-				if(USBDCTX.endpoint_mode[i] == USBD_EP_RX) {
-					SetEPR_RxStatus(i, USBD_EPR_STAT_RX_VALID);
-					SetEPR_TxStatus(i, USBD_EPR_STAT_TX_DIS);
-				}
-				else if(USBDCTX.endpoint_mode[i] == USBD_EP_TX) {
-					SetEPR_RxStatus(i, USBD_EPR_STAT_RX_DIS);
-					SetEPR_TxStatus(i, USBD_EPR_STAT_TX_NAK);
-				}
-			}
-		}
-
-		USBD->DADDR = 0x80; // Enable Function
-	}
-
-	// Check for Suspend
-	if (istr & USBD_ISTR_SUSP) {
-		USBD->ISTR = ~USBD_ISTR_SUSP;
-		USBDCTX.USBD_DevSleepStatus |= 0x02;
-		// Optional: Enter Low Power Mode here if FUSB_SUPPORTS_SLEEP is set
-		// USBD->CNTR |= USBD_CNTR_FSUSP;
-	}
-
-	// Check for Wakeup
-	if (istr & USBD_ISTR_WKUP) {
-		USBD->ISTR = ~USBD_ISTR_WKUP;
-		USBDCTX.USBD_DevSleepStatus &= ~0x02;
-		// USBD->CNTR &= ~USBD_CNTR_FSUSP;
-	}
-
-	// Check for ESOF (Expected Start Of Frame)
-	if (istr & USBD_ISTR_ESOF) {
-		USBD->ISTR = ~USBD_ISTR_ESOF;
-	}
-
-	// Check for SOF
-	if (istr & USBD_ISTR_SOF) {
-		USBD->ISTR = ~USBD_ISTR_SOF;
-	}
-
-	// Error!
-	if (istr & USBD_ISTR_ERR) {
-		USBD->ISTR = ~USBD_ISTR_ERR;
-	}
-
-	return;
-}
-
-void USBD_InternalFinishSetup() {
-	// Set BTABLE Address
-	USBD->BTABLE = BTABLE_OFFSET;
-
-	USBDCTX.endpoint_mode[0] = USBD_EP_RTX;
-	// Config from defines
-#if FUSB_EP1_MODE
-	USBDCTX.endpoint_mode[1] = FUSB_EP1_MODE;
-#endif
-#if FUSB_EP2_MODE
-	USBDCTX.endpoint_mode[2] = FUSB_EP2_MODE;
-#endif
-#if FUSB_EP3_MODE
-	USBDCTX.endpoint_mode[3] = FUSB_EP3_MODE;
-#endif
-#if FUSB_EP4_MODE
-	USBDCTX.endpoint_mode[4] = FUSB_EP4_MODE;
-#endif
-#if FUSB_EP5_MODE
-	USBDCTX.endpoint_mode[5] = FUSB_EP5_MODE;
-#endif
-#if FUSB_EP6_MODE
-	USBDCTX.endpoint_mode[6] = FUSB_EP6_MODE;
-#endif
-#if FUSB_EP7_MODE
-	USBDCTX.endpoint_mode[7] = FUSB_EP7_MODE;
-#endif
-
-	uint16_t pma_ptr = 128; // start packet buffers after btable (8 endpoint with 16 bytes each)
-	for (int i = 0; i < FUSB_CONFIG_EPS; i++) {
-		// Calculate offsets
-		uint32_t* btable_entry = (uint32_t*)(USBD_PMA_BASE + (i*16)); // 4 entries = 16 bytes per ep in btable
-
-		// USBD RAM is 512 bytes
-		if (pma_ptr > 512 -DEF_USBD_UEP0_SIZE) {
-			printf("CRITICAL: USBD PMA OVERFLOW (%d)\n", pma_ptr);
-			pma_ptr -= DEF_USBD_UEP0_SIZE;
-		}
-
-		if (USBDCTX.endpoint_mode[i] == USBD_EP_TX || USBDCTX.endpoint_mode[i] == USBD_EP_RTX) {
-			USBDCTX.pma_offset[i][0] = pma_ptr *2; // *2 because this weird uint16 writes through uint32 pointers
-			btable_entry[0] = pma_ptr; // ADDRx_TX
-			btable_entry[1] = 0; // COUNTx_TX
-			if(USBDCTX.endpoint_mode[i] != USBD_EP_RTX) {
-				// bidirectional endpoints share the buffer, pma can hold only 6
-				pma_ptr += DEF_USBD_UEP0_SIZE;
-			}
-		}
-
-		if (USBDCTX.endpoint_mode[i] == USBD_EP_RX || USBDCTX.endpoint_mode[i] == USBD_EP_RTX) {
-			USBDCTX.pma_offset[i][1] = pma_ptr *2; // *2 because this weird uint16 writes through uint32 pointers
-			btable_entry[2] = pma_ptr; // ADDRx_RX
-			btable_entry[3] = 0x8400; // COUNTx_RX BL_SIZE=1 (32byte), NUM_BLOCK=1 -> 64 bytes
-			pma_ptr += DEF_USBD_UEP0_SIZE;
-		}
-	}
-}
-
-int USBDSetup() {
-	// Enable Clocks
-#ifdef CH32V20x
-#if FUNCONF_SYSTEM_CORE_CLOCK == 144000000
-	RCC->CFGR0 = (RCC->CFGR0 & ~(3<<22)) | (2<<22);
+	// We need 48MHz clock for USB
+#if FUNCONF_SYSTEM_CORE_CLOCK == 240000000
+	RCC->CFGR0 = ( RCC->CFGR0 & ~RCC_USBPRE ) | RCC_USBPRE_DIV5;
+#elif FUNCONF_SYSTEM_CORE_CLOCK == 144000000
+	RCC->CFGR0 = ( RCC->CFGR0 & ~RCC_USBPRE ) | RCC_USBPRE_DIV3;
 #elif FUNCONF_SYSTEM_CORE_CLOCK == 96000000
-	RCC->CFGR0 = (RCC->CFGR0 & ~(3<<22)) | (1<<22);
+	RCC->CFGR0 = ( RCC->CFGR0 & ~RCC_USBPRE ) | RCC_USBPRE_DIV2;
 #elif FUNCONF_SYSTEM_CORE_CLOCK == 48000000
-	RCC->CFGR0 = (RCC->CFGR0 & ~(3<<22));
-#elif FUNCONF_SYSTEM_CORE_CLOCK == 240000000
-#error CH32V20x/30x is unstable at 240MHz
+	RCC->CFGR0 = ( RCC->CFGR0 & ~RCC_USBPRE ) | RCC_USBPRE_DIV1;
 #else
-#error CH32V20x/30x need 144/96/48MHz main clock for USB to work
+#error CH32V20x/30x need 240/144/96/48MHz main clock for USB to work
 #endif
 
-	// As recommended in the manual, output low on these pins before enabling USB
-	RCC->APB2PCENR |= (1 << 2);
-	GPIOA->CFGHR = (GPIOA->CFGHR & ~(0xff << 12)) | (0b00100010 << 12);
-	GPIOA->BSHR = (1 << 27) | (1 << 28);
-
-	RCC->APB2PCENR |= RCC_AFIOEN | RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA;
+	RCC->APB2PCENR |= RCC_AFIOEN | RCC_IOPAEN;
 	RCC->AHBPCENR = RCC_AHBPeriph_SRAM;
 	RCC->APB1PCENR |= RCC_USBEN;
-#else
-#warning USBD is only tested on CH32V20x, on anything else you are trailblazing
+
+#if defined( CH32V203F8 ) || defined( CH32V203F8U6 )
+	// Sometimes USB shares pins w/ SWD
+	// SWD must be disabled in such cases
+	Delay_Ms( 100 );
+	AFIO->PCFR1 |= AFIO_PCFR1_SWJ_CFG_DISABLE;
 #endif
 
-	// Power On
-	USBD->CNTR = USBD_CNTR_FRES; // Force Reset
+	// Suspend & disable all interrupts
+	USBD->CNTR = USBD_FRES;
 	USBD->CNTR = 0;
 
-	// Wait
-	for(volatile int i=0; i<1000; i++);
+	// Delay a tad (Slightly more optimized)
+	for ( volatile int i = 0; i < 1000; i++ );
 
+	// Initialize required registers & packet buffer description table
 	USBD_InternalFinishSetup();
 
 	EXTEN->EXTEN_CTR |= EXTEN_USBD_PU_EN;
-
-	USBD->CNTR = USBD_CNTR_CTRM | USBD_CNTR_RESETM | USBD_CNTR_SUSPM | USBD_CNTR_WKUPM;
-	USBD->ISTR = 0; // reset all interrupt flags
-	NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
+	USBD->CNTR = USBD_CTRM | USBD_RESETM | USBD_SUSPM | USBD_WKUPM;
+	USBD->ISTR = 0;
+	NVIC_EnableIRQ( USB_LP_CAN1_RX0_IRQn );
 
 	return 0;
 }
 
-int USBD_SendEndpoint(int endp, uint8_t *data, int len) {
-	if (USBDCTX.USBD_Endp_Busy[endp]) return -1;
+WEAK void USBD_InternalFinishSetup( void )
+{
+	USBD->BTABLE = 0;
 
-	USBDCTX.USBD_Endp_Busy[endp] = 1;
+	// EP0 has to be RTX for control transfers
+	USBDCTX.endpoints[0].mode = USBD_EP_MODE_RX | USBD_EP_MODE_TX;
 
-	PMA_Write(USBDCTX.pma_offset[endp][0], data, len);
-	SetPMA_TxCount(endp, len);
-	SetEPR_TxStatus(endp, USBD_EPR_STAT_TX_VALID);
+#if FUSB_EP1_MODE
+	USBDCTX.endpoints[1].mode = FUSB_EP1_MODE;
+#endif
+
+#if FUSB_EP2_MODE
+	USBDCTX.endpoints[2].mode = FUSB_EP2_MODE;
+#endif
+
+#if FUSB_EP3_MODE
+	USBDCTX.endpoints[3].mode = FUSB_EP3_MODE;
+#endif
+
+#if FUSB_EP4_MODE
+	USBDCTX.endpoints[4].mode = FUSB_EP4_MODE;
+#endif
+
+#if FUSB_EP5_MODE
+	USBDCTX.endpoints[5].mode = FUSB_EP5_MODE;
+#endif
+
+#if FUSB_EP6_MODE
+	USBDCTX.endpoints[6].mode = FUSB_EP6_MODE;
+#endif
+
+#if FUSB_EP7_MODE
+	USBDCTX.endpoints[7].mode = FUSB_EP7_MODE;
+#endif
+
+	// 64 bytes for each buffer
+	uint16_t pma = USBD_PMA_BASE; // running allocation cursor
+	for ( uint8_t ep = 0; ep < FUSB_MAX_EP_CNT; ++ep )
+	{
+		USBDCTX.usbd_ep_data_ptr[ep] = (uint32_t *)( CAN_USBD_SHARED_BASE + pma * 2 );
+
+		if ( USBDCTX.endpoints[ep].mode & USBD_EP_MODE_TX )
+		{
+			USBD_BDT->EP[ep].ADDn_TX = pma;
+			// Configured on the fly
+			USBD_BDT->EP[ep].COUNTn_TX = 0;
+
+			// If we have an RX node, we double-buffer
+			if ( !( USBDCTX.endpoints[ep].mode & USBD_EP_MODE_RX ) )
+			{
+				pma += USBD_PACKET_SIZE;
+			}
+		}
+
+		if ( USBDCTX.endpoints[ep].mode & USBD_EP_MODE_RX )
+		{
+			USBD_BDT->EP[ep].ADDn_RX = pma;
+			// USBD_BLSIZE: Each cnt is 32 bytes
+			USBD_BDT->EP[ep].COUNTn_RX = USBD_BLSIZE | ( ( USBD_PACKET_SIZE / 32 - 1 ) << 10 );
+			pma += USBD_PACKET_SIZE;
+		}
+	}
+}
+
+void USBDReset( void )
+{
+	NVIC_DisableIRQ( USB_LP_CAN1_RX0_IRQn );
+	USBD->CNTR = USBD_FRES;
+	for ( volatile int i = 0; i < 1000; i++ );
+	USBD->CNTR = USBD_CTRM | USBD_RESETM | USBD_SUSPM | USBD_WKUPM;
+	USBD->ISTR = 0;
+	// Delay 100us for the USB to fully reset
+	// Not recognized otherwise
+	Delay_Us( 100 );
+	NVIC_EnableIRQ( USB_LP_CAN1_RX0_IRQn );
+}
+
+// It seems that even WCH doesn't use the high-priority usb interrupt
+// maybe it's only for CAN?
+#if FUSB_USE_HPE
+// There is an issue with some registers apparently getting lost with HPE, just do it the slow way.
+void USB_LP_CAN1_RX0_IRQHandler( void ) __attribute__( ( section( ".text.vector_handler" ) ) )
+__attribute( ( interrupt ) );
+#else
+#if defined( FUSB_FROM_RAM ) && ( FUSB_FROM_RAM )
+void USB_LP_CAN1_RX0_IRQHandler( void ) __USBFS_FUN_ATTRIBUTE __attribute( ( interrupt ) );
+#else
+void USB_LP_CAN1_RX0_IRQHandler( void ) __attribute__( ( section( ".text.vector_handler" ) ) )
+__attribute( ( interrupt ) );
+#endif
+#endif
+
+void USB_LP_CAN1_RX0_IRQHandler( void )
+{
+	static uint8_t zeros[] = { 0, 0 }; // Macro to reply 0s
+	const uint32_t istr = USBD->ISTR;
+	int len = 0;
+
+	// Correct transfer
+	if ( istr & USBD_CTR )
+	{
+		const int ep = istr & USBD_EP_ID;
+		const int epr = USBD->EPR[ep];
+
+#ifdef USB_DEBUG
+		if ( epr & USBD_CTR_RX && epr & USBD_CTR_TX )
+		{
+			printf( "Both RX & TX flags are set! Processing is too slow\n" );
+		}
+#endif
+
+		if ( epr & USBD_CTR_RX )
+		{
+			// EP0 Setup Packet
+			if ( ep == 0 && epr & USBD_SETUP )
+			{
+				// Memory in USBD is stored in ranks of 16 bits (even though they can store
+				// 32 bits)
+				// What a weird design
+				const uint8_t USBD_request_type = USBDCTX.USBD_SetupReqType = USBDCTX.usbd_ep_data_ptr[0][0] & 0xFF;
+				const uint8_t USBD_request = USBDCTX.USBD_SetupReqCode = USBDCTX.usbd_ep_data_ptr[0][0] >> 8;
+				const uint32_t USBD_index = ( (uint32_t)USBDCTX.usbd_ep_data_ptr[0][2] );
+				const uint32_t USBD_indexValue = USBDCTX.USBD_IndexValue =
+					( ( (uint32_t)( USBDCTX.usbd_ep_data_ptr[0][2] ) ) << 16 ) | USBDCTX.usbd_ep_data_ptr[0][1];
+				const uint16_t USBD_length = USBDCTX.USBD_SetupReqLen = USBDCTX.usbd_ep_data_ptr[0][3];
+
+				// Copy to CTRL0BUFF
+				// Can be removed if CTRL0BUFF unused
+				for ( int i = 0; i < min( USBD_length, 64 ); ++i )
+				{
+					CTRL0BUFF[i] = ( USBDCTX.usbd_ep_data_ptr[0][i / 2] >> ( ( i & 1 ) << 3 ) ) & 0xFF;
+				}
+
+				// Request 0b00100001 0x0A = SET IDLE, can be ignored
+				if ( ( USBD_request_type & USBD_REQ_TYP_MASK ) == USBD_REQ_TYP_STANDARD )
+				{
+					// Standard setup
+					switch ( USBD_request )
+					{
+						case USB_GET_STATUS:
+							// Non remote wakeup and non self powered -> 0
+							USBDCTX.pCtrlPayloadPtr = zeros;
+							USBDCTX.USBD_SetupReqLen = 2;
+							break;
+						case USB_SET_ADDRESS:
+							USBDCTX.USBD_DevAddr = USBD_indexValue & 0xFF;
+							USBDCTX.USBD_SetupReqLen = USBD_SEND_ACK;
+							break;
+						case USB_GET_DESCRIPTOR:
+							const struct descriptor_list_struct *e = descriptor_list;
+							const struct descriptor_list_struct *e_end = e + DESCRIPTOR_LIST_ENTRIES;
+							for ( ; e != e_end; e++ )
+							{
+								if ( e->lIndexValue == (uint32_t)USBD_indexValue )
+								{
+									USBDCTX.pCtrlPayloadPtr = (uint8_t *)e->addr;
+									USBDCTX.USBD_SetupReqLen = min( e->length, USBD_length );
+									break;
+								}
+							}
+							if ( e == e_end ) goto stall;
+							break;
+						case USB_GET_CONFIG:
+							USBDCTX.pCtrlPayloadPtr = &USBDCTX.USBD_DevConfig;
+							USBDCTX.USBD_SetupReqLen = 1;
+							break;
+						case USB_SET_CONFIG:
+							USBDCTX.USBD_DevConfig = USBD_indexValue & 0xFF;
+							USBDCTX.USBD_DevEnumStatus = 0x01;
+							USBDCTX.USBD_SetupReqLen = USBD_SEND_ACK;
+
+							// Reset DTOG bits
+							for ( int ep = 1; ep < FUSB_MAX_EP_CNT; ep++ )
+							{
+								if ( USBD->EPR[ep] & USBD_DTOG_RX )
+								{
+									USBD->EPR[ep] = ( USBD->EPR[ep] & ( USBD_EA | USBD_EPKIND | USBD_EPTYPE ) ) |
+									                USBD_CTR_TX | USBD_CTR_RX | USBD_DTOG_RX;
+								}
+								if ( USBD->EPR[ep] & USBD_DTOG_TX )
+								{
+									USBD->EPR[ep] = ( USBD->EPR[ep] & ( USBD_EA | USBD_EPKIND | USBD_EPTYPE ) ) |
+									                USBD_CTR_TX | USBD_CTR_RX | USBD_DTOG_TX;
+								}
+							}
+							break;
+						case USB_GET_INTERFACE:
+							USBDCTX.pCtrlPayloadPtr = zeros;
+							USBDCTX.USBD_SetupReqLen = 1;
+							break;
+						case USB_CLEAR_FEATURE:
+#if FUSB_SUPPORTS_SLEEP
+							if ( ( USBD_request_type & USB_REQ_RECIP_MASK ) == USB_REQ_RECIP_DEVICE )
+							{
+								/* clear one device feature */
+								if ( (uint8_t)( USBD_indexValue & 0xFF ) == USB_REQ_FEAT_REMOTE_WAKEUP )
+								{
+									/* clear usb sleep status, device not prepare to sleep */
+									USBDCTX.USBD_DevSleepStatus &= ~0x01;
+								}
+								else
+								{
+									goto stall;
+								}
+							}
+							else
+#endif
+								if ( ( USBD_request_type & USB_REQ_RECIP_MASK ) == USB_REQ_RECIP_ENDP )
+							{
+								if ( (uint8_t)( USBD_indexValue & 0xFF ) == USB_REQ_FEAT_ENDP_HALT )
+								{
+									/* Clear End-point Feature */
+									if ( USBDCTX.endpoints[ep].mode )
+									{
+										if ( USBD_index & DEF_UEP_IN &&
+											 ( USBDCTX.endpoints[ep].mode & USBD_EP_MODE_TX ) )
+											SetEPR_Status( ep, USBD_EPR_STAT_TX_MASK, USBD_EPR_STAT_TX_NAK );
+										else if ( USBD_index & DEF_UEP_OUT &&
+												  ( USBDCTX.endpoints[ep].mode & USBD_EP_MODE_RX ) )
+											SetEPR_Status( ep, USBD_EPR_STAT_RX_MASK, USBD_EPR_STAT_RX_ACK );
+										else
+											goto stall;
+									}
+									else
+									{
+										goto stall;
+									}
+								}
+								else
+								{
+									goto stall;
+								}
+							}
+							else
+							{
+								goto stall;
+							}
+							break;
+						case USB_SET_FEATURE:
+							if ( ( USBD_request_type & USB_REQ_RECIP_MASK ) == USB_REQ_RECIP_DEVICE )
+							{
+#if FUSB_SUPPORTS_SLEEP
+								/* Set Device Feature */
+								if ( (uint8_t)( USBD_indexValue & 0xFF ) == USB_REQ_FEAT_REMOTE_WAKEUP )
+								{
+									/* Set Wake-up flag, device prepare to sleep */
+									USBD_DevSleepStatus |= 0x01;
+								}
+								else
+#endif
+								{
+									goto stall;
+								}
+							}
+							else if ( ( USBD_request_type & USB_REQ_RECIP_MASK ) == USB_REQ_RECIP_ENDP )
+							{
+								/* Set Endpoint Feature */
+								if ( (uint8_t)( USBD_indexValue & 0xFF ) == USB_REQ_FEAT_ENDP_HALT )
+								{
+									if ( USBDCTX.endpoints[ep].mode )
+									{
+										if ( ( USBD_index & DEF_UEP_IN ) &&
+											 ( USBDCTX.endpoints[ep].mode & USBD_EP_MODE_TX ) )
+											SetEPR_Status( ep, USBD_EPR_STAT_TX_MASK, USBD_EPR_STAT_TX_STALL );
+										else if ( ( USBD_index & DEF_UEP_OUT ) &&
+												  ( USBDCTX.endpoints[ep].mode & USBD_EP_MODE_RX ) )
+											SetEPR_Status( ep, USBD_EPR_STAT_RX_MASK, USBD_EPR_STAT_RX_STALL );
+										else
+											goto stall;
+									}
+								}
+								else
+									goto stall;
+							}
+							else
+								goto stall;
+							break;
+
+						default: goto stall;
+					}
+				}
+				else
+				{
+					// EP0 Setup non-standard
+#if FUSB_HID_INTERFACES > 0 || FUSB_USER_HANDLERS
+#if FUSB_HID_USER_REPORTS
+					const uint16_t packet_len = USBD_BDT->EP[ep].COUNTn_RX & 0x3FF;
+					uint8_t buff[USBD_PACKET_SIZE];
+
+					for ( int i = 0; i < packet_len; ++i )
+					{
+						buff[i] = ( USBDCTX.usbd_ep_data_ptr[ep][i / 2] >> ( ( i & 1 ) << 3 ) ) & 0xFF;
+					}
+#endif
+
+					len = 0;
+					switch ( USBD_request )
+					{
+#if FUSB_HID_INTERFACES > 0
+						case HID_SET_REPORT:
+#if FUSB_HID_USER_REPORTS
+							len = HandleHidUserSetReportSetup( &USBDCTX, (tusb_control_request_t *)buff );
+							if ( len < 0 ) goto stall;
+							USBDCTX.USBD_SetupReqLen = 0;
+							break;
+
+						case HID_GET_REPORT:
+							len = HandleHidUserGetReportSetup( &USBDCTX, (tusb_control_request_t *)buff );
+							if ( len < 0 ) goto stall;
+							if ( len == 0 )
+							{
+								USBDCTX.USBD_SetupReqLen = USBD_SEND_ACK;
+								break;
+							}
+
+							// len > 0:
+							// We would like to send something it seems
+							USBDCTX.USBD_SetupReqLen = len;
+							len = min( USBD_PACKET_SIZE, len );
+
+							// If HandleHidUserGetReportSetup hasn't provided data to send,
+							// we ask HandleHidUserReportDataIn for data
+							if ( !USBDCTX.pCtrlPayloadPtr )
+							{
+								len = HandleHidUserReportDataIn( &USBDCTX, buff, len );
+								USBDCTX.pCtrlPayloadPtr = buff;
+							}
+
+#endif
+							break;
+						case HID_SET_IDLE:
+							if ( USBD_index < FUSB_HID_INTERFACES )
+								USBDCTX.USBD_HidIdle[USBD_index] = (uint8_t)( USBD_indexValue >> 8 );
+
+							// ACK
+							USBDCTX.USBD_SetupReqLen = USBD_SEND_ACK;
+							break;
+						case HID_SET_PROTOCOL:
+							if ( USBD_index < FUSB_HID_INTERFACES )
+								USBDCTX.USBD_HidProtocol[USBD_index] = (uint8_t)USBD_indexValue;
+							USBDCTX.USBD_SetupReqLen = USBD_SEND_ACK;
+							break;
+						case HID_GET_IDLE:
+							if ( USBD_index < FUSB_HID_INTERFACES )
+							{
+								USBDCTX.pCtrlPayloadPtr = &USBDCTX.USBD_HidIdle[USBD_index];
+								USBDCTX.USBD_SetupReqLen = 1;
+							}
+							break;
+
+						case HID_GET_PROTOCOL:
+							if ( USBD_index < FUSB_HID_INTERFACES )
+							{
+								USBDCTX.pCtrlPayloadPtr = &USBDCTX.USBD_HidProtocol[USBD_index];
+								USBDCTX.USBD_SetupReqLen = 1;
+							}
+							break;
+#endif
+						default:
+#if FUSB_USER_HANDLERS
+							len = HandleSetupCustom( &USBDCTX, USBD_request );
+
+							if ( len )
+							{
+								if ( len < 0 )
+								{
+									// ACK
+									USBDCTX.USBD_SetupReqLen = USBD_SEND_ACK;
+								}
+								else
+								{
+									USBDCTX.USBD_SetupReqLen = min( len, USBD_length );
+								}
+							}
+							else
+#endif
+							{
+								goto stall;
+							}
+							break;
+					}
+#endif
+				}
+			}
+			else
+			{
+				// OUT RX packet
+				const uint16_t packet_len = USBD_BDT->EP[ep].COUNTn_RX & 0x3FF;
+
+#if FUSB_HID_USER_REPORTS || FUSB_USER_HANDLERS
+				uint8_t buff[USBD_PACKET_SIZE];
+
+				for ( int i = 0; i < packet_len; ++i )
+				{
+					buff[i] = ( USBDCTX.usbd_ep_data_ptr[ep][i / 2] >> ( ( i & 1 ) << 3 ) ) & 0xFF;
+				}
+#endif
+#if FUSB_HID_USER_REPORTS
+				if ( USBDCTX.USBD_SetupReqCode == HID_SET_REPORT )
+				{
+					HandleHidUserReportDataOut( &USBDCTX, buff, len );
+				}
+#endif
+#if FUSB_USER_HANDLERS
+				if ( USBDCTX.USBD_SetupReqCode != HID_SET_REPORT )
+				{
+					HandleDataOut( &USBDCTX, ep, buff, packet_len );
+				}
+#endif
+#if FUSB_HID_USER_REPORTS
+				// Transaction finished
+				if ( USBDCTX.USBD_SetupReqLen == 0 )
+				{
+					if ( USBDCTX.USBD_SetupReqCode == HID_SET_REPORT ) HandleHidUserReportOutComplete( &USBDCTX );
+				}
+#endif
+
+				if ( ep == 0 && ( USBDCTX.USBD_SetupReqLen == 0 || packet_len != 0 ) )
+				{
+					USBDCTX.USBD_SetupReqLen = USBD_SEND_ACK;
+				}
+
+				SetEPR_Status( ep, USBD_EPR_STAT_RX_MASK, USBD_EPR_STAT_RX_ACK );
+			}
+
+			// Clear RX (Toggle, 1 conserves bit)
+			USBD->EPR[ep] = ( USBD->EPR[ep] & ( USBD_EA | USBD_EPKIND | USBD_EPTYPE ) ) | USBD_CTR_TX;
+		}
+
+		// length < sizeof -> Return start
+		// length = sizeof -> Return all
+		// length > sizeof -> Return partial then 0
+
+		// 1st load for RX and auto-reload for TX
+		// We need to send something:
+		// - Set tx_buf and tx_pending to non-null and set TX to ACK
+		// - This piece of code shall handle loading to buffer
+		// - TX part shall start next transaction if we need to
+		// TX detects if the operation should be continued by checking
+		// if the tx_buf is null
+
+		// We are always handling either a TX or a RX transaction
+		// This is only for the control endpoint
+		if ( ep == 0 )
+		{
+			if ( USBDCTX.USBD_SetupReqLen == 0 )
+			{
+				USBDCTX.pCtrlPayloadPtr = NULL;
+				// Enable recieving data
+				SetEPR_Status( 0, USBD_EPR_STAT_RX_MASK, USBD_EPR_STAT_RX_ACK );
+			}
+			else
+			{
+				// USBD_SEND_ACK is special variable to say 0 byte tx
+				if ( USBDCTX.USBD_SetupReqLen == USBD_SEND_ACK )
+				{
+					USBDCTX.USBD_SetupReqLen = 0;
+				}
+
+				const uint16_t tx_len = min( USBDCTX.USBD_SetupReqLen, USBD_PACKET_SIZE );
+				// Overreads but eh
+				for ( int i = 0; i < tx_len; i += 2 )
+				{
+					USBDCTX.usbd_ep_data_ptr[0][i / 2] = *( (const uint16_t *)( USBDCTX.pCtrlPayloadPtr + i ) );
+				}
+				USBD_BDT->EP[0].COUNTn_TX = tx_len;
+				USBDCTX.pCtrlPayloadPtr += tx_len;
+				USBDCTX.USBD_SetupReqLen -= tx_len;
+				SetEPR_Status( 0, USBD_EPR_STAT_TX_MASK, USBD_EPR_STAT_TX_ACK );
+			}
+		}
+
+		// IN request
+		if ( epr & USBD_CTR_TX )
+		{
+			if ( ep == 0 )
+			{
+				if ( USBDCTX.USBD_SetupReqCode == USB_SET_ADDRESS )
+				{
+					USBD->DADDR = 0x80 | USBDCTX.USBD_DevAddr;
+					USBDCTX.USBD_DevAddr = 0;
+				}
+			}
+			else
+			{
+				// Send data for non-zero endpoint
+#if FUSB_USER_HANDLERS
+				len = HandleInRequest( &USBDCTX, ep, USBDCTX.endpoints[ep].in, 0 );
+#endif
+
+				if ( len )
+				{
+					if ( len < 0 ) len = 0;
+					SetEPR_Status( ep, USBD_EPR_STAT_TX_MASK, USBD_EPR_STAT_TX_ACK );
+				}
+				else
+				{
+					SetEPR_Status( ep, USBD_EPR_STAT_RX_MASK, USBD_EPR_STAT_RX_NAK );
+				}
+			}
+
+			// Sent, no longer busy
+			USBDCTX.endpoints[ep].busy = 0;
+
+			// Clear TX (Toggle)
+			USBD->EPR[ep] = ( USBD->EPR[ep] & ( USBD_EA | USBD_EPKIND | USBD_EPTYPE ) ) | USBD_CTR_RX;
+		}
+
+		USBD->ISTR = ~USBD_CTR;
+		return;
+
+	stall:
+		SetEPR_Status( 0, USBD_EPR_STAT_TX_MASK, USBD_EPR_STAT_TX_STALL );
+		SetEPR_Status( 0, USBD_EPR_STAT_RX_MASK, USBD_EPR_STAT_RX_STALL );
+		USBD->EPR[ep] = ( epr & ( USBD_EPR_EA | USBD_EPR_EP_TYPE_MASK | USBD_EPR_EP_KIND ) );
+	}
+
+	if ( istr & USBD_RESET )
+	{
+		USBD->ISTR = ~USBD_RESET;
+		USBD->BTABLE = 0;
+
+		for ( uint8_t ep = 0; ep < FUSB_MAX_EP_CNT; ++ep )
+		{
+			USBD->EPR[ep] = ep;
+
+			// TODO: Add method to set EP type
+			// Currently the user must override the function
+			// It seems that using TYPE_BULK is fine for all types though
+			SetEPR_Status( ep, USBD_EPR_EP_TYPE_MASK, USBD_EPR_EP_TYPE_BULK );
+			SetEPR_Status( ep, USBD_EPR_STAT_RX_MASK, USBD_EPR_STAT_RX_ACK );
+			SetEPR_Status( ep, USBD_EPR_STAT_TX_MASK, USBD_EPR_STAT_TX_NAK );
+
+			// Disable unused modes
+			if ( !( USBDCTX.endpoints[ep].mode & USBD_EP_MODE_RX ) )
+			{
+				SetEPR_Status( ep, USBD_EPR_STAT_RX_MASK, USBD_EPR_STAT_RX_DIS );
+			}
+
+			if ( !( USBDCTX.endpoints[ep].mode & USBD_EP_MODE_TX ) )
+			{
+				SetEPR_Status( ep, USBD_EPR_STAT_TX_MASK, USBD_EPR_STAT_TX_DIS );
+			}
+			USBDCTX.endpoints[ep].busy = 0;
+		}
+
+		// Override EP0 to control - mandatory
+		SetEPR_Status( 0, USBD_EPR_EP_TYPE_MASK, USBD_EPR_EP_TYPE_CTRL );
+
+		// Reset context
+		USBDCTX.USBD_DevConfig = 0;
+		USBDCTX.USBD_DevAddr = 0;
+		USBDCTX.USBD_DevSleepStatus = 0;
+		USBDCTX.USBD_DevEnumStatus = 0;
+
+		// Enable USB function (we default to address 0)
+		USBD->DADDR = USBD_EF;
+		return;
+	}
+
+	// If size is a concern, merge this with the ISTR set bellow
+	if ( istr & ( USBD_ERR | USBD_PMAOVR ) )
+	{
+#ifdef DEBUG
+		printf( "ERROR! USB error\n" );
+#endif
+		USBD->ISTR = ~( USBD_ERR | USBD_PMAOVR );
+		return;
+	}
+
+	// We don't need the rest of the events, so we just default to resetting them
+	USBD->ISTR = ~( USBD_ESOF | USBD_SOF | USBD_WKUP | USBD_SUSP );
+}
+
+static uint8_t EP_buffer[USBD_PACKET_SIZE];
+
+uint8_t *USBD_GetEPBufferIfAvailable( int endp )
+{
+	if ( USBDCTX.endpoints[endp].busy ) return 0;
+	return EP_buffer;
+}
+
+int USBD_SendEndpoint( int endp, int len )
+{
+	if ( USBDCTX.endpoints[endp].busy ) return -1;
+	if ( USBDCTX.USBD_SetupReqLen > 0 ) return -2;
+
+	for ( int i = 0; i < len; i += 2 )
+	{
+		USBDCTX.usbd_ep_data_ptr[endp][i / 2] = *( (const uint16_t *)( EP_buffer + i ) );
+	}
+
+	USBD_BDT->EP[endp].COUNTn_TX = len;
+	USBDCTX.endpoints[endp].busy = 1;
+	SetEPR_Status( endp, USBD_EPR_STAT_TX_MASK, USBD_EPR_STAT_TX_ACK );
+
+	return 0;
+}
+
+int USBD_SendEndpointNEW( int endp, uint8_t *data, int len, int copy )
+{
+	if ( USBDCTX.endpoints[endp].busy ) return -1;
+	// This prevents sending while ep0 is receiving
+	if ( USBDCTX.USBD_SetupReqLen > 0 ) return USBDCTX.USBD_SetupReqLen;
+
+	// For FS compatability
+	USBDCTX.endpoints[endp].in = data;
+
+	for ( int i = 0; i + 1 < len; i += 2 )
+	{
+		USBDCTX.usbd_ep_data_ptr[endp][i / 2] = data[i] | ( (uint16_t)data[i + 1] << 8 );
+	}
+	if ( len % 2 != 0 )
+	{
+		USBDCTX.usbd_ep_data_ptr[endp][len / 2] = data[len - 1];
+	}
+
+	USBD_BDT->EP[endp].COUNTn_TX = len;
+	USBDCTX.endpoints[endp].busy = 1;
+	SetEPR_Status( endp, USBD_EPR_STAT_TX_MASK, USBD_EPR_STAT_TX_ACK );
+
+	return 0;
+}
+
+int USBD_SendACK( int endp, int tx )
+{
+	if ( tx )
+	{
+		SetEPR_Status( endp, USBD_EPR_STAT_TX_MASK, USBD_EPR_STAT_TX_ACK );
+	}
+	else
+	{
+		SetEPR_Status( endp, USBD_EPR_STAT_RX_MASK, USBD_EPR_STAT_RX_ACK );
+	}
+
+	return 0;
+}
+
+int USBD_SendNAK( int endp, int tx )
+{
+	if ( tx )
+	{
+		SetEPR_Status( endp, USBD_EPR_STAT_TX_MASK, USBD_EPR_STAT_TX_NAK );
+	}
+	else
+	{
+		SetEPR_Status( endp, USBD_EPR_STAT_RX_MASK, USBD_EPR_STAT_RX_NAK );
+	}
 
 	return 0;
 }
 
 #if defined( FUNCONF_USE_USBPRINTF ) && FUNCONF_USE_USBPRINTF
-int HandleInRequest( struct _USBState *ctx, int endp, uint8_t *data, int len ) {
+uint8_t usb_inputbuffer[USBD_PACKET_SIZE];
+int usb_inbuf_idx;
+
+WEAK int HandleInRequest( struct _USBState *ctx, int endp, uint8_t *data, int len )
+{
 	return 0;
 }
 
-static uint8_t usb_inputbuffer[DEF_USBD_UEP0_SIZE]; // this can be extended if polling rate is low
-static int usb_inbuf_idx;
-void HandleDataOut( struct _USBState *ctx, int endp, uint8_t *data, int len ) {
-	if ( endp == 0 ) {
+WEAK void HandleDataOut( struct _USBState *ctx, int endp, uint8_t *data, int len )
+{
+	if ( endp == 0 )
+	{
 		ctx->USBD_SetupReqLen = 0; // To ACK
 	}
-	else if( endp == 2 ) {
+	else if ( endp == 2 )
+	{
 		// discard oldest if polling is too slow
-		int headroom = (sizeof(usb_inputbuffer) - usb_inbuf_idx) - len;
-		if(headroom < 0) {
+		int headroom = ( sizeof( usb_inputbuffer ) - usb_inbuf_idx ) - len;
+		if ( headroom < 0 )
+		{
 			// not enough space left, free up some
 			int offset = -headroom;
-			for(int i = offset; i < sizeof(usb_inputbuffer); i++) {
-				usb_inputbuffer[i -offset] = usb_inputbuffer[i];
+			for ( int i = offset; i < sizeof( usb_inputbuffer ); i++ )
+			{
+				usb_inputbuffer[i - offset] = usb_inputbuffer[i];
 			}
 			usb_inbuf_idx -= offset;
 		}
 
-		for(int i = 0; i < len; i++) {
+		for ( int i = 0; i < len; i++ )
+		{
 			usb_inputbuffer[usb_inbuf_idx++] = data[i];
 		}
 	}
 }
 
-void handle_usbd_input( int numbytes, uint8_t * data );
-void poll_input() {
-	if(usb_inbuf_idx) {
-		handle_usbd_input(usb_inbuf_idx, usb_inputbuffer);
+void poll_input()
+{
+	if ( usb_inbuf_idx )
+	{
+		HandleUSBInput( usb_inbuf_idx, usb_inputbuffer );
 		usb_inbuf_idx = 0;
 	}
 }
 
-int HandleSetupCustom( struct _USBState *ctx, int setup_code ) {
+WEAK int HandleSetupCustom( struct _USBState *ctx, int setup_code )
+{
 	int ret = -1;
-	if ( ctx->USBD_SetupReqType & USB_REQ_TYP_CLASS ) {
-		switch ( setup_code ) {
+	if ( ctx->USBD_SetupReqType & USB_REQ_TYP_CLASS )
+	{
+		switch ( setup_code )
+		{
 			case CDC_SET_LINE_CODING:
 			case CDC_SET_LINE_CTLSTE:
 			case CDC_SEND_BREAK: ret = ( ctx->USBD_SetupReqLen ) ? ctx->USBD_SetupReqLen : -1; break;
@@ -536,9 +798,60 @@ int HandleSetupCustom( struct _USBState *ctx, int setup_code ) {
 			default: ret = 0; break;
 		}
 	}
-	else {
+	else
+	{
 		ret = 0; // Go to STALL
 	}
+
 	return ret;
 }
-#endif // FUNCONF_USE_USBPRINTF
+#endif
+
+#if defined( FUNCONF_USE_USBPRINTF ) && FUNCONF_USE_USBPRINTF
+int USBFS_SendEndpointNEW( int endp, uint8_t *data, int len, int copy )
+{
+	return USBD_SendEndpointNEW( endp, data, len, copy );
+}
+#endif
+
+#if __STDC_VERSION__ >= 201112L || defined( __GNUC__ ) || defined( __clang__ )
+
+// Very hacky way to ensure that we don't get a BDT overflow
+// I miss C++...
+// This should more logically be in usbd.h, but we get multiple objects
+// if we do that
+//
+// No checking on compilers w/o static assert :(
+static const char _number_of_endpoints[] = {
+#if FUSB_EP1_MODE
+	FUSB_EP1_MODE,
+#endif
+#if FUSB_EP2_MODE
+	FUSB_EP2_MODE,
+#endif
+#if FUSB_EP3_MODE
+	FUSB_EP3_MODE,
+#endif
+#if FUSB_EP4_MODE
+	FUSB_EP4_MODE,
+#endif
+#if FUSB_EP5_MODE
+	FUSB_EP5_MODE,
+#endif
+#if FUSB_EP6_MODE
+	FUSB_EP6_MODE,
+#endif
+#if FUSB_EP7_MODE
+	FUSB_EP7_MODE,
+#endif
+};
+
+#if __STDC_VERSION__ >= 202311L
+static_assert( ( sizeof( _number_of_endpoints ) * USBD_PACKET_SIZE + USBD_PMA_BASE ) <= 512,
+	"USBD BDT overflow! Please use less endpoints, or make usbd packet size smaller" );
+#elif defined( __GNUC__ ) || defined( __clang__ ) || __STDC_VERSION__ >= 201112L
+_Static_assert( ( sizeof( _number_of_endpoints ) * USBD_PACKET_SIZE + USBD_PMA_BASE ) <= 512,
+	"USBD BDT overflow! Please use less endpoints, or make usbd packet size smaller" );
+#endif
+
+#endif
