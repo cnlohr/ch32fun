@@ -650,12 +650,7 @@ USBPD_Result_e USBPD_SinkNegotiate( void )
 			s_instance.state = eSTATE_WAIT_ACCEPT;
 			break;
 
-		case eSTATE_PS_RDY:
-			// Barrier: ensure IRQ-written fields (caps, pdVersion, …) are visible to the
-			// caller before eUSBPD_OK is returned. Without this, LTO may propagate
-			// pre-negotiate stale values into subsequent USBPD_GetCapabilities() reads.
-			__asm volatile( "" ::: "memory" );
-			return eUSBPD_OK;
+		case eSTATE_PS_RDY: return eUSBPD_OK;
 
 		default: break;
 	}
@@ -780,6 +775,12 @@ USBPD_Result_e USBPD_SelectPDO( uint8_t index, uint32_t voltageIn100mV )
  */
 size_t USBPD_GetCapabilities( USBPD_SPR_CapabilitiesMessage_t **capabilities )
 {
+	// Barrier: caps is written by the IRQ via memcpy; without this, LTO can
+	// prove the main-thread call chain never writes caps and fold all reads to
+	// zero. The barrier is placed here so every caller gets correct data
+	// regardless of which state the negotiation exited through.
+	__asm volatile( "" ::: "memory" );
+
 	if ( s_instance.pdoCount == 0 )
 	{
 		return 0;
