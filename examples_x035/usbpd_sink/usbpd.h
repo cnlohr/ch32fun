@@ -553,7 +553,7 @@ typedef struct
 	USBPD_CC_e lastCCLine;
 	USBPD_SPR_CapabilitiesMessage_t caps;
 	uint8_t messageID;
-	uint8_t pdoCount;
+	volatile uint8_t pdoCount;
 	bool gotSourceGoodCRC;
 } USBPD_Instance_t;
 
@@ -641,6 +641,11 @@ USBPD_Result_e USBPD_SinkNegotiate( void )
 			break;
 
 		case eSTATE_SOURCE_CAP:
+			// Wait for the GoodCRC TX (started inside ParsePacket) to finish before
+			// sending the Request. Without this, SelectPDO's SendMessage races with
+			// the in-progress GoodCRC transmission (~450 µs at 300 kHz BMC), causing
+			// strict chargers to reject or ignore the request.
+			while ( USBPD->CONTROL & PD_TX_EN );
 			USBPD_SelectPDO( 0, 0 ); // Select the first PDO by default
 			s_instance.state = eSTATE_WAIT_ACCEPT;
 			break;
@@ -770,6 +775,12 @@ USBPD_Result_e USBPD_SelectPDO( uint8_t index, uint32_t voltageIn100mV )
  */
 size_t USBPD_GetCapabilities( USBPD_SPR_CapabilitiesMessage_t **capabilities )
 {
+	// Barrier: caps is written by the IRQ via memcpy; without this, LTO can
+	// prove the main-thread call chain never writes caps and fold all reads to
+	// zero. The barrier is placed here so every caller gets correct data
+	// regardless of which state the negotiation exited through.
+	__asm volatile( "" ::: "memory" );
+
 	if ( s_instance.pdoCount == 0 )
 	{
 		return 0;
@@ -872,6 +883,8 @@ static void ParsePacket( void )
 
 			case eUSBPD_CTRL_MSG_PS_RDY: nextState = eSTATE_PS_RDY; break;
 
+			case eUSBPD_CTRL_MSG_WAIT: nextState = eSTATE_CABLE_DETECT; break;
+
 			default: break;
 		}
 	}
@@ -931,6 +944,7 @@ void USBPD_IRQHandler( void )
 	if ( USBPD->STATUS & IF_RX_RESET )
 	{
 		USBPD->STATUS |= IF_RX_RESET;
+		SwitchRXMode();
 	}
 }
 
