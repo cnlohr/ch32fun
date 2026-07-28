@@ -12,7 +12,7 @@
 // registers.
 
 // Describes timer + CH1/CH2 pin-pair combination.
-// Only TIM1 and TIM2 support "Encoder Mode", and some alternate pins (PA)
+// Only TIM1 and TIM2 support "Encoder Mode".
 typedef struct
 {
 	TIM_TypeDef *tim;
