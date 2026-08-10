@@ -243,7 +243,15 @@ typedef struct
 
 #ifdef CH570_CH572
 typedef struct {
-    __IO uint32_t CTRL;
+	union {
+		__IO uint32_t CTRL;
+		struct {
+			__IO uint8_t CTRL0;
+			__IO uint8_t CTRL1;
+			__IO uint8_t CTRL2;
+			__IO uint8_t CTRL3;
+		};
+	};
 } CMP_TypeDef;
 #endif
 
