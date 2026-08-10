@@ -92,10 +92,10 @@ void __libc_init_array(void)
 #include <stdint.h>
 #include <ch32fun.h>
 
-#if defined(__FreeBSD__)
 #ifdef putchar
+// Host stdio headers may define putchar as a macro. The firmware provides its
+// own weak implementation below, so remove the host macro on every toolchain.
 #undef putchar
-#endif
 #endif
 
 #if defined(CH32H41x)
