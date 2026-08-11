@@ -16,16 +16,9 @@ void blink(int n) {
 	}
 }
 
-// this is hacky, it implements the USBFS sender called in ch32fun.c
-// we do it like this for now, because the USBFS peripheral is preferred
-// over the USBD interface implemented here
-int USBFS_SendEndpointNEW( int endp, uint8_t* data, int len, int copy) {
-	return USBD_SendEndpoint(endp, data, len);
-}
-
 // this callback is mandatory when FUNCONF_USE_USBPRINTF is defined,
 // can be empty though
-void handle_usbd_input(int numbytes, uint8_t *data) {
+void HandleUSBInput(int numbytes, uint8_t *data) {
 	if(numbytes == 1) {
 		switch(data[0]) {
 		case '1':
