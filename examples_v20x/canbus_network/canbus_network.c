@@ -8,6 +8,7 @@
 // These values are calculated based on the system clock clock being 144MHz
 // The print function bellow will print the actual baud rate
 // if the clock or divider is different.
+#if FUNCONF_SYSTEM_CORE_CLOCK == 144000000
 //                       TS1         TS2            BRP
 #define BAUD_25kbps  ((5 << 16) | (4 << 20) | (479 / AHB1_DIV))
 #define BAUD_50kbps  ((5 << 16) | (4 << 20) | (239 / AHB1_DIV))
@@ -17,6 +18,7 @@
 #define BAUD_500kbps ((5 << 16) | (4 << 20) | ( 23 / AHB1_DIV))
 #define BAUD_750kbps ((5 << 16) | (4 << 20) | ( 15 / AHB1_DIV))
 #define BAUD_1Mbps   ((5 << 16) | (4 << 20) | ( 11 / AHB1_DIV))
+#endif
 
 #define STATUS_OK ( CAN_TSTATR_RQCP0 | CAN_TSTATR_TXOK0 )
 
