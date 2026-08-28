@@ -235,7 +235,7 @@ typedef struct
 #define USBFS_UEP6_TX_EN      RB_UEP6_TX_EN
 #define USBFS_UEP7_TX_EN      RB_UEP7_TX_EN
 
-#define CHECK_USBFS_UEP_AUTO_TOG   RB_UEP_AUTO_TOG
+#define CHECK_USBFS_UEP_R_AUTO_TOG RB_UEP_AUTO_TOG
 #define CHECK_USBFS_UEP_T_AUTO_TOG RB_UEP_AUTO_TOG
 
 #define USBFS           ((USBFS_TypeDef *)USBFS_BASE)
@@ -255,15 +255,20 @@ typedef struct
 
 #define DEBUG_PIN       PB0
 
+#if defined(CH32L103)
+#define USBFS           ((USBFSD_TypeDef *)USBFS_BASE)
+#define CHECK_USBFS_UEP_R_AUTO_TOG USBFS_UEP_T_AUTO_TOG
+#define CHECK_USBFS_UEP_T_AUTO_TOG USBFS_UEP_T_AUTO_TOG
+#else
 #define USBFS           ((USBOTG_FS_TypeDef *)USBFS_BASE)
+#define CHECK_USBFS_UEP_T_AUTO_TOG USBOTG_UEP_T_AUTO_TOG
+#define CHECK_USBFS_UEP_R_AUTO_TOG USBOTG_UEP_R_AUTO_TOG
+#endif
 
 #define UEP_CTRL_LEN(n) (((volatile uint16_t*)&USBFS->UEP0_TX_LEN)[n*2])
 #define UEP_CTRL_TX(n)  (((volatile uint8_t*)&USBFS->UEP0_TX_CTRL)[n*4])
 #define UEP_CTRL_RX(n)  (((volatile uint8_t*)&USBFS->UEP0_RX_CTRL)[n*4])
 #define UEP_DMA(n)      (((volatile uint32_t*)&USBFS->UEP0_DMA)[n])
-
-#define CHECK_USBFS_UEP_T_AUTO_TOG USBOTG_UEP_T_AUTO_TOG
-#define CHECK_USBFS_UEP_R_AUTO_TOG USBOTG_UEP_R_AUTO_TOG
 
 #if defined(CH32V20x)
 #define USBFS_UEP_T_RES_MASK       USBOTG_UEP_T_RES_MASK
@@ -308,7 +313,9 @@ typedef struct
 #define USBFS_UD_PORT_EN           USBOTG_UD_PORT_EN
 #endif
 
-#ifdef CH32V30x_D8C
+#if defined(CH32L103)
+#define USB_IRQn                   USBFS_IRQn
+#elif defined(CH32V30x_D8C)
 #define USB_IRQn                   OTG_FS_IRQn
 #else
 #define USB_IRQn                   USBHD_IRQn
