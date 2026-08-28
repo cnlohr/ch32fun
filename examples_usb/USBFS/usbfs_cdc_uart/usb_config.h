@@ -28,107 +28,130 @@
 #define FUSB_STR_SERIAL       u"007"
 
 //Taken from http://www.usbmadesimple.co.uk/ums_ms_desc_dev.htm
-static const uint8_t device_descriptor[] = {
-	18, //bLength - Length of this descriptor
-	1,  //bDescriptorType - Type (Device)
-	0x10, 0x01, //bcdUSB - The highest USB spec version this device supports (USB1.1)
-	0x02, //bDeviceClass - Device Class
-	0x0, //bDeviceSubClass - Device Subclass
-	0x0, //bDeviceProtocol - Device Protocol  (000 = use config descriptor)
-	64, //bMaxPacketSize - Max packet size for EP0
-  (uint8_t)(FUSB_USB_VID), (uint8_t)(FUSB_USB_VID >> 8), //idVendor - ID Vendor
-	(uint8_t)(FUSB_USB_PID), (uint8_t)(FUSB_USB_PID >> 8), //idProduct - ID Product
-	(uint8_t)(FUSB_USB_REV), (uint8_t)(FUSB_USB_REV >> 8), //bcdDevice - Device Release Number
-	1, //iManufacturer - Index of Manufacturer string
-	2, //iProduct - Index of Product string
-	3, //iSerialNumber - Index of Serial string
-	1, //bNumConfigurations - Max number of configurations (if more then 1, you can switch between them)
+static const tusb_desc_device_t device_descriptor = {
+  .bLength = sizeof(tusb_desc_device_t),
+  .bDescriptorType = TUSB_DESC_DEVICE,
+  .bcdUSB = 0x0110,
+  .bDeviceClass = TUSB_CLASS_CDC,
+  .bDeviceSubClass = 0,
+  .bDeviceProtocol = 0,
+  .bMaxPacketSize0 = 64,
+  .idVendor = FUSB_USB_VID,
+  .idProduct = FUSB_USB_PID,
+  .bcdDevice = FUSB_USB_REV,
+  .iManufacturer = 1,
+  .iProduct = 2,
+  .iSerialNumber = 3,
+  .bNumConfigurations = 1,
 };
 
 /* Configuration Descriptor Set */
-static const uint8_t config_descriptor[ ] =
-{
-  0x09,        // bLength
-  0x02,        // bDescriptorType (Configuration)
-  0x43, 0x00,  // wTotalLength 67
-  0x02,        // bNumInterfaces 2
-  0x01,        // bConfigurationValue
-  0x00,        // iConfiguration (String Index)
-  0x80,        // bmAttributes
-  0x32,        // bMaxPower 100mA
-
-  0x09,        // bLength
-  0x04,        // bDescriptorType - Interface
-  0x00,        // bInterfaceNumber - 0
-  0x00,        // bAlternateSetting
-  0x01,        // bNumEndpoints - 1
-  0x02,        // bInterfaceClass - CDC
-  0x02,        // bInterfaceSubClass - Abstract Control Model (Table 4 in CDC120.pdf)
-  0x01,        // bInterfaceProtocol - AT Commands: V.250 etc (Table 5)
-  0x00,        // iInterface (String Index)
-
+static const struct {
+  tusb_desc_configuration_t cfg;
+  tusb_desc_interface_t if0;
+  csInterfaceDescriptor csif0;
+  cdcInterfaceDescriptor cdcif0;
+  acmInterfaceDescriptor acm0;
+  unionFunctionalDescriptor union0;
+  tusb_desc_endpoint_t ep1in;
+  tusb_desc_interface_t if1;
+  tusb_desc_endpoint_t ep2out;
+  tusb_desc_endpoint_t ep3;
+} config_descriptor = {
+  .cfg = {
+    .bLength = sizeof(tusb_desc_configuration_t),
+    .bDescriptorType = TUSB_DESC_CONFIGURATION,
+    .wTotalLength = sizeof(config_descriptor),
+    .bNumInterfaces = 2,
+    .bConfigurationValue = 1,
+    .bmAttributes = 0x80, // TODO, use enum
+    .bMaxPower = 100 / 2,
+  },
+  .if0 = {
+    .bLength = sizeof(tusb_desc_interface_t),
+    .bDescriptorType = TUSB_DESC_INTERFACE,
+    .bInterfaceNumber = 0,
+    .bAlternateSetting = 0,
+    .bNumEndpoints = 1,
+    .bInterfaceClass = TUSB_CLASS_CDC,
+    .bInterfaceSubClass = 2, // Abstract Control Model (Table 4 in CDC120.pdf)
+    .bInterfaceProtocol = 1, // AT Commands: V.250 etc (Table 5)
+    .iInterface = 0,
+  },
   // Setting up CDC interface (Table 18)
-  0x05,        // bLength
-  0x24,        // bDescriptorType - CS_INTERFACE (Table 12)
-  0x00,        // bDescriptorSubType - Header Functional Descriptor (Table 13)
-  0x10, 0x01,  // bcdCDC - USB version - USB1.1
+  .csif0 = {
+    .bLength = sizeof(csInterfaceDescriptor),
+    .bDescriptorType = TUSB_DESC_CS_INTERFACE, // (Table 12)
+    .bDescriptorSubType = 0, // Header Functional Descriptor (Table 13)
+    .bcdCDC = 0x0110,        // USB version - USB1.1
+  },
   // Call Management Functional Descriptor
-  0x05,        // bLength
-  0x24,        // bDescriptorType - CS_INTERFACE
-  0x01,        // bDescriptorSubType - Call Management Functional Descriptor (Table 13)
-  0x00,        // bmCapabilities: (Table 3 in PSTN120.pdf)
-  // Bit 0 — Device handles call management itself:
-  //  1 = device handles call management (e.g. call setup, termination, etc.)
-  //  0 = host handles it
-  // Bit 1 — Device can send/receive call management information over a Data Class interface:
-  //  1 = can use the Data Class interface for call management
-  //  0 = must use the Communication Class interface
-  0x01,        // bDataInterface - Indicates that multiplexed commands are handled via data interface 01h (same value as used in the UNION Functional Descriptor)
-  // Abstract Control Management Functional Descriptor
-  0x04,        // bLength
-  0x24,        // bDescriptorType - CS_INTERFACE
-  0x02,        // bDescriptorSubType - Abstract Control Management Functional Descriptor (Table 13)
-  0x02,        // bmCapabilities - Device supports the request combination of Set_Line_Coding, Set_Control_Line_State, Get_Line_Coding, and the notification Serial_State (Table 4 in PSTN120.pdf)
+  .cdcif0 = {
+    .bLength = sizeof(cdcInterfaceDescriptor),
+    .bDescriptorType = TUSB_DESC_CS_INTERFACE,
+    .bDescriptorSubType = 1, // Call Management Functional Descriptor (Table 13)
+    // Bit 0 — Device handles call management itself:
+    //  1 = device handles call management (e.g. call setup, termination, etc.)
+    //  0 = host handles it
+    // Bit 1 — Device can send/receive call management information over a Data Class interface:
+    //  1 = can use the Data Class interface for call management
+    //  0 = must use the Communication Class interface
+    .bmCapabilities = 0, // (Table 3 in PSTN120.pdf)
+    .bDataInterface = 1, // Indicates that multiplexed commands are handled via data interface 01h (same value as used in the UNION Functional Descriptor)
+  },
+  .acm0 = {
+    .bLength = sizeof(acmInterfaceDescriptor),
+    .bDescriptorType = TUSB_DESC_CS_INTERFACE,
+    .bDescriptorSubType = 2, // Abstract Control Management Functional Descriptor (Table 13)
+    .bmAttributes = 0x02,    // Device supports the request combination of Set_Line_Coding, Set_Control_Line_State, Get_Line_Coding, and the notification Serial_State (Table 4 in PSTN120.pdf)
+  },
   // Union Descriptor Functional Descriptor
-  0x05,        // bLength
-  0x24,        // bDescriptorType - CS_INTERFACE
-  0x06,        // bDescriptorSubType - Union Descriptor Functional Descriptor (Table 13)
-  0x00,        // bControlInterface (Interface number of the control (Communications Class) interface)
-  0x01,        // bSubordinateInterface0 (Interface number of the subordinate (Data Class) interface)
-  // Setting up EP1 for CDC config interface 
-  0x07,        // bLength
-  0x05,        // bDescriptorType (Endpoint)
-  0x81,        // bEndpointAddress (IN/D2H)
-  0x03,        // bmAttributes (Interrupt)
-  0x40, 0x00,  // wMaxPacketSize 64
-  0x01,        // bInterval 1 (unit depends on device speed)
-
+  .union0 = {
+    .bLength = sizeof(unionFunctionalDescriptor),
+    .bDescriptorType = TUSB_DESC_CS_INTERFACE,
+    .bDescriptorSubType = 6, // Union Descriptor Functional Descriptor (Table 13)
+    .bControlInterface = 0,  // (Interface number of the control (Communications Class) interface)
+    .bSubordinateInterface0 = 1, // (Interface number of the subordinate (Data Class) interface)
+  },
+  // Setting up EP1 for CDC config interface
+  .ep1in = {
+    .bLength = sizeof(tusb_desc_endpoint_t),
+    .bDescriptorType = TUSB_DESC_ENDPOINT,
+    .bEndpointAddress = 0x81,
+    .bmAttributes.xfer = 3, // interrupt
+    .wMaxPacketSize.size = 64,
+    .bInterval = 1,
+  },
   // Transmission interface with two bulk endpoints
-  0x09,        // bLength
-  0x04,        // bDescriptorType (Interface)
-  0x01,        // bInterfaceNumber 1
-  0x00,        // bAlternateSetting
-  0x02,        // bNumEndpoints 2
-  0x0A,        // bInterfaceClass
-  0x00,        // bInterfaceSubClass
-  0x00,        // bInterfaceProtocol - Transparent
-  0x00,        // iInterface (String Index)
+  .if1 = {
+    .bLength = sizeof(tusb_desc_interface_t),
+    .bDescriptorType = TUSB_DESC_INTERFACE,
+    .bInterfaceNumber = 1,
+    .bAlternateSetting = 0,
+    .bNumEndpoints = 2,
+    .bInterfaceClass = TUSB_CLASS_CDC_DATA,
+    .bInterfaceSubClass = 0,
+    .bInterfaceProtocol = 0, // Transparent
+    .iInterface = 0,
+  },
   // EP2 - device to host
-  0x07,        // bLength
-  0x05,        // bDescriptorType (Endpoint)
-  0x02,        // bEndpointAddress (OUT/H2D)
-  0x02,        // bmAttributes (Bulk)
-  0x40, 0x00,  // wMaxPacketSize 64
-  0x00,        // bInterval 0 (unit depends on device speed)
+  .ep2out = {
+    .bLength = sizeof(tusb_desc_endpoint_t),
+    .bDescriptorType = TUSB_DESC_ENDPOINT,
+    .bEndpointAddress = 0x02,
+    .bmAttributes.xfer = 0x02, // bulk
+    .wMaxPacketSize.size = 64,
+    .bInterval = 0,
+  },
   // EP3 - host to device
-  0x07,        // bLength
-  0x05,        // bDescriptorType (Endpoint)
-  0x83,        // bEndpointAddress (IN/D2H)
-  0x02,        // bmAttributes (Bulk)
-  0x40, 0x00,  // wMaxPacketSize 64
-  0x00,        // bInterval 0 (unit depends on device speed)
-
-  // 67 bytes
+  .ep3 = {
+    .bLength = sizeof(tusb_desc_endpoint_t),
+    .bDescriptorType = TUSB_DESC_ENDPOINT,
+    .bEndpointAddress = 0x83,
+    .bmAttributes.xfer = 0x02, // bulk
+    .wMaxPacketSize.size = 64,
+    .bInterval = 0,
+  },
 };
 
 struct usb_string_descriptor_struct {
@@ -164,8 +187,8 @@ const static struct descriptor_list_struct {
 	const uint8_t	*addr;
 	uint8_t		length;
 } descriptor_list[] = {
-	{0x00000100, device_descriptor, sizeof(device_descriptor)},
-	{0x00000200, config_descriptor, sizeof(config_descriptor)},
+	{0x00000100, (const uint8_t*)&device_descriptor, sizeof(device_descriptor)},
+	{0x00000200, (const uint8_t*)&config_descriptor, sizeof(config_descriptor)},
 	// {0x00002100, config_descriptor + 18, 9 }, // Not sure why, this seems to be useful for Windows + Android.
 
 	{0x00000300, (const uint8_t *)&language, 4},
