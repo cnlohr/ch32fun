@@ -345,9 +345,21 @@ SECTIONS
 
 		PROVIDE( end = . );
 
+#if TARGET_MCU_LD == 4 /* x03x */
+		.pioc_sram (ORIGIN(RAM) + LENGTH(RAM) - 0x1000) (NOLOAD) : {
+			. = ALIGN(4);
+			*(.pioc_sram .pioc_sram.*)
+		} >RAM
+		ASSERT(SIZEOF(.pioc_sram) == 0 || SIZEOF(.pioc_sram) == 0x1000,
+			"Error: PIOC_SRAM, if defined, must be exactly 4kB."
+		)
+#endif
+
 #if TARGET_MCU_LD == 11
 		PROVIDE( _v3f_stack = ORIGIN(RAM) + LENGTH(RAM));
 		PROVIDE( _v5f_stack = ORIGIN(DTCM) + LENGTH(DTCM));
+#elif TARGET_MCU_LD == 4 /* x03x */
+		PROVIDE( _eusrstack = ORIGIN(RAM) + LENGTH(RAM) - SIZEOF(.pioc_sram));
 #else
 		PROVIDE( _eusrstack = ORIGIN(RAM) + LENGTH(RAM));
 #endif
@@ -363,7 +375,6 @@ SECTIONS
 			. = ALIGN(4);
 		} >EXT AT>EXT
 #endif
-
 
 		/DISCARD/ : {
 			*(.note .note.*)
