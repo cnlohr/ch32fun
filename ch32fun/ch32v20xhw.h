@@ -4503,7 +4503,7 @@ typedef struct{
 #define RCC_USBPRE_DIV3                         ((uint32_t)0x00800000) /* PLL clock divided by 3 (PLLCLK = 144MHz) */
 #define RCC_USBPRE_DIV5                         ((uint32_t)0x00C00000) /* PLL clock divided by 5, PLL source is HSE/2 (PLLCLK = 240MHz) */
 
-#define RCC_CFGR0_MCO                           ((uint32_t)0x07000000) /* MCO[2:0] bits (Microcontroller Clock Output) */
+#define RCC_CFGR0_MCO                           ((uint32_t)0x0F000000) /* MCO[3:0] bits (Microcontroller Clock Output) */
 #define RCC_MCO_0                               ((uint32_t)0x01000000) /* Bit 0 */
 #define RCC_MCO_1                               ((uint32_t)0x02000000) /* Bit 1 */
 #define RCC_MCO_2                               ((uint32_t)0x04000000) /* Bit 2 */
@@ -4514,6 +4514,10 @@ typedef struct{
 #define RCC_CFGR0_MCO_HSI                       ((uint32_t)0x05000000) /* HSI clock selected as MCO source */
 #define RCC_CFGR0_MCO_HSE                       ((uint32_t)0x06000000) /* HSE clock selected as MCO source  */
 #define RCC_CFGR0_MCO_PLL                       ((uint32_t)0x07000000) /* PLL clock divided by 2 selected as MCO source */
+#define RCC_CFGR0_MCO_PLL2                      ((uint32_t)0x08000000) /* PLL2 clock selected as MCO source */
+#define RCC_CFGR0_MCO_PLL3DIV2                  ((uint32_t)0x09000000) /* PLL3 clock divided by 2 selected as MCO source */
+#define RCC_CFGR0_MCO_XT1                       ((uint32_t)0x0A000000) /* XT1 external oscillator clock selected as MCO source */
+#define RCC_CFGR0_MCO_PLL3                      ((uint32_t)0x0B000000) /* PLL3 clock selected as MCO source */
 
 #define RCC_ADCDUTY                             ((uint32_t)0x80000000) /* ADC clock duty cycle adjustment */
 #define RCC_ADC_DUTY_SEL                        ((uint32_t)0x40000000) /* ADC clock duty cycle selection */
