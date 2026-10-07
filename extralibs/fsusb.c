@@ -911,12 +911,20 @@ int USBFSSetup()
 #endif
 
 #if defined (CH32X03x)
-	RCC->APB2PCENR |= RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOC;
-#if FUSB_VDD_5V
-	AFIO->CTLR = (AFIO->CTLR & ~(UDP_PUE_MASK | UDM_PUE_MASK | USB_PHY_V33)) | UDP_PUE_10K | USB_IOEN;
-#else
-	AFIO->CTLR = (AFIO->CTLR & ~(UDP_PUE_MASK | UDM_PUE_MASK )) | USB_PHY_V33 | UDP_PUE_1K5 | USB_IOEN;
-#endif
+	RCC->APB2PCENR |= RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOC | RCC_APB1Periph_PWR;
+	PWR->CTLR |= PWR_CTLR_PLS_MODE3; // Set PVD to 4V
+	Delay_Ms(1);
+	// This is how it's done in ISP
+	if( PWR->CSR & PWR_CSR_PVDO ) // Check if supply voltage is above (0) or below (1) the threshold
+	{
+		// 3.3V supply
+		AFIO->CTLR = (AFIO->CTLR & ~(UDP_PUE_MASK | UDM_PUE_MASK )) | USB_PHY_V33 | UDP_PUE_1K5 | USB_IOEN;
+	}
+	else
+	{
+		// 5V supply
+		AFIO->CTLR = (AFIO->CTLR & ~(UDP_PUE_MASK | UDM_PUE_MASK | USB_PHY_V33)) | UDP_PUE_10K | USB_IOEN;
+	}
 	// Enable PC16/17 Alternate Function (USB)
 	// According to EVT, GPIO16 = GPIO_Mode_IN_FLOATING, GPIO17 = GPIO_Mode_IPU
 	GPIOC->CFGXR = 	( GPIOC->CFGXR & ~( (0xf<<(4*0)) | (0xf<<(4*1)) ) )  |
