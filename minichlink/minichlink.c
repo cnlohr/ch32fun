@@ -870,8 +870,10 @@ keep_going:
 				break;
 			}
 			case 'w':
+			case 'v':
 			{
 				//struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
+				char cmd = argchar[1];
 				if( argchar[2] != 0 ) goto help;
 				iarg++;
 				argchar = 0; // Stop advancing
@@ -965,6 +967,32 @@ keep_going:
 
 				int is_flash = IsAddressFlash( offset );
 				
+				if( cmd == 'v' )
+				{
+					if( MCF.HaltMode ) MCF.HaltMode( dev, HALT_MODE_HALT_BUT_NO_RESET );
+					if( !MCF.ReadBinaryBlob ) goto unimplemented;
+					uint8_t * readback = malloc( len );
+					if( !readback || MCF.ReadBinaryBlob( dev, offset, len, readback ) )
+					{
+						fprintf( stderr, "Fault reading device\n" );
+						free( readback );
+						free( image );
+						return -12;
+					}
+					int i, at = 0, differ = 0;
+					for( i = 0; i < len; i++ )
+						if( readback[i] != image[i] && differ++ == 0 ) at = i;
+					if( differ )
+						fprintf( stderr, "Error: Verify failed, %d of %d bytes differ. First at %08x: expected %02x, read %02x\n",
+							differ, len, (uint32_t)(offset + at), image[at], readback[at] );
+					else
+						printf( "Image verified.\n" );
+					free( readback );
+					free( image );
+					if( differ ) return -14;
+					break;
+				}
+
 				if( MCF.HaltMode && is_flash )
 				{
 					if( offset == 0x1ffff000 || iss->current_area == BOOTLOADER_AREA ) // The same thing for v003, maybe remove redundant condition?
@@ -1092,6 +1120,7 @@ help:
 	fprintf( stderr, " -n Disable Debug Module\n" );
 	fprintf( stderr, " -S set FLASH/SRAM split [FLASH kbytes] [SRAM kbytes]\n" );
 	fprintf( stderr, " -w [binary image to write] [address, decimal or 0x, try0x08000000]\n" );
+	fprintf( stderr, " -v [binary image to compare] [address] Read back and compare, e.g. after -w\n" );
 	fprintf( stderr, " -r [output binary image] [memory address, decimal or 0x, try 0x08000000] [size, decimal or 0x, try 16384]\n" );
 	fprintf( stderr, "   Note: for memory addresses, you can use 'flash' 'bootloader' 'option' 'eeprom' 'ram' and say \"ram+0x10\" for instance\n" );
 	fprintf( stderr, "   For filename, you can use - for raw (terminal) or + for hex (inline).\n" );
