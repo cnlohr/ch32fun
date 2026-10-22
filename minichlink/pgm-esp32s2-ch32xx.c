@@ -454,10 +454,9 @@ int ESPBlockWrite64( void * dev, uint32_t address_to_write, const uint8_t * data
 
 retry:
 
-	if( (eps->dev_version >> 8) >= 2 && InternalIsMemoryErased( (struct InternalState*)eps->internal, address_to_write ) )
-		Write2LE( eps, 0x0efe );
-	else
-		Write2LE( eps, 0x0bfe );
+	// Always 0x0b, even into an erased sector: the programmers implement 0x0e
+	// as "initialize and report status", not as a write without erase.
+	Write2LE( eps, 0x0bfe );
 	Write4LE( eps, address_to_write );
 
 	int i;
