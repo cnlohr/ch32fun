@@ -38,6 +38,36 @@
 #include <stdint.h>
 
 
+typedef struct {
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint8_t bDescriptorSubType;
+  uint16_t bcdCDC;
+} __attribute__((packed)) csInterfaceDescriptor;
+
+typedef struct {
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint8_t bDescriptorSubType;
+  uint8_t bmCapabilities;
+  uint8_t bDataInterface;
+} __attribute__((packed)) cdcInterfaceDescriptor;
+
+typedef struct {
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint8_t bDescriptorSubType;
+  uint8_t bmAttributes;
+} __attribute__((packed)) acmInterfaceDescriptor;
+
+typedef struct {
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint8_t bDescriptorSubType;
+  uint8_t bControlInterface;
+  uint8_t bSubordinateInterface0;
+} __attribute__((packed)) unionFunctionalDescriptor;
+
 /*------------------------------------------------------------------*/
 /* From Linux
  *------------------------------------------------------------------*/
