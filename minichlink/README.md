@@ -28,6 +28,7 @@ Usage: minichlink [args]
  -s [debug register] [value]
  -g [debug register]
  -w [binary image to write] [address, decimal or 0x, try0x08000000]
+ -v [binary image to compare] [address] Read back and compare, e.g. after -w
  -r [output binary image] [memory address, decimal or 0x, try 0x08000000] [size, decimal or 0x, try 16384]
    Note: for memory addresses, you can use 'flash' 'launcher' 'bootloader' 'option' 'ram' and say "ram+0x10" for instance
    For filename, you can use - for raw or + for hex.
