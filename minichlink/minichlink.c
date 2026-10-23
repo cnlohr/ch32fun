@@ -204,15 +204,21 @@ int main( int argc, char ** argv )
 	int status;
 	int must_be_end = 0;
 
+	// Skip the programmer selection (-c, -C, -l and their values) to find the first command.
+	int first = 1;
+	while( first + 1 < argc && ( strncmp( argv[first], "-c", 2 ) == 0 ||
+		strncmp( argv[first], "-C", 2 ) == 0 || strncmp( argv[first], "-l", 2 ) == 0 ) )
+		first += 2;
+
 	int skip_startup = 
-		(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'k' ) |
-		(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'e' ) |
-		(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'A' ) |
-		(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'u' ) |
-		(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'h' ) |
-		(argc > 1 && argv[1][0] == '-' && argv[1][1] == 't' ) |
-		(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'f' ) |
-		(argc > 1 && argv[1][0] == '-' && argv[1][1] == 'X' );
+		(argc > first && argv[first][0] == '-' && argv[first][1] == 'k' ) |
+		(argc > first && argv[first][0] == '-' && argv[first][1] == 'e' ) |
+		(argc > first && argv[first][0] == '-' && argv[first][1] == 'A' ) |
+		(argc > first && argv[first][0] == '-' && argv[first][1] == 'u' ) |
+		(argc > first && argv[first][0] == '-' && argv[first][1] == 'h' ) |
+		(argc > first && argv[first][0] == '-' && argv[first][1] == 't' ) |
+		(argc > first && argv[first][0] == '-' && argv[first][1] == 'f' ) |
+		(argc > first && argv[first][0] == '-' && argv[first][1] == 'X' );
 
 	if( !skip_startup && MCF.SetupInterface )
 	{
