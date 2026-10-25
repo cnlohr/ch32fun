@@ -912,18 +912,11 @@ int USBFSSetup()
 
 #if defined (CH32X03x)
 	RCC->APB2PCENR |= RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOC;
-#if FUSB_VDD_5V
-	// The board is declared as running from 5V, no need to measure.
-	int vdd_3v3 = 0;
-#else
-	// PWR is on APB1: without its clock the PLS write is lost and PVDO always reads 0 (5V).
 	RCC->APB1PCENR |= RCC_APB1Periph_PWR;
 	PWR->CTLR |= PWR_CTLR_PLS_MODE3; // Set PVD to 4V
 	Delay_Ms(1);
 	// This is how it's done in ISP
-	int vdd_3v3 = PWR->CSR & PWR_CSR_PVDO; // Check if supply voltage is above (0) or below (1) the threshold
-#endif
-	if( vdd_3v3 )
+	if( PWR->CSR & PWR_CSR_PVDO ) // Check if supply voltage is above (0) or below (1) the threshold
 	{
 		// 3.3V supply
 		AFIO->CTLR = (AFIO->CTLR & ~(UDP_PUE_MASK | UDM_PUE_MASK )) | USB_PHY_V33 | UDP_PUE_1K5 | USB_IOEN;
