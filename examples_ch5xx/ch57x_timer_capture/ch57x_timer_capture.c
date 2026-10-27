@@ -31,7 +31,7 @@ int main()
 
 	funPinMode( LED, GPIO_CFGLR_OUT_10Mhz_PP );
 
-	funPinMode(PA7, GPIO_CFGLR_OUT_10Mhz_PP); //PWM1
+	funPinMode(PA7, GPIO_CFGLR_OUT_2Mhz_PP); //PWM1
 
 
 	// Setup 26-bit capture timer - default on PA7.
@@ -53,18 +53,18 @@ int main()
 	// Base is 952.4 @ 5-bit (31 period) = 60MHz base clock.
 	// Output at 11.9kHz with this setup.
 	R16_PWM_CLOCK_DIV = 80;
-    R8_PWM_OUT_EN |= (1 << (0));
-    R8_PWM_CONFIG &= ~(RB_PWM_CYC_MOD | RB_PWM_CYCLE_SEL);
-    R8_PWM_CONFIG |= 3 << 2; // 0 = 8-bit, 3 << 2 = 5-bit, 2 << 2 = 6-bit, 1 << 2 = 7-bit.
-    R8_PWM_CONFIG |= RB_PWM_CYCLE_SEL;
-	R8_PWM1_DATA = 2;
+	R8_PWM_OUT_EN |= (1 << (0));
+	R8_PWM_CONFIG &= ~(RB_PWM_CYC_MOD | RB_PWM_CYCLE_SEL);
+	R8_PWM_CONFIG |= 3 << 2; // 0 = 8-bit, 3 << 2 = 5-bit, 2 << 2 = 6-bit, 1 << 2 = 7-bit.
+	R8_PWM_CONFIG |= RB_PWM_CYCLE_SEL;
+	R8_PWM1_DATA = 1;
 
 	while(1)
 	{
 		//printf( "%08x\n", R16_TMR_DMA_NOW );
 		// Should print 00001310 020000a0 00001310 020000a0
-		printf( "%08x %08x %08x %08x\n", (int)timer_data[0], (int)timer_data[1], (int)timer_data[2], (int)timer_data[3] );
-		Delay_Ms(10);
+		printf( "%08x %08x %08x %08x @ %08x\n", (int)timer_data[0], (int)timer_data[1], (int)timer_data[2], (int)timer_data[3], R16_TMR_DMA_NOW );
+		Delay_Ms(1);
 		//if( R8_PWM1_DATA++ > 28 ) R8_PWM1_DATA = 1;
 	}
 }
