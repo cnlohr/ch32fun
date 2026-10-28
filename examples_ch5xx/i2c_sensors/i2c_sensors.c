@@ -6,17 +6,17 @@
 #define I2C_SDA PB12
 #define I2C_SCL PB13
 
-u16 bh1750_read() {
+int bh1750_read() {
 	u8 address = 0x23;
 
 	//# request reading
 	u8 ret = i2c_writeData(address, (u8[]){0x13}, 1);
-	if (ret != 0) { printf("\nERROR: I2C request 0x%02X\r\n", ret); return; }
+	if (ret != 0) { printf("\nERROR: I2C request 0x%02X\r\n", ret); return -1; }
 
 	//# parse reading
 	u8 data[2];
 	ret = i2c_readData(address, data, 2);
-	if (ret != 0) { printf("\nERROR: I2C reading 0x%02X\r\n", ret); return; }
+	if (ret != 0) { printf("\nERROR: I2C reading 0x%02X\r\n", ret); return -1; }
 
 	u16 lux_raw = BUF_MAKE_U16(data);
 	return lux_raw * 12 / 10;
@@ -52,11 +52,11 @@ int main()
 
 	// power on
 	u8 ret = i2c_writeData(address, (u8[]){0x01}, 1);
-	if (ret != 0) { printf("\nERROR: I2C powerON 0x%02X\r\n", ret); return; }
+	if (ret != 0) { printf("\nERROR: I2C powerON 0x%02X\r\n", ret); return -1; }
 
 	// set resolution
 	ret = i2c_writeData(address, (u8[]){0x23}, 1);
-	if (ret != 0) { printf("\nERROR: I2C resolution 0x%02X\r\n", ret); return; }
+	if (ret != 0) { printf("\nERROR: I2C resolution 0x%02X\r\n", ret); return -1; }
 
 	//# setup SHT3x
 	address = 0x44;
@@ -68,7 +68,7 @@ int main()
 
 	// config
 	ret = i2c_writeData(address, (u8[]){0x21, 0x30}, 2);
-	if (ret != 0) { printf("\nERROR: I2C Config 0x%02X\r\n", ret); return; }
+	if (ret != 0) { printf("\nERROR: I2C Config 0x%02X\r\n", ret); return -1; }
 	Delay_Ms(5);	//! REQUIRED
 
 	u16 temp, hum, lux;
