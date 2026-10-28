@@ -889,7 +889,10 @@ int ESPCH5xxWriteBinaryBlob(void * dev, uint32_t address_to_write, uint32_t blob
 			if (!iss->debugger) write_mode = 1;
 			else write_mode = 0;
 		}
-		
+
+		// Uncomment this if you want to use the non-blob (manaul) operations.
+		//write_mode = 0;
+
 		if (spad) {
 			if (spad + blob_size <= sector_size) {
 				MCF.ReadBinaryBlob(dev, (address_to_write - spad), sector_size, start_pad);
@@ -1586,10 +1589,10 @@ void * TryInit_ESP32S2CHFUN(uint32_t id)
 			eps->capabilities = (eps->programmer_type << 12) | ((eps->replybuffer[1] > 4)?0x1f:0);
 		}
 		fprintf( stderr, "Found %s\n", programmer_name_string[eps->programmer_type] );
-		printf( "Programmer firmware version %d.%02d-%04x\n", (uint8_t)(eps->dev_version >> 8), (uint8_t)eps->dev_version&0xff, eps->capabilities );
+		fprintf( stderr, "Programmer firmware version %d.%02d-%04x\n", (uint8_t)(eps->dev_version >> 8), (uint8_t)eps->dev_version&0xff, eps->capabilities );
 		if( (uint16_t)(((uint8_t)(eps->dev_version >> 8) * 100) + (uint8_t)(eps->dev_version&0xff)) < (uint16_t)CURRENT_VERSION )
 		{
-			printf( "There is newer version of programmer firmware available - v.%d.%d\n", CURRENT_VERSION/100, CURRENT_VERSION%100 );
+			fprintf( stderr, "There is newer version of programmer firmware available - v.%d.%d\n", CURRENT_VERSION/100, CURRENT_VERSION%100 );
 		}
 	}
 	else if( eps->replylen <= 1 || !eps->programmer_type )

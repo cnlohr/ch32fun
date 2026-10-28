@@ -221,7 +221,7 @@ int main( int argc, char ** argv )
 			fprintf( stderr, "Could not setup interface.\n" );
 			return -33;
 		}
-		printf( "Interface Setup\n" );
+		fprintf( stderr, "Interface Setup\n" );
 	}
 
 	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
@@ -462,7 +462,7 @@ keep_going:
 				}
 
 				CaptureKeyboardInput();
-				printf( "Terminal started\n\n" );
+				fprintf( stderr, "Terminal started\n\n" );
 
 				CMDInit();
 
