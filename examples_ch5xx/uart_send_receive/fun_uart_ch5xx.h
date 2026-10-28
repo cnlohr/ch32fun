@@ -1,6 +1,7 @@
 // MIT License
 // Copyright (c) 2025 UniTheCat
 
+#include <stdio.h>
 #include "ch32fun.h"
 
 #define FUNCONF_UART_PRINTF_BAUD 115200
