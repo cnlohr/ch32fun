@@ -26,7 +26,7 @@ int main() {
 			time_ref = SysTick->CNT;
 			printf("send: %s\r\n", send_msg);
 			sprintf(send_msg, "hello bee %d\r\n", i++);
-			uart_send_ch5xx(TARGET_UART, send_msg, sizeof(send_msg));
+			uart_send_ch5xx(TARGET_UART, (uint8_t*)send_msg, sizeof(send_msg));
 		}
 
 		u16 receiv_len = uart_receive_ch5xx(TARGET_UART, &recv_msg, sizeof(recv_msg));
