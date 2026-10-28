@@ -29,7 +29,7 @@ int main() {
 			uart_send_ch5xx(TARGET_UART, (uint8_t*)send_msg, sizeof(send_msg));
 		}
 
-		u16 receiv_len = uart_receive_ch5xx(TARGET_UART, &recv_msg, sizeof(recv_msg));
+		u16 receiv_len = uart_receive_ch5xx(TARGET_UART, (uint8_t*)&recv_msg, sizeof(recv_msg));
 		if (receiv_len > 0) {
 			printf("received: %s\r\n", recv_msg);
 			memset(recv_msg, 0, sizeof(recv_msg));
