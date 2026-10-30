@@ -446,7 +446,7 @@ volatile uint32_t tuneFilter2M;
 volatile uint32_t tx_done;
 
 #ifdef ISLER_CALLBACK_RX
-void ISLER_CALLBACK_RX();
+void ISLER_CALLBACK_RX(uint8_t *frame);
 #else
 volatile uint32_t rx_ready;
 #endif
@@ -540,7 +540,7 @@ void LLE_IRQHandler() {
 		iSLERStop();
 
 #ifdef ISLER_CALLBACK_RX
-		ISLER_CALLBACK_RX();
+		ISLER_CALLBACK_RX((uint8_t *)LLE_BUF);
 #else
 		rx_ready = status;
 #endif
