@@ -424,7 +424,7 @@ typedef struct {
 	volatile uint32_t RF50[3]; // TXCTUNE_GA[3]
 } RF_Type;
 
-uint8_t channel_map[] = {1,2,3,4,5,6,7,8,9,10,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,0,11,39};
+const uint8_t channel_map[] = {1,2,3,4,5,6,7,8,9,10,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,0,11,39};
 #define CO_MID (uint8_t)(RF->TXTUNE_CTRL & ~0xffffffc0)
 #define GA_MID (uint8_t)((RF->TXTUNE_CTRL & ~0x80ffffff) >> 24)
 
