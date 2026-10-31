@@ -34,6 +34,9 @@ static int UPDIErase( struct UPDIState* updi );
 static int UPDIReset( struct UPDIState* updi );
 static int UPDIFlash( struct UPDIState* updi, int memory_address, uint8_t * program, int len, int flash_bootloader );
 static int UPDIReadMemoryArea( struct UPDIState* updi, int memory_location, uint8_t * program, int len );
+static inline void UPDIWordInternal( struct UPDIState* updi, uint16_t word );
+static inline void UPDISendBreak( struct UPDIState* updi );
+static int UPDIReceive( struct UPDIState* updi );
 
 // Returns 0 if device detected.  Returns nonzero if failure.
 static inline int UPDISyncStart( struct UPDIState* updi );
