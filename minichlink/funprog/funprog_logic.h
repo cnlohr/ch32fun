@@ -128,7 +128,7 @@ static void HandleCommandBuffer( uint8_t * buffer, uint16_t reqlen, uint8_t* ret
 						iptr +=3 ; // reserved.
 
 						// On the ESP32-S2, this will output clock on P2.
-						EnableMCO( use_apll, sdm0, sdm1, sdm2, odiv )
+						EnableMCO( use_apll, sdm0, sdm1, sdm2, odiv );
 					}
 					break;
 #endif
