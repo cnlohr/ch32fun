@@ -8,7 +8,7 @@ ch32fun contains:
 1. Examples using ch32fun, but not as many as using the HAL.  Most of which are centered around the ch32v003, but even many of those are compatible with other processors.
 2. "minichlink" which uses the WCH CH-Link with libusb, for cross-platform use.
   * An STM32F042 Programmer, the [NHC-Link042](https://github.com/NgoHungCuong/NHC-Link042)
-  * A series of programmers with common API under common name [*funprog*](https://github.com/cnlohr/ch32fun/minichlink/funprog):
+  * A series of programmers with common API under common name [*funprog*](minichlink/funprog):
     * [ESP32-S2](https://github.com/cnlohr/esp32s2-cookbook/tree/master/ch32v003programmer)
     * [CH32V003](https://github.com/cnlohr/rv003usb/tree/master/rvswdio_programmer)
     * [CH570](https://github.com/cnlohr/ch570funprog/)
