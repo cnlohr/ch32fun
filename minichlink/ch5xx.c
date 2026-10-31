@@ -276,7 +276,7 @@ uint8_t ch5xx_flash_open(void* dev, uint8_t op) {
 		// fprintf(stderr, "RS = %02x\n", glob_rom_cfg);
 	}
 	MCF.WriteByte(dev, 0x40001806, 4);
-	if (iss->target_chip_type == CHIP_CH570){
+	if (iss->target_chip_type == CHIP_CH570) {
 		ch5xx_flash_begin(dev, 0xff);
 		ch5xx_flash_out(dev, 0xff);
 		// ch5xx_flash_in(dev);

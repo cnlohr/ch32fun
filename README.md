@@ -8,10 +8,12 @@ ch32fun contains:
 1. Examples using ch32fun, but not as many as using the HAL.  Most of which are centered around the ch32v003, but even many of those are compatible with other processors.
 2. "minichlink" which uses the WCH CH-Link with libusb, for cross-platform use.
   * An STM32F042 Programmer, the [NHC-Link042](https://github.com/NgoHungCuong/NHC-Link042)
-  * An ESP32S2 Programmer, the [esp32s2-funprog](https://github.com/cnlohr/esp32s2-cookbook/tree/master/ch32v003programmer)
+  * A series of programmers with common API under common name [*funprog*](https://github.com/cnlohr/ch32fun/minichlink/funprog):
+    * [ESP32-S2](https://github.com/cnlohr/esp32s2-cookbook/tree/master/ch32v003programmer)
+    * [CH32V003](https://github.com/cnlohr/rv003usb/tree/master/rvswdio_programmer)
+    * [CH570](https://github.com/cnlohr/ch570funprog/)
   * The official WCH Link-E Programmer.
   * An Arduino-based interface, [Ardulink](https://gitlab.com/BlueSyncLine/arduino-ch32v003-swio).
-  * Support for the ch32v003-based programmer for all SWD/SWIO boards using [The rv003usb SWDIO programmer](https://github.com/cnlohr/rv003usb/tree/master/rvswdio_programmer)
   * Support for built-in USB ISP bootloader that is present on all WCH chips with USB peripheral
   * Supports gdbserver-style-debugging for use with Visual Studio.
   * Supports printf-over-single-wire. (At about 400kBaud)
