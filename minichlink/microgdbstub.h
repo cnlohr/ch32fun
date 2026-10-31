@@ -383,7 +383,7 @@ void HandleGDBPacket( void * dev, char * data, int len )
 		uint32_t length_to_read = 0;
 		if( ReadHex( &data, -1, &address_to_read ) < 0 ) goto err;
 		if( *(data++) != ',' ) goto err;
-		if( ReadHex( &data, -1, &length_to_read ) < 0 ) goto err;
+		if( ReadHex( &data, -1, &length_to_read ) < 0 || length_to_read == 0 ) goto err;
 
 		uint8_t * pl = alloca( length_to_read * 2 );
 		if( RVReadMem( dev, address_to_read, pl, length_to_read ) < 0 )
