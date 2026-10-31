@@ -4,7 +4,7 @@
 #include "ch5xx.h"
 #include "chips.h"
 
-#define CURRENT_VERSION 520
+#define CURRENT_VERSION 530
 
 #define PROGRAMMER_TYPE_UNKNOWN  0
 #define PROGRAMMER_TYPE_ESP32S2  1
@@ -13,6 +13,7 @@
 #define PROGRAMMER_TYPE_ESP32    4
 #define PROGRAMMER_TYPE_SWADGE   5
 
+#define HAS_MCO                  (1 << 12)
 #define HAS_BLE                  (1 << 11)
 #define HAS_WEB_UI               (1 << 10)
 #define HAS_WEBSOCKET            (1 << 9)
@@ -453,11 +454,17 @@ int ESPBlockWrite64( void * dev, uint32_t address_to_write, const uint8_t * data
 	ESPFlushLLCommands( dev );
 
 retry:
-
-	if( (eps->dev_version >> 8) >= 2 && InternalIsMemoryErased( (struct InternalState*)eps->internal, address_to_write ) )
-		Write2LE( eps, 0x0efe );
+	if( (eps->dev_version >= 0x500) && InternalIsMemoryErased( (struct InternalState*)eps->internal, address_to_write ) )
+	{
+		Write2LE( eps, 0x12fe );
+		Write1( eps, 64 );
+		Write1( eps, 0 );
+	}
 	else
+	{
 		Write2LE( eps, 0x0bfe );
+	}
+
 	Write4LE( eps, address_to_write );
 
 	int i;
@@ -502,6 +509,7 @@ int ESPVoidHighLevelState( void * dev )
 
 int ESPVendorCommand( void * dev, const char * cmd )
 {
+	struct ESP32ProgrammerStruct * eps = (struct ESP32ProgrammerStruct *)dev;
 	char command[10] = { 0 };
 	char tbuf[10] = { 0 };
 	int fields[10];
@@ -535,18 +543,22 @@ int ESPVendorCommand( void * dev, const char * cmd )
 		tbuf[i++] = c;
 		tbuf[i] = 0;
 	}
-	printf( "Got Vendor Command \"%s\"\n", command );
+	fprintf( stderr, "Got Vendor Command \"%s\"\n", command );
 	ESPFlushLLCommands( dev );
 	if( strcasecmp( command, "ECLK" ) == 0 )
 	{
-		printf( "Setting up external clock on pin.\n" );
+		if( !(eps->capabilities & HAS_MCO) )
+		{
+			fprintf(stderr, "This programmer doesn't have MCO funciton\n" );
+			return -1;
+		}
+		fprintf( stderr, "Setting up external clock on pin.\n" );
 		if( f < 5 )
 		{
 			fprintf( stderr, "Error: Need fields :use_apll:sdm0:sdm1:sdm2:odiv try 1:0:0:8:3 for 24MHz\n" );
-			fprintf( stderr, "Definition:\n\
-	use_apll = Configures APLL = 480 / 4 = 120\n\
-	40 * (SDM2 + SDM1/(2^8) + SDM0/(2^16) + 4) / ( 2 * (ODIV+2) );\n\
-	Datasheet recommends that numerator is between 300 and 500MHz.\n ");
+			fprintf( stderr, "Definition:\nuse_apll = Configures APLL = 480 / 4 = 120\n\
+			                  40 * (SDM2 + SDM1/(2^8) + SDM0/(2^16) + 4) / ( 2 * (ODIV+2) );\n\
+			                  Datasheet recommends that numerator is between 300 and 500MHz.\n ");
 			return -9;
 		}
 		Write2LE( dev, 0x0cfe );
@@ -1285,6 +1297,12 @@ int ESPDetermineChipType( void * dev )
 				iss->target_chip = &ch570;
 				iss->target_chip_id = 0x70 << 24;
 				flash_size_address = 0;
+				if( eps->dev_version <= 0x514 ) // v.5.2
+				{
+					uint32_t options;
+					MCF.ReadWord( dev, 0x40001058, &options );
+					if( (options&0x800000) || (options&0x200000) ) read_protection = 1;
+				}
 				break;
 			case 0x571:
 				iss->target_chip = &ch571;
@@ -1295,6 +1313,12 @@ int ESPDetermineChipType( void * dev )
 				iss->target_chip = &ch572;
 				iss->target_chip_id = 0x72 << 24;
 				flash_size_address = 0;
+				if( eps->dev_version <= 0x514 ) // v.5.2
+				{
+					uint32_t options;
+					MCF.ReadWord( dev, 0x40001058, &options );
+					if( (options&0x800000) || (options&0x200000) ) read_protection = 1;
+				}
 				break;
 			case 0x573:
 				{
@@ -1516,7 +1540,7 @@ void * TryInit_ESP32S2CHFUN(uint32_t id)
 		// Actually CH570, but close enough to 003.
 		eps->commandbuffersize = 255;
 		eps->replybuffersize = 255;
-		eps->programmer_type = PROGRAMMER_TYPE_CH32V003;
+		eps->programmer_type = PROGRAMMER_TYPE_CH570;
 	}
 	else if( !!( hd = hid_open( 0x303a, 0x4004, 0) ) ||
 	         !!( hd = hid_open( 0x1206, 0x5D10, 0) ) )
