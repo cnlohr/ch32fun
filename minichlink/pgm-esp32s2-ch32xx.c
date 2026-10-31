@@ -509,6 +509,7 @@ int ESPVoidHighLevelState( void * dev )
 
 int ESPVendorCommand( void * dev, const char * cmd )
 {
+	struct ESP32ProgrammerStruct * eps = (struct ESP32ProgrammerStruct *)dev;
 	char command[10] = { 0 };
 	char tbuf[10] = { 0 };
 	int fields[10];
@@ -551,11 +552,11 @@ int ESPVendorCommand( void * dev, const char * cmd )
 			fprintf(stderr, "This programmer doesn't have MCO funciton\n" );
 			return -1;
 		}
-		printf( stderr, "Setting up external clock on pin.\n" );
+		fprintf( stderr, "Setting up external clock on pin.\n" );
 		if( f < 5 )
 		{
 			fprintf( stderr, "Error: Need fields :use_apll:sdm0:sdm1:sdm2:odiv try 1:0:0:8:3 for 24MHz\n" );
-			fprintf( stderr, "Definition:\n\use_apll = Configures APLL = 480 / 4 = 120\n\
+			fprintf( stderr, "Definition:\nuse_apll = Configures APLL = 480 / 4 = 120\n\
 			                  40 * (SDM2 + SDM1/(2^8) + SDM0/(2^16) + 4) / ( 2 * (ODIV+2) );\n\
 			                  Datasheet recommends that numerator is between 300 and 500MHz.\n ");
 			return -9;
