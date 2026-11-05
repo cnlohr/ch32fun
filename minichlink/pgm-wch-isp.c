@@ -126,8 +126,11 @@ int ISPSetupInterface( void * d ) {
 		if( (chip = FindChipISP( chip_type )) != NULL )
 		{
 			iss->target_chip = chip;
-			if( iss->target_chip == &ch32x035 ||
-			    iss->target_chip == &ch32l103 ||
+			// The CH32X035 is not sized here: every part of the family has 62 KB
+			// of code flash (CH32X035DS0 V2.3, product selection table), which
+			// is ch32x035.flash_size. The low nibble of its ISP chip ID (7 on
+			// the F7P6) is a variant code, not a flash size class.
+			if( iss->target_chip == &ch32l103 ||
 			    iss->target_chip == &ch32v103 ||
 			    iss->target_chip == &ch32v203 ||
 			    iss->target_chip == &ch32v303 )
@@ -167,7 +170,7 @@ int ISPSetupInterface( void * d ) {
 					if( rbuff[4] == 0x32 || rbuff[4] == 0x33 ) iss->flash_size = 128;
 					else iss->flash_size = 128 * 1024;
 				}
-				else // If CH32X035 of CH32L103
+				else // CH32L103
 				{
 					if ( (rbuff[4] & 0xf) == 7 ) iss->flash_size = 48;
 					else iss->flash_size = 64 * 1024;
