@@ -49,9 +49,6 @@ int main()
 	// enable AWU
 	PWR->AWUCSR |= (1 << 1);
 
-	// select standby on power-down
-	PWR->CTLR |= PWR_CTLR_PDDS;
-
 	// peripheral interrupt controller send to deep sleep
 	PFIC->SCTLR |= (1 << 2);
 
@@ -59,6 +56,11 @@ int main()
 	printf("entering sleep loop\r\n");
 
 	for (;;) {
+		// select standby on power-down, 
+		// must be done every time before entering standby
+		PWR->CTLR &= CTLR_DS_MASK;
+		PWR->CTLR |= PWR_CTLR_PDDS;
+
 		__WFE();
 		// restore clock to full speed
 		SystemInit();
