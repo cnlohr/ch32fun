@@ -17,10 +17,14 @@ int main()
 	Delay_Ms(5000);
 	funGpioInitAll();
 
+	// enable port modules clocks
+	RCC->APB2PCENR |= RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOD;
+
 	// Set all GPIOs to input pull up to reduce the power consumption otherwise they may cause current leak
 	// [0] Mode -> 0 for input, [1] RO, [3:2] Config -> 0b10 for pullup
 	// so 0b1000 = 0x8 for Input Pullup
 	GPIOA->CFGLR = 0x88888888;
+	GPIOB->CFGLR = 0x88888888;
 	GPIOC->CFGLR = 0x88888888;
 	GPIOD->CFGLR = 0x88888888;
 
