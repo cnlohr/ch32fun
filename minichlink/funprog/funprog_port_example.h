@@ -34,4 +34,8 @@ static void EnableMCO( int use_apll, int sdm0, int sdm1, int sdm2, int odiv )
 }
 #endif
 
+static void VendorCommand( const char * buffer, unsigned short len )
+{
+}
+
 #endif

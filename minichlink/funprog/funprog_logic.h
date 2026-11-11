@@ -290,6 +290,15 @@ static void HandleCommandBuffer( uint8_t * buffer, uint16_t reqlen, uint8_t* ret
 					}
 					break;
 #endif
+				case 0xee:
+					if( remain > 2 )
+					{
+						uint16_t len = iptr[0] | (iptr[1]<<8);
+						const char* buf = (const char*)&iptr[2];
+						VendorCommand( buf, len );
+						iptr += len + 2;
+					}
+					break;
 				// Done
 				}
 			} else if( cmd == 0xff )

@@ -516,6 +516,9 @@ int ESPVendorCommand( void * dev, const char * cmd )
 	char c;
 	int i = 0;
 	int f = 0;
+	uint16_t len = (uint16_t)(strlen(cmd) & 0xffff);
+	const char * cmd_orig = cmd;
+
 	while( (c = *cmd++) )
 	{
 		if( c == ':' ) break;
@@ -543,10 +546,10 @@ int ESPVendorCommand( void * dev, const char * cmd )
 		tbuf[i++] = c;
 		tbuf[i] = 0;
 	}
-	fprintf( stderr, "Got Vendor Command \"%s\"\n", command );
 	ESPFlushLLCommands( dev );
 	if( strcasecmp( command, "ECLK" ) == 0 )
 	{
+		fprintf( stderr, "Got Vendor Command \"ECLK\"\n" );
 		if( !(eps->capabilities & HAS_MCO) )
 		{
 			fprintf(stderr, "This programmer doesn't have MCO funciton\n" );
@@ -558,7 +561,7 @@ int ESPVendorCommand( void * dev, const char * cmd )
 			fprintf( stderr, "Error: Need fields :use_apll:sdm0:sdm1:sdm2:odiv try 1:0:0:8:3 for 24MHz\n" );
 			fprintf( stderr, "Definition:\nuse_apll = Configures APLL = 480 / 4 = 120\n\
 			                  40 * (SDM2 + SDM1/(2^8) + SDM0/(2^16) + 4) / ( 2 * (ODIV+2) );\n\
-			                  Datasheet recommends that numerator is between 300 and 500MHz.\n ");
+			                  Datasheet recommends that numerator is between 300 and 500MHz.\n" );
 			return -9;
 		}
 		Write2LE( dev, 0x0cfe );
@@ -574,7 +577,16 @@ int ESPVendorCommand( void * dev, const char * cmd )
 	}
 	else
 	{
-		fprintf( stderr, "Error: Unknown vendor command %s\n", command );
+		if( len > eps->commandbuffersize - eps->commandplace - 4 )
+		{
+			fprintf( stderr, "Vendor command is too long\n" );
+			return -1;
+		}
+		fprintf( stderr, "Got Custom Vendor Command: \"%s\"\n", cmd_orig );
+		Write2LE( dev, 0xeefe );
+		Write2LE( dev, len );
+		for( int i = 0; i < len; i++) Write1( dev, cmd_orig[i] );
+		ESPFlushLLCommands( dev );
 	}
 	return 0;
 }
@@ -1387,6 +1399,7 @@ int ESPDetermineChipType( void * dev )
 			case ((3 << 12) | 0x2):
 				iss->target_chip = &ch32v002;
 				chip_id_address = 0x1ffff704;
+				flash_size_address = 0;
 				break;
 			case ((3 << 12) | 0x3):
 				iss->target_chip = &ch32v003;
@@ -1394,14 +1407,22 @@ int ESPDetermineChipType( void * dev )
 			case ((3 << 12) | 0x4):
 				iss->target_chip = &ch32v004;
 				chip_id_address = 0x1ffff704;
+				flash_size_address = 0;
+				break;
+			case ((3 << 12) | 0x5):
+				iss->target_chip = &ch32v005;
+				chip_id_address = 0x1ffff704;
+				flash_size_address = 0;
 				break;
 			case ((3 << 12) | 0x6):
 				iss->target_chip = &ch32v006;
 				chip_id_address = 0x1ffff704;
+				flash_size_address = 0;
 				break;
 			case ((3 << 12) | 0x7):
 				iss->target_chip = &ch32v007;
 				chip_id_address = 0x1ffff704;
+				flash_size_address = 0;
 				break;
 			case ((3 << 12) | 0x103):
 				iss->target_chip = &ch32v103;
