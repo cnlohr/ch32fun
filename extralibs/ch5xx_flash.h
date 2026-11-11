@@ -46,6 +46,9 @@
 
   // when done, just continue using the "scratch" buffer for whatever
 */
+#ifndef CH5XX_FLASH_H
+#define CH5XX_FLASH_H
+
 #ifdef FUNCONF_CH5XXFLASHLIB_SECTION
 #undef __HIGH_CODE
 #define __HIGH_CODE FUNCONF_CH5XXFLASHLIB_SECTION
@@ -148,6 +151,7 @@ uint8_t ch5xx_flash_rom_wait() {
 	return 0; // timeout
 }
 
+__HIGH_CODE
 void ch5xx_flash_cmd_unlock(uint8_t cmd) {
 	// cmd: 0 - unlock all, 0x44 - lock boot code, 0x50 - lock all code and flash, 0x3c - lock something, unclear what exactly
 	ch5xx_flash_rom_open_erase_write();
@@ -161,12 +165,25 @@ void ch5xx_flash_cmd_unlock(uint8_t cmd) {
 	ch5xx_flash_rom_close();
 }
 
+__HIGH_CODE
 void ch5xx_flash_cmd_reset() {
 	ch5xx_flash_rom_open_erase_write();
 	ch5xx_flash_rom_begin(0x66);
 	ch5xx_flash_rom_end();
 	ch5xx_flash_rom_begin(0x99);
 	ch5xx_flash_rom_close();
+}
+
+__HIGH_CODE
+void ch5xx_flash_eeprom_read(uint32_t addr, uint8_t* buf, uint32_t len) {
+	ch5xx_flash_rom_open_read();
+	ch5xx_flash_rom_addr(0xb, addr);
+	uint8_t* end_addr = (uint8_t*)((uint32_t)buf + len);
+	for (; buf != (uint8_t*)end_addr; buf++) {
+		uint8_t data = ch5xx_flash_rom_in();
+		*(uint8_t *)buf = (uint8_t)data;
+	}
+	ch5xx_flash_rom_end();
 }
 
 void ch5xx_flash_cmd_read(uint32_t addr, uint8_t *buf, int len) {
@@ -179,6 +196,7 @@ void ch5xx_flash_cmd_read(uint32_t addr, uint8_t *buf, int len) {
 	}
 }
 
+__HIGH_CODE
 uint32_t ch5xx_flash_cmd_write(uint32_t addr, uint8_t *buf, int len ) {
 	uint32_t *buf32 = (uint32_t*)buf;
 	int len32 = (len +3) >> 2;
@@ -210,6 +228,7 @@ uint32_t ch5xx_flash_cmd_write(uint32_t addr, uint8_t *buf, int len ) {
 	return 0;
 }
 
+__HIGH_CODE
 uint32_t ch5xx_flash_cmd_erase(uint32_t addr, int len) {
 	addr &= 0xfffff000; // start at a Sector boundary
 	len = (len + (addr & 0xfff) + 0xfff) & 0xfffff000; // adjust length to Sector boundaries
@@ -256,6 +275,7 @@ uint32_t ch5xx_flash_cmd_erase(uint32_t addr, int len) {
 	return 0;
 }
 
+__HIGH_CODE
 uint32_t ch5xx_flash_cmd_verify(uint32_t addr, uint8_t *buf, int len) {
 	uint32_t *buf32 = (uint32_t*)buf;
 	int len32 = (len +3) >> 2;
@@ -277,18 +297,21 @@ uint32_t ch5xx_flash_cmd_verify(uint32_t addr, uint8_t *buf, int len) {
 	return 0;
 }
 
+__HIGH_CODE
 void ch5xx_flash_cmd_powerup() {
 	ch5xx_flash_rom_open_erase_write();
 	ch5xx_flash_rom_begin(0xab);
 	ch5xx_flash_rom_close();
 }
 
+__HIGH_CODE
 void ch5xx_flash_cmd_powerdown() {
 	ch5xx_flash_rom_open_erase_write();
 	ch5xx_flash_rom_begin(0xb9);
 	ch5xx_flash_rom_close();
 }
 
+__HIGH_CODE
 void ch5xx_flash_cmd_get_rom_info(uint32_t addr, uint8_t *buf) {
 	uint32_t *buf32 = (uint32_t*)buf;
 
@@ -309,3 +332,5 @@ void ch5xx_flash_cmd_get_rom_info(uint32_t addr, uint8_t *buf) {
 	}
 	ch5xx_flash_rom_close();
 }
+
+#endif

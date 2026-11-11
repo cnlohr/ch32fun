@@ -409,7 +409,7 @@ static int DetermineChipTypeAndSectorInfo( struct SWIOState * iss, uint8_t * rep
 				iss->sectorsize = 256;
 				chip_id = (3 << 12) | 0x317;
 			}
-			else if( masked_id == 0x00200000 || masked_id == 0x00400000 || masked_id == 0x00600000 || masked_id == 0x00700000 )
+			else if( masked_id == 0x00200000 || masked_id == 0x00400000 || masked_id == 0x00500000 || masked_id == 0x00600000 || masked_id == 0x00700000 )
 			{
 				iss->target_chip_type = CHIP_CH32V00x;
 				iss->sectorsize = 256;
