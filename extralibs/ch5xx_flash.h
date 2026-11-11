@@ -46,6 +46,9 @@
 
   // when done, just continue using the "scratch" buffer for whatever
 */
+#ifndef CH5XX_FLASH_H
+#define CH5XX_FLASH_H
+
 #ifdef FUNCONF_CH5XXFLASHLIB_SECTION
 #undef __HIGH_CODE
 #define __HIGH_CODE FUNCONF_CH5XXFLASHLIB_SECTION
@@ -329,3 +332,5 @@ void ch5xx_flash_cmd_get_rom_info(uint32_t addr, uint8_t *buf) {
 	}
 	ch5xx_flash_rom_close();
 }
+
+#endif
