@@ -84,7 +84,7 @@
 #define FUNCONF_DEBUGPRINTF_TIMEOUT 0x100000 // Arbitrary time units, this is around 200ms.
 #define FUNCONF_ENABLE_HPE 1            // Enable hardware interrupt stack.  Very good on QingKeV4, i.e. x035, v10x, v20x, v30x, but questionable on 003. 
                                         // If you are using that, consider using INTERRUPT_DECORATOR as an attribute to your interrupt handlers.
-#define FUNCONF_USE_5V_VDD 0            // Enable this if you plan to use your part at 5V - affects USB and PD configration on the x035.
+#define FUNCONF_USE_5V_VDD 0            // V103: enable this to run at 5V - x035: autodetected
 #define FUNCONF_DEBUG_HARDFAULT    1    // Log fatal errors with "printf"
 #define FUNCONF_ISR_IN_RAM 0            // Put the interrupt vector in RAM.
 #define FUNCONF_SUPPORT_CONSTRUCTORS 0	// Call functions with __attribute__((constructor)) in SystemInit()
