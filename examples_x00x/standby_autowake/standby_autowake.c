@@ -17,10 +17,14 @@ int main()
 	Delay_Ms(5000);
 	funGpioInitAll();
 
+	// enable port modules clocks
+	RCC->APB2PCENR |= RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOD;
+
 	// Set all GPIOs to input pull up to reduce the power consumption otherwise they may cause current leak
 	// [0] Mode -> 0 for input, [1] RO, [3:2] Config -> 0b10 for pullup
 	// so 0b1000 = 0x8 for Input Pullup
 	GPIOA->CFGLR = 0x88888888;
+	GPIOB->CFGLR = 0x88888888;
 	GPIOC->CFGLR = 0x88888888;
 	GPIOD->CFGLR = 0x88888888;
 
@@ -45,9 +49,6 @@ int main()
 	// enable AWU
 	PWR->AWUCSR |= (1 << 1);
 
-	// select standby on power-down
-	PWR->CTLR |= PWR_CTLR_PDDS;
-
 	// peripheral interrupt controller send to deep sleep
 	PFIC->SCTLR |= (1 << 2);
 
@@ -55,6 +56,11 @@ int main()
 	printf("entering sleep loop\r\n");
 
 	for (;;) {
+		// select standby on power-down, 
+		// must be done every time before entering standby
+		PWR->CTLR &= CTLR_DS_MASK;
+		PWR->CTLR |= PWR_CTLR_PDDS;
+
 		__WFE();
 		// restore clock to full speed
 		SystemInit();
