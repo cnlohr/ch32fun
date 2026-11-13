@@ -205,14 +205,14 @@ static void HandleCommandBuffer( uint8_t * buffer, uint16_t reqlen, uint8_t* ret
 #if CH5xx_SUPPORT
 				case 0x20: //ch5xx_write_flash
 				case 0x21:
-					if( remain >= 260 )
+					if( remain >= 261 )
 					{
 						int8_t r = 0;
 						uint32_t length = iptr[4];
 						if( length == 0 ) length = 256;
 						if( cmd == 0x20 ) r = ch5xx_write_flash( &state, iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24), (uint8_t*)&iptr[5], length );
 						else r = ch5xx_write_flash_using_microblob( &state, iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24), (uint8_t*)&iptr[5], length ); 
-						iptr += 260;
+						iptr += 261;
 						*(retbuffptr++) = r;
 					}
 					break;
