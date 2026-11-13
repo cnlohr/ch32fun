@@ -254,54 +254,52 @@ int ESPFlushLLCommands( void * dev )
 	if( eps->commandplace == 1 ) return 0;
 
 	int r;
-	uint8_t descriptor = 0xad;
+	uint8_t descriptor = 0xad; // Default ID, should work on all legacy firmwares
 	int buffer_size = eps->commandbuffersize;
 
-	if( (eps->dev_version >> 8) >= 5 && !(eps->capabilities&(PROGRAMMER_TYPE_SWADGE<<12)) )
+	if( (eps->dev_version >> 8) >= 5 )
 	{
-		if( eps->commandplace <= 7 )
+		if( !(eps->capabilities&(PROGRAMMER_TYPE_SWADGE<<12)) )
 		{
-			descriptor = 0xaa;
-			buffer_size = 8;
+			if( eps->commandplace <= 7 )
+			{
+				descriptor = 0xaa;
+				buffer_size = 8;
+			}
+			else if ( eps->commandplace <= 63 )
+			{
+				descriptor = 0xab;
+				buffer_size = 64;
+			}
+			else if ( eps->commandplace <= 78 )
+			{
+				descriptor = 0xad;
+				buffer_size = 79;
+			}
+			else if ( eps->commandplace <= 127 )
+			{
+				descriptor = 0xac;
+				buffer_size = 128;
+			}
+			else
+			{
+				descriptor = 0xae;
+				buffer_size = 264;
+			}
 		}
-		else if ( eps->commandplace <= 63 )
+		else if( (eps->capabilities&(PROGRAMMER_TYPE_SWADGE<<12)) )
 		{
-			descriptor = 0xab;
-			buffer_size = 64;
+			if ( eps->commandplace <= 78 )
+			{
+				descriptor = 0xad;
+				buffer_size = 79;
+			}
+			else
+			{
+				descriptor = 0xae;
+				buffer_size = 264;
+			}
 		}
-		else if ( eps->commandplace <= 78 )
-		{
-			descriptor = 0xad;
-			buffer_size = 79;
-		}
-		else if ( eps->commandplace <= 127 )
-		{
-			descriptor = 0xac;
-			buffer_size = 128;
-		}
-		else
-		{
-			descriptor = 0xae;
-			buffer_size = 264;
-		}
-	}
-	else if( (eps->dev_version >> 8) >= 5 && (eps->capabilities&(PROGRAMMER_TYPE_SWADGE<<12)) )
-	{
-		if ( eps->commandplace <= 78 )
-		{
-			descriptor = 0xad;
-			buffer_size = 79;
-		}
-		else
-		{
-			descriptor = 0xae;
-			buffer_size = 264;
-		}
-	}
-	else if( eps->commandplace <= 78 )
-	{
-		// For when starting up, 0xad is default.
-		buffer_size = 79;
 	}
 
 	eps->commandbuffer[0] = descriptor; // Key report ID
@@ -487,7 +485,7 @@ retry:
 
 	if( eps->replybuffer[1] )
 	{
-		fprintf( stderr, "Error: Got code %d from ESP write algo. %d [%02x %02x %02x]\n", (char)eps->replybuffer[1], eps->replylen, eps->replybuffer[0], eps->replybuffer[1], eps->replybuffer[2] );
+		fprintf( stderr, "Error: Got code %d from funprog write algo. %d [%02x %02x %02x]\n", (char)eps->replybuffer[1], eps->replylen, eps->replybuffer[0], eps->replybuffer[1], eps->replybuffer[2] );
 		if( writeretry < 10 )
 		{
 			writeretry++;
@@ -552,7 +550,7 @@ int ESPVendorCommand( void * dev, const char * cmd )
 		fprintf( stderr, "Got Vendor Command \"ECLK\"\n" );
 		if( !(eps->capabilities & HAS_MCO) )
 		{
-			fprintf(stderr, "This programmer doesn't have MCO funciton\n" );
+			fprintf(stderr, "This programmer doesn't have MCO function\n" );
 			return -1;
 		}
 		fprintf( stderr, "Setting up external clock on pin.\n" );
@@ -790,7 +788,13 @@ retry:
 
 		if( eps->replybuffer[1] )
 		{
-			fprintf( stderr, "Error: Got code %d from ESP write algo. %d [%02x %02x %02x]\n", (char)eps->replybuffer[1], eps->replylen, eps->replybuffer[0], eps->replybuffer[1], eps->replybuffer[2] );
+			fprintf( stderr, "Error: Got code %d from funprog write algo. %d [%02x %02x %02x]\n", (char)eps->replybuffer[1], eps->replylen, eps->replybuffer[0], eps->replybuffer[1], eps->replybuffer[2] );
+			for (int i = 0; i < 256; i++)
+			{
+				fprintf(stderr, "%02x ", data[i + pos]);
+			}
+			fprintf(stderr, "\n");
+			return -1;
 			if( writeretry < 10 )
 			{
 				writeretry++;
