@@ -21,9 +21,6 @@
 #define DELAY_US(n)
 #define DELAY_MS(n)
 
-// Some chips need to slow down the protocol speed to work stable. Check available implementations
-#define SLOW_DOWN_PROTOCOL
-
 // Platform dependent attribute to put functions in RAM
 #define IRAM
 
