@@ -4,6 +4,7 @@
 // This will enable debug prints in places of interest
 // FUN_PRINTF_DEBUG macro will be used
 #define DEBUG_PRINT              0
+#define OLD_SWD_SUPPORT          1 // Support for old chips: CH32V103, CH571/3, CH582/3
 
 // Set of options that define programmer's capabilities, that minichlink will rely on
 #define CH5xx_SUPPORT            1 // General support for CH5xx family of chips

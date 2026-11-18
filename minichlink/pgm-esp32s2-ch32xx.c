@@ -4,7 +4,7 @@
 #include "ch5xx.h"
 #include "chips.h"
 
-#define CURRENT_VERSION 530
+#define CURRENT_VERSION 540
 
 #define PROGRAMMER_TYPE_UNKNOWN  0
 #define PROGRAMMER_TYPE_ESP32S2  1
@@ -1534,10 +1534,54 @@ int ESPDetermineChipType( void * dev )
 
 static int ESPResetInterface( void * dev )
 {
-	Write2LE( dev, 0x0efe ); // Trigger Init.
-	ESPFlushLLCommands( dev );
+	struct ESP32ProgrammerStruct * eps = (struct ESP32ProgrammerStruct *)dev;
+
 	Write2LE( dev, 0x0afe ); // Reset programmer internals
 	ESPFlushLLCommands( dev );
+	Write2LE( dev, 0x0efe ); // Trigger Init.
+	ESPFlushLLCommands( dev );
+	return (int8_t)eps->replybuffer[1];
+}
+
+int ESPSetupInterface( void * dev )
+{
+	if( ESPResetInterface( dev ) ) return -1;
+
+	struct InternalState * iss = (struct InternalState*)(((struct ProgrammerStructBase*)dev)->internal);
+
+	int retries = MINICHLINK_SETUP_MAX_RETRIES;
+
+retry:
+	MCF.WriteReg32( dev, DMSHDWCFGR, 0x5aa50000 | (1<<10) ); // Shadow Config Reg
+	MCF.WriteReg32( dev, DMCFGR, 0x5aa50000 | (1<<10) ); // CFGR (1<<10 == Allow output from slave)
+	MCF.WriteReg32( dev, DMSHDWCFGR, 0x5aa50000 | (1<<10) ); // sometimes doing this just once isn't enough
+	MCF.WriteReg32( dev, DMCFGR, 0x5aa50000 | (1<<10) ); // And this is about as fast as checking, so why not.
+	MCF.WriteReg32( dev, DMCONTROL, 0x80000001 ); // Make the debug module work properly.
+	MCF.WriteReg32( dev, DMCONTROL, 0x80000001 );
+	MCF.WriteReg32( dev, DMCONTROL, 0x80000001 );
+	// Why do we repeat this commands? Because in some cases they can be lost, if debug module is still starting
+	// and it's better to be send these crucial commands twice fot better chance for success.
+
+	// Read back chip status.  This is really basic.
+	uint32_t reg = 0;
+	int r = MCF.ReadReg32( dev, DMSTATUS, &reg );
+	if( r >= 0 )
+	{
+		// Valid R.
+		if( reg == 0x00000000 || reg == 0xffffffff )
+		{
+			fprintf( stderr, "Error: Setup chip failed. Got code %08x\n", reg );
+			if (retries--) goto retry;
+			return -9;
+		}
+	}
+	else
+	{
+		fprintf( stderr, "Error: Could not read dmstatus. r = %d\n", r );
+		return r;
+	}
+
+	iss->statetag = STTAG( "STRT" );
 	return 0;
 }
 
@@ -1600,6 +1644,7 @@ void * TryInit_ESP32S2CHFUN(uint32_t id)
 	MCF.VoidHighLevelState = ESPVoidHighLevelState;
 	MCF.VendorCommand = ESPVendorCommand;
 	MCF.ResetInterface = ESPResetInterface;
+	MCF.SetupInterface = ESPSetupInterface;
 
 #if 1
 	// These are optional. Disabling these is a good mechanism to make sure the core functions still work.
@@ -1662,11 +1707,6 @@ void * TryInit_ESP32S2CHFUN(uint32_t id)
 	{
 		MCF.DetermineChipType = ESPDetermineChipTypeOLD;
 	}
-
-	Write2LE( eps, 0x0efe ); // Trigger Init.
-	ESPFlushLLCommands( eps );
-	Write2LE( eps, 0x0afe ); 	// Reset programmer internals
-	ESPFlushLLCommands( eps );
 
 	return eps;
 }

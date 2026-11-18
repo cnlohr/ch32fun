@@ -2,7 +2,7 @@
 #define FUNPROG_LOGIC_H
 
 #define PROGRAMMER_VERSION_MAJOR 5
-#define PROGRAMMER_VERSION_MINOR 30
+#define PROGRAMMER_VERSION_MINOR 40
 
 static const uint16_t capabilities = (PROGRAMMER_TYPE << 12) | CAPABILITIES;
 static uint8_t programmer_mode;
@@ -73,7 +73,7 @@ static void HandleCommandBuffer( uint8_t * buffer, uint16_t reqlen, uint8_t* ret
 					iptr += 2;
 					break;
 				case 0x05: // Void High Level State
-					ResetInternalProgrammingState( &state );
+					VoidHighLevelState( &state );
 					break;
 				case 0x06: // Wait-for-flash-op.
 					*(retbuffptr++) = WaitForFlash( &state );
@@ -85,7 +85,9 @@ static void HandleCommandBuffer( uint8_t * buffer, uint16_t reqlen, uint8_t* ret
 				{
 					if( remain >= 9 )
 					{
-						int r = WriteWord( &state, iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24),  iptr[4] | (iptr[5]<<8) | (iptr[6]<<16) | (iptr[7]<<24) );
+						uint32_t addr = iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24);
+						uint32_t data = iptr[4] | (iptr[5]<<8) | (iptr[6]<<16) | (iptr[7]<<24);
+						int r = WriteWord( &state, addr, data );
 						iptr += 8;
 						*(retbuffptr++) = r;
 					}
@@ -95,12 +97,14 @@ static void HandleCommandBuffer( uint8_t * buffer, uint16_t reqlen, uint8_t* ret
 				{
 					if( remain >= 4 )
 					{
-						int r = ReadWord( &state, iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24), (uint32_t*)&retbuffptr[1] );
+						uint32_t addr = iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24);
+						uint8_t reply[4];
+						int r = ReadWord( &state, addr, (uint32_t*)reply );
 						FUN_PRINTF_DEBUG( "READING: %08x -> %08x\n", (iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24)), (retbuffptr[1] | retbuffptr[2]<<8 | retbuffptr[3]<<16 | retbuffptr[4]<<24) );
 						iptr += 4;
 						retbuffptr[0] = r;
-						if( r < 0 )
-							memset( &retbuffptr[1], 0, 4 );
+						if( r < 0 ) memset( &retbuffptr[1], 0, 4 );
+						else memcpy(&retbuffptr[1], reply, 4);
 						retbuffptr += 5;
 					}
 					break;
@@ -171,7 +175,14 @@ static void HandleCommandBuffer( uint8_t * buffer, uint16_t reqlen, uint8_t* ret
 					if( remain >= 8 )
 					{
 						state.target_chip_type = *(iptr++);
-						if( state.target_chip_type == CHIP_CH59x ) SLOW_DOWN_PROTOCOL;
+						if( state.target_chip_type == CHIP_CH59x || state.target_chip_type == CHIP_CH57x )
+						{
+							SetProtocolSpeed( &state, PROTOCOL_SPEED_LOW );
+						}
+						else
+						{
+							SetProtocolSpeed( &state, PROTOCOL_SPEED_DEFAULT );
+						}
 						state.sectorsize = iptr[0] | (iptr[1]<<8);
 						iptr += 2;
 						// Rest is reserved.
@@ -182,7 +193,6 @@ static void HandleCommandBuffer( uint8_t * buffer, uint16_t reqlen, uint8_t* ret
 				case 0x10: //DetermineChip
 					{
 						int r = DetermineChipTypeAndSectorInfo( &state, &retbuffptr[1] );
-						if( state.target_chip_type == CHIP_CH59x ) SLOW_DOWN_PROTOCOL;
 						retbuffptr[0] = 0xce;
 						if( r < 0 )
 							memset( &retbuffptr[1], 0, 6 );
@@ -209,9 +219,10 @@ static void HandleCommandBuffer( uint8_t * buffer, uint16_t reqlen, uint8_t* ret
 					{
 						int8_t r = 0;
 						uint32_t length = iptr[4];
+						uint32_t addr = iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24);
 						if( length == 0 ) length = 256;
-						if( cmd == 0x20 ) r = ch5xx_write_flash( &state, iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24), (uint8_t*)&iptr[5], length );
-						else r = ch5xx_write_flash_using_microblob( &state, iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24), (uint8_t*)&iptr[5], length ); 
+						if( cmd == 0x20 ) r = ch5xx_write_flash( &state, addr, (uint8_t*)&iptr[5], length );
+						else r = ch5xx_write_flash_using_microblob( &state, addr, (uint8_t*)&iptr[5], length ); 
 						iptr += 261;
 						*(retbuffptr++) = r;
 					}
@@ -232,10 +243,12 @@ static void HandleCommandBuffer( uint8_t * buffer, uint16_t reqlen, uint8_t* ret
 						uint32_t length = iptr[4] | (iptr[5]<<8);
 						if( length <= (ret_size-(retbuffptr - ret_buffer) - 1) )
 						{
-							int8_t r = ch5xx_read_eeprom( &state, iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24), &retbuffptr[1], length );
+							uint32_t addr = iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24);
+							uint8_t reply[4];
+							int8_t r = ch5xx_read_eeprom( &state, addr, reply, length );
 							retbuffptr[0] = r;
-							if( r < 0 )
-								memset( &retbuffptr[1], 0, length );
+							if( r < 0 ) memset( &retbuffptr[1], 0, length );
+							else memcpy(&retbuffptr[1], reply, 4);
 							retbuffptr += length + 1;
 						}
 						else
@@ -252,10 +265,12 @@ static void HandleCommandBuffer( uint8_t * buffer, uint16_t reqlen, uint8_t* ret
 						uint32_t length = iptr[4] | (iptr[5]<<8);
 						if( length <= (ret_size-(retbuffptr - ret_buffer) - 1) )
 						{
-							int8_t r = ch5xx_read_options_bulk( &state, iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24), &retbuffptr[1], length );
+							uint32_t addr = iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24);
+							uint8_t reply[4];
+							int8_t r = ch5xx_read_options_bulk( &state, addr, reply, length );
 							retbuffptr[0] = r;
-							if( r < 0 )
-								memset( &retbuffptr[1], 0, length );
+							if( r < 0 ) memset( &retbuffptr[1], 0, length );
+							else memcpy(&retbuffptr[1], reply, 4);
 							retbuffptr += length + 1;
 						}
 						else
@@ -269,7 +284,9 @@ static void HandleCommandBuffer( uint8_t * buffer, uint16_t reqlen, uint8_t* ret
 				case 0x25: //CH5xx Erase
 					if( remain >= 9 )
 					{
-						int8_t r = CH5xxErase( &state, iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24), iptr[4] | (iptr[5]<<8) | (iptr[6]<<16) | (iptr[7]<<24), (enum MemoryArea)(iptr[8]));
+						uint32_t addr = iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24);
+						uint32_t len = iptr[4] | (iptr[5]<<8) | (iptr[6]<<16) | (iptr[7]<<24);
+						int8_t r = CH5xxErase( &state, addr, len, (enum MemoryArea)(iptr[8]));
 						iptr += 9;
 						*(retbuffptr++) = r;
 					}
@@ -284,7 +301,8 @@ static void HandleCommandBuffer( uint8_t * buffer, uint16_t reqlen, uint8_t* ret
 				case 0x28:
 					if( remain >= 4 )
 					{
-						int8_t r = ch5xx_set_clock( &state, iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24) );
+						uint32_t clock = iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24);
+						int8_t r = ch5xx_set_clock( &state, clock );
 						iptr += 4;
 						*(retbuffptr++) = r;
 					}
@@ -319,7 +337,8 @@ static void HandleCommandBuffer( uint8_t * buffer, uint16_t reqlen, uint8_t* ret
 					{
 						cmd = (cmd >> 1) + 1; // Unshift from -1 to be able to read 0x7f
 						if( cmd >= DMPROGBUF0 && cmd <= DMPROGBUF7 ) state.statetag = STTAG( "XXXX" ); // Reset statetag in case we are writing to progbuf from outside
-						MCFWriteReg32( &state, cmd, iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24) );
+						uint32_t data = iptr[0] | (iptr[1]<<8) | (iptr[2]<<16) | (iptr[3]<<24);
+						MCFWriteReg32( &state, cmd, data );
 						iptr += 4;
 					}
 				}
@@ -328,10 +347,11 @@ static void HandleCommandBuffer( uint8_t * buffer, uint16_t reqlen, uint8_t* ret
 					if( remain >= 1 && (ret_size-(retbuffptr - ret_buffer)) >= 4 )
 					{
 						cmd = (cmd >> 1) + 1;
-						int r = MCFReadReg32( &state, cmd, (uint32_t*)&retbuffptr[1] );
+						uint8_t reply[4];
+						int r = MCFReadReg32( &state, cmd, (uint32_t*)reply );
 						retbuffptr[0] = r;
-						if( r < 0 )
-							memset( &retbuffptr[1], 0, 4 );
+						if( r < 0 ) memset( &retbuffptr[1], 0, 4 );
+						else memcpy(&retbuffptr[1], reply, 4);
 						retbuffptr += 5;
 					}
 				}

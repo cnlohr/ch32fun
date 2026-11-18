@@ -48,3 +48,7 @@ static inline void ConfigureIOForRVSWIO(struct SWIOState * state)
 static inline void ConfigureIOForRVSWD(struct SWIOState * state)
 {
 }
+
+static void SetProtocolSpeed( struct SWIOState * state, enum ProtocolSpeed speed )
+{
+}

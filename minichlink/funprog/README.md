@@ -47,3 +47,15 @@ Then include everything in your main file in this order:
 ```
 
 You need to call ``HandleCommandBuffer`` function from [funprog_logic.h](./funprog_logic.h) to process incoming commands. Check out available implementation to get the idea.
+
+### Vendor Commands
+
+Now funprog supports custom commands that can be sent from minichlink using ``-X`` argument. It will pass the string of data/commands to the programmer that should then parse it and decide if it needs to do anything about it. This way you can implement your own functionality without changing the common API. For example this is used for enabling/disabling CDC UART on ch570 and esp32s2 versions and also to control RGB leds on esp32s2 version of the programmer.
+
+## Useful links about RVSWD
+
+https://github.com/perigoso/sigrok-rvswd/blob/main/pd.py
+https://perigoso.github.io/rins/rvswd/index.html
+https://github.com/ch32-riscv-ug/wch-protocols/
+https://github.com/openwch/ch32v003/blob/main/RISC-V%20QingKeV2%20Microprocessor%20Debug%20Manual.pdf
+https://github.com/bmx/SaleaeRVSWDAnalyzer

@@ -53,6 +53,12 @@ enum MemoryArea {
 	RAM_AREA = 5,
 };
 
+enum ProtocolSpeed {
+	PROTOCOL_SPEED_DEFAULT = 0,
+	PROTOCOL_SPEED_MEDIUM = 1,
+	PROTOCOL_SPEED_LOW = 2,
+};
+
 struct SWIOState
 {
 	// Set these before calling any functions
@@ -75,6 +81,7 @@ struct SWIOState
 	int microblob_running; // < 0 - not running, 0+ - current address in flash microblob is ready to write data to
 	int writing_flash;
 #endif
+	enum ProtocolSpeed protocol_speed;
 };
 
 #define STTAG( x ) (*((uint32_t*)(x)))
@@ -87,26 +94,32 @@ static inline void SendBitRVSWD( struct SWIOState * state, int val ) IRAM;
 static inline int ReadBitRVSWD( struct SWIOState * state ) IRAM;
 static inline void ConfigureIOForRVSWIO(struct SWIOState * state);
 static inline void ConfigureIOForRVSWD(struct SWIOState * state);
+static void SetProtocolSpeed(struct SWIOState * state, enum ProtocolSpeed speed);
+#if defined(OLD_SWD_SUPPORT) && OLD_SWD_SUPPORT
+static void SWDWakeUP( struct SWIOState * state ) IRAM;
+static void SWDLongOP( struct SWIOState * state, uint8_t reg, uint32_t * value, uint8_t op ) IRAM;
+#endif
 
 // Provided Basic functions
 static void MCFWriteReg32( struct SWIOState * state, uint8_t command, uint32_t value ) IRAM;
 static int MCFReadReg32( struct SWIOState * state, uint8_t command, uint32_t * value ) IRAM;
 
 // More advanced functions built on lower level PHY.
-static int InitializeSWDSWIO( struct SWIOState * state );
+static int InitializeSWDSWIO( struct SWIOState * iss );
 #if CH5xx_SUPPORT
 static int ReadByte( struct SWIOState * iss, uint32_t address_to_read, uint8_t * data );
 static int WriteByte( struct SWIOState * iss, uint32_t address_to_write, uint8_t data );
 #endif
-static int ReadWord( struct SWIOState * state, uint32_t word, uint32_t * ret );
-static int WriteWord( struct SWIOState * state, uint32_t word, uint32_t val );
-static int WaitForFlash( struct SWIOState * state );
-static int WaitForDoneOp( struct SWIOState * state );
+static int ReadWord( struct SWIOState * iss, uint32_t word, uint32_t * ret );
+static int WriteWord( struct SWIOState * iss, uint32_t word, uint32_t val );
+static int WaitForFlash( struct SWIOState * iss );
+static int WaitForDoneOp( struct SWIOState * iss );
 static int WriteBlock( struct SWIOState * iss, uint32_t address_to_write, uint8_t * data, uint8_t len, uint8_t erase );
 static int UnlockFlash( struct SWIOState * iss );
 static int EraseFlash( struct SWIOState * iss, uint32_t address, uint32_t length, int type );
 static void ResetInternalProgrammingState( struct SWIOState * iss );
 static int PollTerminal( struct SWIOState * iss, uint8_t * buffer, int maxlen, uint32_t leavevalA, uint32_t leavevalB );
+static void VoidHighLevelState( struct SWIOState * iss );
 
 #if CH5xx_SUPPORT
 extern int ch5xx_set_clock(struct SWIOState * iss, uint32_t clock);
@@ -150,30 +163,33 @@ extern int ch5xx_write_flash_using_microblob(struct SWIOState * iss, uint32_t st
 // High level functions
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static int InitializeSWDSWIO( struct SWIOState * state )
+static int InitializeSWDSWIO( struct SWIOState * iss )
 {
+	SetProtocolSpeed(iss, PROTOCOL_SPEED_LOW);
+
 	for( int timeout = 20; timeout; timeout-- )
 	{
+		iss->opmode = 0;
 		FUN_PRINTF_DEBUG( "CFG FOR RV\n" );
-		ConfigureIOForRVSWIO(state);
+		ConfigureIOForRVSWIO(iss);
 		FUN_PRINTF_DEBUG( "DONE CFG FOR RV\n" );
 		// Careful - don't halt the part, we might just want to attach for a debug printf or something.
-		state->target_chip_type = CHIP_UNKNOWN;
-		state->sectorsize = 64;
+		iss->target_chip_type = CHIP_UNKNOWN;
+		iss->sectorsize = 64;
 
-		state->opmode = 1; // Try SWIO first
+		iss->opmode = 1; // Try SWIO first
 		// First try to see if there is an 003.
-		MCFWriteReg32( state, DMSHDWCFGR, 0x5aa50000 | (1<<10) ); // Shadow Config Reg
-		MCFWriteReg32( state, DMCFGR, 0x5aa50000 | (1<<10) ); // CFGR (1<<10 == Allow output from slave)
-		MCFWriteReg32( state, DMSHDWCFGR, 0x5aa50000 | (1<<10) ); // Try twice just in case
-		MCFWriteReg32( state, DMCFGR, 0x5aa50000 | (1<<10) );
+		MCFWriteReg32( iss, DMSHDWCFGR, 0x5aa50000 | (1<<10) ); // Shadow Config Reg
+		MCFWriteReg32( iss, DMCFGR, 0x5aa50000 | (1<<10) ); // CFGR (1<<10 == Allow output from slave)
+		MCFWriteReg32( iss, DMSHDWCFGR, 0x5aa50000 | (1<<10) ); // Try twice just in case
+		MCFWriteReg32( iss, DMCFGR, 0x5aa50000 | (1<<10) );
 
-		MCFWriteReg32( state, DMCONTROL, 0x00000001 );
-		MCFWriteReg32( state, DMCONTROL, 0x00000001 );
+		MCFWriteReg32( iss, DMCONTROL, 0x00000001 );
+		MCFWriteReg32( iss, DMCONTROL, 0x00000001 );
 
 		// See if we can see a chip here...
 		uint32_t value = 0;
-		int readdm = MCFReadReg32( state, DMCFGR, &value );
+		int readdm = MCFReadReg32( iss, DMCFGR, &value );
 		if( readdm == 0 && ( value & 0xffff0000 ) == ( 0x5aa50000 ) )
 		{
 			FUN_PRINTF_DEBUG( "Found RVSWIO interface.\n" );
@@ -181,40 +197,56 @@ static int InitializeSWDSWIO( struct SWIOState * state )
 		}
 
 		FUN_PRINTF_DEBUG( "CFG FOR SWD\n" );
-		ConfigureIOForRVSWD(state);
+		ConfigureIOForRVSWD( iss );
 		FUN_PRINTF_DEBUG( "DONE CFG FOR SWD\n" );
 
 		//Otherwise Maybe it's SWD?
-		state->opmode = 2;
+		iss->opmode = 2;
 
-		MCFWriteReg32( state, DMCONTROL, 0x00000001 );
-		MCFWriteReg32( state, DMCONTROL, 0x00000001 );
+check:
+		MCFWriteReg32( iss, DMCONTROL, 0x00000001 );
+		// MCFWriteReg32( iss, DMCONTROL, 0x40000001 );
 
 		uint32_t dmstatus, dmcontrol;
-		if( MCFReadReg32( state, DMSTATUS, &dmstatus ) != 0 ||
-		  MCFReadReg32( state, DMCONTROL, &dmcontrol ) != 0 )
+		if( MCFReadReg32( iss, DMSTATUS, &dmstatus ) != 0 ||
+		  MCFReadReg32( iss, DMCONTROL, &dmcontrol ) != 0 )
 		{
 			FUN_PRINTF_DEBUG( "Could not read from RVSWD connection\n" );
-			state->opmode = 0;
+#if defined(OLD_SWD_SUPPORT) && OLD_SWD_SUPPORT
+			goto swdlong;
+#else
 			continue;
+#endif
 		}
-
 		// See if we can see a chip here...
 		if( ( ( ( dmstatus >> 8 ) & 0xf ) != 0x0c &&
 		  ( ( dmstatus >> 8 ) & 0xf ) != 0x03 ) ||
-		  dmcontrol != 1 )
+		  (dmcontrol & 0x3FFFFFFF)  != 1 )
 		{
-			FUN_PRINTF_DEBUG( "DMSTATUS invalid (Probably no RVSWD chip)\n" );
-			state->opmode = 0;
-			continue;
+			FUN_PRINTF_DEBUG( "DMSTATUS invalid (Probably no RVSWD chip) opmode = %u, dmcontrol = %08lx, dmstatus = %08lx\n", iss->opmode, dmcontrol, dmstatus );
+		}
+		else
+		{
+			goto ready;
 		}
 
-		MCFWriteReg32( state, DMABSTRACTCS, 0x08000302 ); // Clear out abstractcs register.
-		FUN_PRINTF_DEBUG( "Found RVSWD interface\n" );
-		return 0;
+#if defined(OLD_SWD_SUPPORT) && OLD_SWD_SUPPORT
+swdlong:
+		if( iss->opmode == 2 )
+		{
+			iss->opmode = 3;
+			SWDWakeUP(iss);
+			goto check;
+		}
+#endif
 	}
 	FUN_PRINTF_DEBUG( "TIMEOUT\n" );
 	return -55;
+
+ready:
+	MCFWriteReg32( iss, DMABSTRACTCS, 0x08000302 ); // Clear out abstractcs register.
+	FUN_PRINTF_DEBUG( "Found RVSWD interface\n" );
+	return 0;
 }
 
 static int DetermineChipTypeAndSectorInfo( struct SWIOState * iss, uint8_t * reply)
@@ -475,12 +507,12 @@ static int DetermineChipTypeAndSectorInfo( struct SWIOState * iss, uint8_t * rep
 
 chip_identified:
 
-    if( iss->target_chip_type == CHIP_CH570 )
-    {
-      uint32_t options;
-      ReadWord( dev, 0x40001058, &options );
-      if( (options&0x800000) || (options&0x200000) ) read_protection = 1;
-    }
+		if( iss->target_chip_type == CHIP_CH570 )
+		{
+			uint32_t options;
+			ReadWord( dev, 0x40001058, &options );
+			if( (options&0x800000) || (options&0x200000) ) read_protection = 1;
+		}
 		else if( read_protection == 0 )
 		{
 			uint32_t one;
@@ -509,7 +541,7 @@ chip_identified:
 			reply[4] = chip_id;
 			if( read_protection == 1 ) reply[5] |= 0x80;
 		}
-		
+
 		// Cleanup
 		MCFWriteReg32( dev, BDMDATA0, old_x8 );
 		MCFWriteReg32( dev, DMCOMMAND, 0x00231008 ); // Copy data to x8
@@ -518,6 +550,18 @@ chip_identified:
 #if CH5xx_SUPPORT
 		if( ch5xx ) ch5xx_set_clock( dev, 0 );
 #endif
+		if( iss->target_chip_type != CHIP_CH32V10x )
+		{
+			if( iss->target_chip_type == CHIP_CH59x ||
+			    iss->target_chip_type == CHIP_CH57x )
+			{
+				SetProtocolSpeed( iss, PROTOCOL_SPEED_MEDIUM );
+			}
+			else
+			{
+				SetProtocolSpeed( iss, PROTOCOL_SPEED_DEFAULT );
+			}
+		}
 	}
 	return 0;
 }
@@ -593,18 +637,27 @@ static int StaticUpdatePROGBUFRegs( struct SWIOState * dev )
 	return 0;
 }
 
-static void ResetInternalProgrammingState( struct SWIOState * iss )
+static void VoidHighLevelState( struct SWIOState * iss )
 {
 	iss->statetag = 0;
 	iss->lastwriteflags = 0;
 	iss->currentstateval = 0;
 	iss->flash_unlocked = 0;
 	iss->autoincrement = 0;
-	iss->clock_set = 0;
 #if CH5xx_SUPPORT
 	iss->microblob_running = -2;
 	iss->writing_flash = 0;
 #endif
+}
+
+static void ResetInternalProgrammingState( struct SWIOState * iss )
+{
+	VoidHighLevelState( iss );
+	iss->opmode = 0; // 0 for undefined, 1 for SWIO, 2 for SWD
+	iss->target_chip_type = CHIP_UNKNOWN;
+	iss->sectorsize = 64;
+	iss->no_autoexec = 0;
+	iss->clock_set = 0;
 }
 
 static int ReadByte( struct SWIOState * iss, uint32_t address_to_read, uint8_t * data )
@@ -689,7 +742,7 @@ static int ReadWord( struct SWIOState * iss, uint32_t address_to_read, uint32_t 
 
 	if( iss->autoincrement )
 		iss->currentstateval += 4;
-    
+
 	if( iss->no_autoexec ) {
 		MCFWriteReg32( dev, DMCOMMAND, 0x00240000 );
 	}
