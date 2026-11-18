@@ -15,7 +15,7 @@
 
 #include <stdint.h>
 
-void WS2812BSimpleSend( GPIO_TypeDef * port, int pin, uint8_t * data, int len_in_bytes );
+void WS2812BSimpleSend( int pin, uint8_t * data, int len_in_bytes );
 
 #ifdef WS2812BSIMPLE_IMPLEMENTATION
 
@@ -25,18 +25,16 @@ void WS2812BSimpleSend( GPIO_TypeDef * port, int pin, uint8_t * data, int len_in
 #error WS2812B Driver Requires FUNCONF_SYSTICK_USE_HCLK
 #endif
 
-void WS2812BSimpleSend( GPIO_TypeDef * port, int pin, uint8_t * data, int len_in_bytes )
+#include "ch32fun.h"
+
+void WS2812BSimpleSend( int pin, uint8_t * data, int len_in_bytes )
 {
-	int port_id = (((intptr_t)port-(intptr_t)GPIOA)>>10);
-	RCC->APB2PCENR |= (RCC_APB2Periph_GPIOA<<port_id);  // Make sure port is enabled.
+	funGpioInitAll();
 
-	int poffset = (pin*4);
-	port->CFGLR = ( port->CFGLR & (~(0xf<<poffset))) | ((GPIO_Speed_2MHz | GPIO_CNF_OUT_PP)<<(poffset));
+	funPinMode(pin, GPIO_CFGLR_OUT_10Mhz_PP);
 
-	int maskon = 1<<pin;
-	int maskoff = 1<<(16+pin);
 
-	port->BSHR = maskoff;
+	funDigitalWrite(pin, FUN_LOW);
 
 	uint8_t * end = data + len_in_bytes;
 	while( data != end )
@@ -49,9 +47,9 @@ void WS2812BSimpleSend( GPIO_TypeDef * port, int pin, uint8_t * data, int len_in
 			if( byte & 0x80 )
 			{
 				// WS2812B's need AT LEAST 625ns for a logical "1"
-				port->BSHR = maskon;
+				funDigitalWrite(pin, FUN_HIGH);
 				DelaySysTick(25);
-				port->BSHR = maskoff;
+				funDigitalWrite(pin, FUN_LOW);
 				DelaySysTick(1);
 			}
 			else
@@ -60,9 +58,9 @@ void WS2812BSimpleSend( GPIO_TypeDef * port, int pin, uint8_t * data, int len_in
 #ifndef WS2812BSIMPLE_NO_IRQ_TWEAKING
 				__disable_irq();
 #endif
-				port->BSHR = maskon;
+				funDigitalWrite(pin, FUN_HIGH);
 				asm volatile( "nop\nnop\nnop\nnop" );
-				port->BSHR = maskoff;
+				funDigitalWrite(pin, FUN_LOW);
 #ifndef WS2812BSIMPLE_NO_IRQ_TWEAKING
 				__enable_irq();
 #endif
@@ -74,7 +72,7 @@ void WS2812BSimpleSend( GPIO_TypeDef * port, int pin, uint8_t * data, int len_in
 		data++;
 	}
 
-	port->BSHR = maskoff;
+	funDigitalWrite(pin, FUN_LOW);
 }
 
 #endif
