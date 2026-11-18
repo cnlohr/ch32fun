@@ -2,7 +2,7 @@
 #define FUNPROG_LOGIC_H
 
 #define PROGRAMMER_VERSION_MAJOR 5
-#define PROGRAMMER_VERSION_MINOR 30
+#define PROGRAMMER_VERSION_MINOR 40
 
 static const uint16_t capabilities = (PROGRAMMER_TYPE << 12) | CAPABILITIES;
 static uint8_t programmer_mode;
