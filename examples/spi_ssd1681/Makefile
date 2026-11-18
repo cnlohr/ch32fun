@@ -1,6 +1,6 @@
 all : flash
 
-TARGET:=main
+TARGET:=spi_ssd1681
 
 TARGET_MCU?=CH32V003
 include ../../ch32fun/ch32fun.mk
