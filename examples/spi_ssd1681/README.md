@@ -8,4 +8,4 @@ Simple example based on 1.54 inch GDEM0154D67WT e-paper display.
 - SSD1681-related code is adaptation of display producer-provided examples (can be found [here](https://www.good-display.com/product/556.html); no ch32v003 support though, hence this example).
 - [SSD1681 docs](https://v4.cecdn.yun300.cn/100001_1909185148/GDEM0154D67WTnew.pdf) (especially "Command Table").
 
-![](media/display_in_action.png)
+<img width="792" height="1112" alt="image" src="https://github.com/user-attachments/assets/1bc9e3c7-55c3-4483-8a56-c0d1d8405c33" />
