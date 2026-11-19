@@ -93,7 +93,7 @@
 */
 
 // Sanity check for when porting old code.
-#if defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x) || defined(CH32X03x) || defined(CH32L103)  || defined(CH32H41x)
+#if defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x) || defined(CH32X03x) || defined(CH32L103)  || defined(CH32H41x) || defined(CH32V4x7)
 	#if defined(CH32V003)
 		#error Cannot define CH32V003 and another arch.
 	#endif
@@ -176,6 +176,8 @@
 		#define HSE_VALUE				  (32000000)
 	#elif defined(CH32H41x)
 		#define HSE_VALUE				  (25000000)
+	#elif defined(CH32V4x7)
+		#define HSE_VALUE				  (25000000)
 	#endif
 #endif
 
@@ -193,6 +195,8 @@
 		#define HSI_VALUE					(8000000)
 	#elif defined(CH32H41x)
 		#define HSI_VALUE					(25000000)
+	#elif defined(CH32V4x7)
+		#define HSI_VALUE					(20000000)
 	#endif
 #endif
 
@@ -217,6 +221,8 @@
 			#define FUNCONF_PLL_MULTIPLIER 18	// Default: 8 * 18 = 144 MHz
 		#elif defined(CH32H41x)
 			#define FUNCONF_PLL_MULTIPLIER 16	// Default: 25 * 16 = 400 MHz
+		#elif defined(CH32V4x7)
+			#define FUNCONF_PLL_MULTIPLIER 16	// Default: 25 * 16 = 400 MHz SYSCLK, HCLK = SYSCLK / 2 = 200 MHz
 		#else // CH32V003
 			#define FUNCONF_PLL_MULTIPLIER 2	// Default: 24 * 2 = 48 MHz
 		#endif
@@ -243,6 +249,21 @@
 				#define FUNCONF_SYSTEM_CORE_CLOCK ((HSI_VALUE)*(FUNCONF_PLL_MULTIPLIER))
 			#elif defined(FUNCONF_USE_HSE) && FUNCONF_USE_HSE
 				#define FUNCONF_SYSTEM_CORE_CLOCK ((HSE_VALUE)*(FUNCONF_PLL_MULTIPLIER))
+			#endif
+		#endif
+	#elif defined(CH32V4x7)
+		// The PLL feeds SYSCLK, and HCLK = SYSCLK / 2 when the PLL is used.  Without the PLL HCLK = SYSCLK.
+		#if defined(FUNCONF_USE_PLL) && FUNCONF_USE_PLL
+			#if defined(FUNCONF_USE_HSI) && FUNCONF_USE_HSI
+				#define FUNCONF_SYSTEM_CORE_CLOCK ((HSI_VALUE)*(FUNCONF_PLL_MULTIPLIER)/2)
+			#elif defined(FUNCONF_USE_HSE) && FUNCONF_USE_HSE
+				#define FUNCONF_SYSTEM_CORE_CLOCK ((HSE_VALUE)*(FUNCONF_PLL_MULTIPLIER)/2)
+			#endif
+		#else
+			#if defined(FUNCONF_USE_HSI) && FUNCONF_USE_HSI
+				#define FUNCONF_SYSTEM_CORE_CLOCK (HSI_VALUE)
+			#elif defined(FUNCONF_USE_HSE) && FUNCONF_USE_HSE
+				#define FUNCONF_SYSTEM_CORE_CLOCK (HSE_VALUE)
 			#endif
 		#endif
 	#elif defined(FUNCONF_USE_HSI) && FUNCONF_USE_HSI
@@ -428,6 +449,8 @@ typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
 	#include "ch5xxhw.h"
 #elif defined( CH32H41x )
 	#include "ch32h41xhw.h"
+#elif defined( CH32V4x7 )
+	#include "ch32v4x7hw.h"
 #endif
 
 #if defined(__riscv) || defined(__riscv__) || defined( CH32V003FUN_BASE )
@@ -990,14 +1013,24 @@ RV_STATIC_INLINE void funPinAF(u32 pin, u32 af)
 	*afio = (*afio & ~(0xf << (4U * (pin & 0x7)))) | (af << (4U * (pin & 0x7)));
 }
 
+#elif defined(CH32V4x7)
+// Same CFGLR/CFGHR nibble layout as the CH32V30x, but the clock enable register is RCC->PB2PCENR.
+#define funGpioInitAll() do{ RCC->PB2PCENR |= ( RCC_PB2Periph_AFIO | RCC_PB2Periph_GPIOA | RCC_PB2Periph_GPIOB | RCC_PB2Periph_GPIOC | RCC_PB2Periph_GPIOD | RCC_PB2Periph_GPIOE ); }while(0)
+#define funPinMode( pin, mode ) do{ *((&GpioOf(pin)->CFGLR)+((pin&0x8)>>3)) = ( (*((&GpioOf(pin)->CFGLR)+((pin&0x8)>>3))) & (~(0xf<<(4*((pin)&0x7))))) | ((mode)<<(4*((pin)&0x7))); }while(0)
+#define funGpioInitA() do{ RCC->PB2PCENR |= ( RCC_PB2Periph_AFIO | RCC_PB2Periph_GPIOA ); }while(0)
+#define funGpioInitB() do{ RCC->PB2PCENR |= ( RCC_PB2Periph_AFIO | RCC_PB2Periph_GPIOB ); }while(0)
+#define funGpioInitC() do{ RCC->PB2PCENR |= ( RCC_PB2Periph_AFIO | RCC_PB2Periph_GPIOC ); }while(0)
+#define funGpioInitD() do{ RCC->PB2PCENR |= ( RCC_PB2Periph_AFIO | RCC_PB2Periph_GPIOD ); }while(0)
 #else
 #define funGpioInitAll() do{ RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOD ); }while(0)
 #define funPinMode( pin, mode ) do{ GpioOf(pin)->CFGLR = (GpioOf(pin)->CFGLR & (~(0xf<<(4*((pin)&0xf))))) | ((mode)<<(4*((pin)&0xf))); }while(0)
 #endif
 
+#if !defined(CH32V4x7)
 #define funGpioInitA() do{ RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA ); }while(0)
 #define funGpioInitC() do{ RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOC ); }while(0)
 #define funGpioInitD() do{ RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOD ); }while(0)
+#endif
 #define funDigitalRead( pin ) ((int)((GpioOf(pin)->INDR >> ((pin)&0xf)) & 1))
 #endif
 
