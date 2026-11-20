@@ -58,6 +58,10 @@ static const uint8_t HIDAPIRepDesc[ ] =
 		HID_OUTPUT         ( HID_DATA | HID_VARIABLE | HID_ABSOLUTE ),
 		HID_COLLECTION ( HID_COLLECTION_LOGICAL ),
 			// For use with testtop
+			HID_REPORT_COUNT   ( 255 ), 
+			HID_REPORT_ID      ( 0xaa )
+			HID_USAGE          ( 0x01 ),	
+			HID_FEATURE        ( HID_DATA | HID_VARIABLE | HID_ABSOLUTE ),
 			HID_REPORT_COUNT   ( 63 ), 
 			HID_REPORT_ID      ( 0xab )
 			HID_USAGE          ( 0x01 ),	
