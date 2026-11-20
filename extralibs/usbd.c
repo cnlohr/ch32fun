@@ -36,6 +36,33 @@ static inline void SetEPR_Status( const int ep, const uint16_t mask, const uint1
 	USBD->EPR[ep] = write_val;
 }
 
+static int SetEPR_Halt( const uint8_t index, const int halt )
+{
+	const int target_ep = index & 0x0F;
+
+	// EP0 should never be stalled
+	if ( target_ep == 0 )
+	{
+		return -1;
+	}
+
+	const uint8_t mode = USBDCTX.endpoints[target_ep].mode;
+	if ( ( index & 0x80 ) && ( mode & USBD_EP_MODE_TX ) )
+	{
+		SetEPR_Status( target_ep, USBD_EPR_STAT_TX_MASK, halt ? USBD_EPR_STAT_TX_STALL : USBD_EPR_STAT_TX_NAK );
+	}
+	else if ( !( index & 0x80 ) && ( mode & USBD_EP_MODE_RX ) )
+	{
+		SetEPR_Status( target_ep, USBD_EPR_STAT_RX_MASK, halt ? USBD_EPR_STAT_RX_STALL : USBD_EPR_STAT_RX_ACK );
+	}
+	else
+	{
+		return -1;
+	}
+
+	return 0;
+}
+
 int USBDSetup( void )
 {
 	// Initialize USB pins to pull-down to avoid mis-detection
@@ -297,20 +324,9 @@ void USB_LP_CAN1_RX0_IRQHandler( void )
 							{
 								if ( (uint8_t)( USBD_indexValue & 0xFF ) == USB_REQ_FEAT_ENDP_HALT )
 								{
-									/* Clear End-point Feature */
-									if ( USBDCTX.endpoints[ep].mode )
+									if ( SetEPR_Halt( USBD_index, 0 ) < 0 )
 									{
-										if ( USBD_index & DEF_UEP_IN &&
-											 ( USBDCTX.endpoints[ep].mode & USBD_EP_MODE_TX ) )
-											SetEPR_Status( ep, USBD_EPR_STAT_TX_MASK, USBD_EPR_STAT_TX_NAK );
-										else if ( USBD_index & DEF_UEP_OUT &&
-												  ( USBDCTX.endpoints[ep].mode & USBD_EP_MODE_RX ) )
-											SetEPR_Status( ep, USBD_EPR_STAT_RX_MASK, USBD_EPR_STAT_RX_ACK );
-										else
-											goto stall;
-									}
-									else
-									{
+
 										goto stall;
 									}
 								}
@@ -343,25 +359,17 @@ void USB_LP_CAN1_RX0_IRQHandler( void )
 							else if ( ( USBD_request_type & USB_REQ_RECIP_MASK ) == USB_REQ_RECIP_ENDP )
 							{
 								/* Set Endpoint Feature */
-								if ( (uint8_t)( USBD_indexValue & 0xFF ) == USB_REQ_FEAT_ENDP_HALT )
+								if ( (uint8_t)( USBD_indexValue & 0xFF ) != USB_REQ_FEAT_ENDP_HALT &&
+									 ( SetEPR_Halt( USBD_index, 1 ) < 0 ) )
 								{
-									if ( USBDCTX.endpoints[ep].mode )
-									{
-										if ( ( USBD_index & DEF_UEP_IN ) &&
-											 ( USBDCTX.endpoints[ep].mode & USBD_EP_MODE_TX ) )
-											SetEPR_Status( ep, USBD_EPR_STAT_TX_MASK, USBD_EPR_STAT_TX_STALL );
-										else if ( ( USBD_index & DEF_UEP_OUT ) &&
-												  ( USBDCTX.endpoints[ep].mode & USBD_EP_MODE_RX ) )
-											SetEPR_Status( ep, USBD_EPR_STAT_RX_MASK, USBD_EPR_STAT_RX_STALL );
-										else
-											goto stall;
-									}
-								}
-								else
 									goto stall;
+								}
 							}
 							else
+							{
 								goto stall;
+							}
+
 							break;
 
 						default: goto stall;
@@ -373,7 +381,7 @@ void USB_LP_CAN1_RX0_IRQHandler( void )
 #if FUSB_HID_INTERFACES > 0 || FUSB_USER_HANDLERS
 #if FUSB_HID_USER_REPORTS
 					const uint16_t packet_len = USBD_BDT->EP[ep].COUNTn_RX & 0x3FF;
-					uint8_t buff[USBD_PACKET_SIZE];
+					static uint8_t buff[USBD_PACKET_SIZE];
 
 					for ( int i = 0; i < packet_len; ++i )
 					{
@@ -485,12 +493,14 @@ void USB_LP_CAN1_RX0_IRQHandler( void )
 #endif
 #if FUSB_HID_USER_REPORTS
 				if ( USBDCTX.USBD_SetupReqCode == HID_SET_REPORT )
+					;
 				{
-					HandleHidUserReportDataOut( &USBDCTX, buff, len );
+					HandleHidUserReportDataOut( &USBDCTX, buff, packet_len );
 				}
 #endif
 #if FUSB_USER_HANDLERS
 				if ( USBDCTX.USBD_SetupReqCode != HID_SET_REPORT )
+					;
 				{
 					HandleDataOut( &USBDCTX, ep, buff, packet_len );
 				}
@@ -583,7 +593,7 @@ void USB_LP_CAN1_RX0_IRQHandler( void )
 				}
 				else
 				{
-					SetEPR_Status( ep, USBD_EPR_STAT_RX_MASK, USBD_EPR_STAT_RX_NAK );
+					SetEPR_Status( ep, USBD_EPR_STAT_TX_MASK, USBD_EPR_STAT_TX_NAK );
 				}
 			}
 
