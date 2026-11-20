@@ -911,7 +911,8 @@ int USBFSSetup()
 #endif
 
 #if defined (CH32X03x)
-	RCC->APB2PCENR |= RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOC | RCC_APB1Periph_PWR;
+	RCC->APB2PCENR |= RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOC;
+	RCC->APB1PCENR |= RCC_APB1Periph_PWR;
 	PWR->CTLR |= PWR_CTLR_PLS_MODE3; // Set PVD to 4V
 	Delay_Ms(1);
 	// This is how it's done in ISP
