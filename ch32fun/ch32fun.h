@@ -993,7 +993,7 @@ RV_STATIC_INLINE void funPinMode(u32 pin, GPIOModeTypeDef mode)
 #if defined(CH32X03x)
 #define funGpioInitAll() do{ RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC ); }while(0)
 #define funPinMode( pin, mode ) do{ *((&GpioOf(pin)->CFGLR)+((pin&0x8)>>3)) = ( (*((&GpioOf(pin)->CFGLR)+((pin&0x8)>>3))) & (~(0xf<<(4*((pin)&0x7))))) | ((mode)<<(4*((pin)&0x7))); }while(0)
-#elif defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x) || defined(CH32L103)
+#elif defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x) || defined(CH32L103) || defined(CH32V4x7)
 #define funGpioInitAll() do{ RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOD | RCC_APB2Periph_GPIOE ); }while(0)
 #define funPinMode( pin, mode ) do{ *((&GpioOf(pin)->CFGLR)+((pin&0x8)>>3)) = ( (*((&GpioOf(pin)->CFGLR)+((pin&0x8)>>3))) & (~(0xf<<(4*((pin)&0x7))))) | ((mode)<<(4*((pin)&0x7))); }while(0)
 #define funGpioInitB() do{ RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOB ); }while(0)
@@ -1013,24 +1013,15 @@ RV_STATIC_INLINE void funPinAF(u32 pin, u32 af)
 	*afio = (*afio & ~(0xf << (4U * (pin & 0x7)))) | (af << (4U * (pin & 0x7)));
 }
 
-#elif defined(CH32V4x7)
-// Same CFGLR/CFGHR nibble layout as the CH32V30x, but the clock enable register is RCC->PB2PCENR.
-#define funGpioInitAll() do{ RCC->PB2PCENR |= ( RCC_PB2Periph_AFIO | RCC_PB2Periph_GPIOA | RCC_PB2Periph_GPIOB | RCC_PB2Periph_GPIOC | RCC_PB2Periph_GPIOD | RCC_PB2Periph_GPIOE ); }while(0)
-#define funPinMode( pin, mode ) do{ *((&GpioOf(pin)->CFGLR)+((pin&0x8)>>3)) = ( (*((&GpioOf(pin)->CFGLR)+((pin&0x8)>>3))) & (~(0xf<<(4*((pin)&0x7))))) | ((mode)<<(4*((pin)&0x7))); }while(0)
-#define funGpioInitA() do{ RCC->PB2PCENR |= ( RCC_PB2Periph_AFIO | RCC_PB2Periph_GPIOA ); }while(0)
-#define funGpioInitB() do{ RCC->PB2PCENR |= ( RCC_PB2Periph_AFIO | RCC_PB2Periph_GPIOB ); }while(0)
-#define funGpioInitC() do{ RCC->PB2PCENR |= ( RCC_PB2Periph_AFIO | RCC_PB2Periph_GPIOC ); }while(0)
-#define funGpioInitD() do{ RCC->PB2PCENR |= ( RCC_PB2Periph_AFIO | RCC_PB2Periph_GPIOD ); }while(0)
 #else
 #define funGpioInitAll() do{ RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOD ); }while(0)
 #define funPinMode( pin, mode ) do{ GpioOf(pin)->CFGLR = (GpioOf(pin)->CFGLR & (~(0xf<<(4*((pin)&0xf))))) | ((mode)<<(4*((pin)&0xf))); }while(0)
 #endif
 
-#if !defined(CH32V4x7)
 #define funGpioInitA() do{ RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOA ); }while(0)
 #define funGpioInitC() do{ RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOC ); }while(0)
 #define funGpioInitD() do{ RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOD ); }while(0)
-#endif
+#define funGpioInitE() do{ RCC->APB2PCENR |= ( RCC_APB2Periph_AFIO | RCC_APB2Periph_GPIOE ); }while(0)
 #define funDigitalRead( pin ) ((int)((GpioOf(pin)->INDR >> ((pin)&0xf)) & 1))
 #endif
 

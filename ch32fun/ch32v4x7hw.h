@@ -1,5 +1,5 @@
-#ifndef TODO_HARDWARE_H
-#define TODO_HARDWARE_H
+#ifndef CH32V4X7HW_H
+#define CH32V4X7HW_H
 
 #include "ch32fun.h"
 
@@ -10261,6 +10261,14 @@ typedef struct
 #define RCC_PB2Periph_TIM8              ((uint32_t)0x00002000)
 #define RCC_PB2Periph_USART1            ((uint32_t)0x00004000)
 
+/* CH32V30x names, used by the shared GPIO helpers in ch32fun.h */
+#define RCC_APB2Periph_AFIO             RCC_PB2Periph_AFIO
+#define RCC_APB2Periph_GPIOA            RCC_PB2Periph_GPIOA
+#define RCC_APB2Periph_GPIOB            RCC_PB2Periph_GPIOB
+#define RCC_APB2Periph_GPIOC            RCC_PB2Periph_GPIOC
+#define RCC_APB2Periph_GPIOD            RCC_PB2Periph_GPIOD
+#define RCC_APB2Periph_GPIOE            RCC_PB2Periph_GPIOE
+
 /* PB1_peripheral */
 #define RCC_PB1Periph_TIM2              ((uint32_t)0x00000001)
 #define RCC_PB1Periph_TIM3              ((uint32_t)0x00000002)
@@ -12804,4 +12812,4 @@ typedef enum
  * IN THE SOFTWARE.
  */
 
-#endif // Header guard
+#endif // CH32V4X7HW_H
