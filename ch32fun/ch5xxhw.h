@@ -603,10 +603,11 @@ typedef enum
 } SYS_CLKTypeDef;
 
 #if (defined(CH570_CH572))
-#define ROM_CFG_MAC_ADDR		((const u32*)0x0003f018)
+#define ROM_CFG_MAC_ADDR		((const u32*)0x0003F018) // 6 bytes
 #elif defined(CH582_CH583)
-#define ROM_CFG_MAC_ADDR		((const u32*)0x0007F018)
-#define ROM_CFG_TMP_25C 		((const u32*)0x0007F014)
+#define ROM_CFG_BOOT_INFO 		((const u32*)0x0007DFF8) // 8 bytes
+#define ROM_CFG_TMP_25C 		((const u32*)0x0007F014) // 4 bytes
+#define ROM_CFG_MAC_ADDR		((const u32*)0x0007F018) // 6 bytes
 #endif
 
 // For debug writing to the debug interface, and USB ISP.
